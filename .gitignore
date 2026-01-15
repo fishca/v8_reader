@@ -1,41 +1,85 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
+# Compiled files
+*.exe
+*.dll
 *.so
 *.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+*.obj
+*.o
 *.a
 *.lib
+*.exp
+*.pdb
+*.tds
+*.map
+*.rsm
+*.identcache
 
-# Executables
-*.exe
-*.out
-*.app
+# IDE files
+*.dsk
+*.dof
+*.cfg
+*.local
+*.identcache
+*.otares
+*.otapreferences
+*.otarepository
+*.dproj.local
 
-# debug information files
-*.dwo
+# Project files
+*.dproj
+*.cbproj
+*.dpr
+*.bdsproj
+*.bdsgroup
+*.bdsproj.local
+
+# Output directories
+Win32/
+Win64/
+x86/
+x64/
+Debug/
+Release/
+__history/
+*.dcu
+*.dcpil
+
+# Backup files
+*.~*
+*.bak
+*.bk?
+
+# Temporary files
+*.tmp
+*.temp
+
+# Precompiled headers
+*.pch
+*.sbr
+
+# Debug files
+*.dbg
+*.db
+*.edb
+
+# IDE workspace files
+*.bdsgroup
+*.bdsproj.local
+
+# RAD Studio user settings
+*.dproj.local
+*.cbproj.local
+
+# Deployment files
+*.deployproj
+*.DEPLOY
+
+# Documentation
+*.doc
+*.pdf
+
+# Packages
+*.bpl
+*.drc
+*.res
+*.rc
