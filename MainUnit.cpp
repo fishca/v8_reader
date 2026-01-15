@@ -1222,7 +1222,7 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 			}
 			else if (guid_md == GUID_AccountingRegisters)
 			{
-				node = &(*node)[0][1][15][1][2];
+				node = &(*node)[0][1][16][1][2];
 				auto val = node->get_value();
 				md_list.push_back(node->get_value());
 			}
@@ -1332,14 +1332,19 @@ void get_cf_name(tree* tr, Messager* mess)
 
 	// Заполняем справочники
 	fill_md(tr, GUID_Catalogs, MainForm->Catalogs);
+    mess->AddError(L"Справочники обработаны");
 	// Заполняем языки
 	fill_md(tr, GUID_Languages, MainForm->Languages);
+	mess->AddError(L"Языки обработаны");
 	// Заполняем регистры накопления
 	fill_md(tr, GUID_AccumulationRegisters, MainForm->AccumulationRegisters);
+	mess->AddError(L"РН обработаны");
 	// Заполняем регистры бухгалтерии
 	fill_md(tr, GUID_AccountingRegisters, MainForm->AccountingRegisters);
+	mess->AddError(L"РБ обработаны");
 	// Заполняем регистры расчета
 	fill_md(tr, GUID_CalculationRegisters, MainForm->CalculationRegisters);
+    mess->AddError(L"РР обработаны");
 	// Заполняем бизнес-процессы
 	fill_md(tr, GUID_BusinessProcesses, MainForm->BusinessProcesses);
 	// ПВХ
