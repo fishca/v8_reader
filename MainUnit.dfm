@@ -111,7 +111,7 @@
       TabOrder = 0
       TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoTristateTracking, toAutoHideButtons, toAutoDeleteMovedNodes, toAutoChangeScale]
       TreeOptions.MiscOptions = [toFullRepaintOnResize, toInitOnSave, toToggleOnDblClick, toWheelPanning, toEditOnClick]
-      TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowTreeLines, toThemeAware, toUseBlendedImages]
+      TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toThemeAware, toUseBlendedImages]
       TreeOptions.SelectionOptions = [toExtendedFocus, toFullRowSelect]
       OnFreeNode = VirtualStringTreeValue1CFreeNode
       OnGetText = VirtualStringTreeValue1CGetText
@@ -156,7 +156,6 @@
           Height = 479
           Align = alClient
           TabOrder = 0
-          ExplicitHeight = 412
         end
       end
       object TabModuleManager: TTabSheet

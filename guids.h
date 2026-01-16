@@ -152,8 +152,22 @@ constexpr const char* GUID_BusinessProcesses           = "fcd3404e-1523-48ce-9bc
 constexpr const char* GUID_Tasks                       = "3e63355c-1378-4953-be9b-1deb5fb6bec5";
 constexpr const char* GUID_ExternalDataSources         = "5274d9fc-9c3a-4a71-8f5e-a0db8ab23de5";
 
+// Макеты Справочника
+constexpr const char* GUID_MoxelsCatalogs   = "3daea016-69b7-4ed4-9453-127911372fe6";
 //Команды справочника
-constexpr const char* GUID_RefCommands                 = "4fe87c89-9ad4-43f6-9fdb-9dc83b3879c6";
+constexpr const char* GUID_CommandsCatalogs = "4fe87c89-9ad4-43f6-9fdb-9dc83b3879c6";
+//Табличные части справочника
+constexpr const char* GUID_TabsCatalogs     = "932159f9-95b2-4e76-a8dd-8849fe5c5ded";
+//Реквизиты справочника
+constexpr const char* GUID_AttCatalogs      = "cf4abea7-37b2-11d4-940f-008048da11f9";
+// Формы Справочника
+constexpr const char* GUID_FormsCatalogs    = "fdf816d2-1ead-11d5-b975-0050bae0a95d";
+
+
+
+
+
+
 //Команды критерия отбора
 constexpr const char* GUID_SelCritCommands             = "23fa3b84-220a-40e9-8331-e588bed87f7d";
 

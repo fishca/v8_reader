@@ -19,6 +19,9 @@
 #include <Vcl.ActnList.hpp>
 #include <Vcl.Menus.hpp>
 #include <Vcl.ExtCtrls.hpp>
+
+#include <System.Contnrs.hpp>
+
 #include "guids.h"
 #include "MessageRegistration.h"
 #include "Parse_tree.h"
@@ -82,6 +85,9 @@ public:		// User declarations
 	void __fastcall TreeInit();
 	String ConfigName;
 	std::vector<String> Catalogs;
+
+	TObjectList *mdCatalogs;
+
 	std::vector<String> Languages;
 	std::vector<String> AccumulationRegisters;
 	std::vector<String> AccountingRegisters;
