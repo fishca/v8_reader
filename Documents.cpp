@@ -2,23 +2,9 @@
 
 #pragma hdrstop
 
-#include "Catalogs.h"
+#include "Documents.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
-
-__fastcall TCatalogs::TCatalogs()
-{
-	guid   = "";
-	name   = "";
-	parent = NULL;
-}
-
-__fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid)
-{
-	guid      = _guid;
-	parent    = _parent;
-	root_data = get_treeFromV8file(parent->GetFile(_guid));
-}
 
 String GetNameFormCatalogs(v8catalog *cf, String &guid_md)
 {
@@ -64,29 +50,22 @@ String GetNameMoxCatalogs(v8catalog *cf, String &guid_md)
 	return Result;
 }
 
-String GetNameFormAtt(v8catalog *cf, String &guid_md)
+
+__fastcall TDocuments::TDocuments()
 {
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
-
-	node = &(*node)[0][1][1][1][2]; // guid подсистемы
-
-	Result = node->get_value(); // имя подсистемы
-
-	return Result;
+	guid   = "";
+	name   = "";
+	parent = NULL;
 }
 
-__fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const String& _name)
+__fastcall TDocuments::TDocuments(v8catalog *_parent, const String& _guid)
+{
+	guid      = _guid;
+	parent    = _parent;
+	root_data = get_treeFromV8file(parent->GetFile(_guid));
+}
+
+__fastcall TDocuments::TDocuments(v8catalog *_parent, const String& _guid, const String& _name)
 {
 	name      = _name;
 	guid      = _guid;
@@ -97,14 +76,14 @@ __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const S
 	attributes.clear();
 	tree* node_att = root_data;
 
-	node_att = &(*node_att)[0][6][1]; // количество элементов
+	node_att = &(*node_att)[0][5][1]; // количество элементов
 	int CountAtt = node_att->get_value().ToInt();
 	int Delta = CountAtt - 2;
 	for (int i = 0; i < CountAtt; i++)
 	{
 		try {
 			tree* node_att_att = root_data;
-			node_att_att = &(*node_att_att)[0][6][i+CountAtt-Delta][0][1][1][1][2];
+			node_att_att = &(*node_att_att)[0][5][i+CountAtt-Delta][0][1][1][1][2];
 			String NameAtt = node_att_att->get_value();
 			attributes.push_back(NameAtt);  // здесь уже имена
 
@@ -114,13 +93,13 @@ __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const S
 	// Получаем табличные части
 	tabulars.clear();
 	tree* node_att_t = root_data;
-	node_att_t = &(*node_att_t)[0][5][1]; // количество элементов
+	node_att_t = &(*node_att_t)[0][3][1]; // количество элементов
 	int CountAttTab = node_att_t->get_value().ToInt();
 	int DeltaTab = CountAttTab - 2;
 	for (int i = 0; i < CountAttTab; i++)
 	{
 		tree* node_att_tab = root_data;
-		node_att_tab = &(*node_att_tab)[0][5][i+CountAttTab-DeltaTab][0][1][5][1][2];
+		node_att_tab = &(*node_att_tab)[0][3][i+CountAttTab-DeltaTab][0][1][5][1][2];
 		String NameAttTab = node_att_tab->get_value();
 		tabulars.push_back(NameAttTab);  // здесь уже имена
 	}
@@ -146,21 +125,21 @@ __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const S
 	comands.clear();
 	tree* node_att_c = root_data;
 
-	node_att_c = &(*node_att_c)[0][4][1]; // количество элементов
+	node_att_c = &(*node_att_c)[0][6][1]; // количество элементов
 
 	int CountCom = node_att_c->get_value().ToInt();
 	int DeltaCom = CountCom - 2;
 	for (int i = 0; i < CountCom; i++)
 	{
 		tree* node_com = root_data;
-		node_com = &(*node_com)[0][4][i+CountCom-DeltaCom][0][1][3][2][9][2];
+		node_com = &(*node_com)[0][6][i+CountCom-DeltaCom][0][1][3][2][9][2];
 		String NameCom = node_com->get_value();
 		comands.push_back(NameCom);  // здесь уже имена
 	}
 	// Получаем макеты
 	moxels.clear();
 	tree* node_mox = root_data;
-	node_mox = &(*node_mox)[0][3][0];
+	node_mox = &(*node_mox)[0][4][0];
 
 	int CountMox = (node_mox->get_next())->get_value().ToInt();
 	tree* curNodeChildMox = node_mox->get_next();
@@ -174,11 +153,9 @@ __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const S
 		}
 
 	}
-
 }
 
-__fastcall TCatalogs::~TCatalogs()
+__fastcall TDocuments::~TDocuments()
 {
-	// TODO: Реализовать
-}
 
+}

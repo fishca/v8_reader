@@ -4,6 +4,7 @@
 #define CommonH
 
 //#include <vcl.h>
+#include "APIcfBase.h"
 #include <System.Classes.hpp>
 
 //---------------------------------------------------------------------------
@@ -24,6 +25,9 @@ String __fastcall tohex(int n);
 String __fastcall tohex64(__int64 n);
 String __fastcall hexstring(char* buf, int n);
 String __fastcall hexstring(TStream* str);
+//---------------------------------------------------------------------------
+String __fastcall GetNameFormCatalogs(v8catalog *cf, String &guid_md);
+String __fastcall GetNameMoxCatalogs(v8catalog *cf, String &guid_md);
 
 //---------------------------------------------------------------------------
 #endif

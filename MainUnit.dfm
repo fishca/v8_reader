@@ -90,7 +90,7 @@
       Colors.UnfocusedColor = clGray
       Colors.UnfocusedSelectionColor = clWhite
       Colors.UnfocusedSelectionBorderColor = clWhite
-      DefaultNodeHeight = 27
+      DefaultNodeHeight = 20
       Font.Charset = ANSI_CHARSET
       Font.Color = clWindowText
       Font.Height = -13
@@ -106,12 +106,11 @@
       Header.Options = [hoColumnResize, hoDblClickResize, hoHeightDblClickResize]
       Header.ParentFont = False
       Images = VirtualImageList1
-      LineStyle = lsSolid
       ParentFont = False
       TabOrder = 0
       TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoTristateTracking, toAutoHideButtons, toAutoDeleteMovedNodes, toAutoChangeScale]
       TreeOptions.MiscOptions = [toFullRepaintOnResize, toInitOnSave, toToggleOnDblClick, toWheelPanning, toEditOnClick]
-      TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toThemeAware, toUseBlendedImages]
+      TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages]
       TreeOptions.SelectionOptions = [toExtendedFocus, toFullRowSelect]
       OnFreeNode = VirtualStringTreeValue1CFreeNode
       OnGetText = VirtualStringTreeValue1CGetText

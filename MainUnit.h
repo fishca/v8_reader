@@ -83,64 +83,155 @@ private:	// User declarations
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
 	void __fastcall TreeInit();
+	void __fastcall	FillVirtualTree();
+	void __fastcall FillTreeMD(PVirtualNode parentNode, TObjectList *mdData, const String& md_name, int imgIndex);
 	String ConfigName;
-	std::vector<String> Catalogs;
 
+	std::vector<String> Catalogs;
 	TObjectList *mdCatalogs;
 
+	std::vector<String> Commonss;
+	TObjectList *mdCommonss;
+
 	std::vector<String> Languages;
+	TObjectList *mdLanguages;
+
 	std::vector<String> AccumulationRegisters;
+	TObjectList *mdAccumulationRegisters;
+
 	std::vector<String> AccountingRegisters;
+	TObjectList *mdAccountingRegisters;
+
 	std::vector<String> CalculationRegisters;
+	TObjectList *mdCalculationRegisters;
+
 	std::vector<String> BusinessProcesses;
+	TObjectList *mdBusinessProcesses;
 
 	std::vector<String> ChartsOfCharacteristicTypes;
+	TObjectList *mdChartsOfCharacteristicTypes;
+
 	std::vector<String> CommandGroups;
+	TObjectList *mdCommandGroups;
+
 	std::vector<String> CommonAttributes;
+	TObjectList *mdCommonAttributes;
+
 	std::vector<String> CommonCommands;
+	TObjectList *mdCommonCommands;
+
+
 	std::vector<String> CommonForms;
+	TObjectList *mdCommonForms;
+
 	std::vector<String> CommonModules;
+	TObjectList *mdCommonModules;
+
 	std::vector<String> CommonPictures;
+	TObjectList *mdCommonPictures;
+
 	std::vector<String> CommonTemplates;
+	TObjectList *mdCommonTemplates;
+
 	std::vector<String> Constants;
+	TObjectList *mdConstants;
+
 	std::vector<String> DataProcessors;
+	TObjectList *mdDataProcessors;
+
 	std::vector<String> DefinedTypes;
+	TObjectList *mdDefinedTypes;
+
 	std::vector<String> DocumentJournals;
+	TObjectList *mdDocumentJournals;
+
 	std::vector<String> DocumentNumerators;
+	TObjectList *mdDocumentNumerators;
+
 	std::vector<String> Documents;
+	TObjectList *mdDocuments;
+
 	std::vector<String> Enums;
+	TObjectList *mdEnums;
+
 	std::vector<String> EventSubscriptions;
+	TObjectList *mdEventSubscriptions;
+
 	std::vector<String> ExchangePlans;
+	TObjectList *mdExchangePlans;
+
 	std::vector<String> ChartOfAccounts;
+	TObjectList *mdChartOfAccounts;
+
 	std::vector<String> ChartOfCalculationTypes;
+	TObjectList *mdChartOfCalculationTypes;
+
 	std::vector<String> ExternalDataSources;
+	TObjectList *mdExternalDataSources;
+
 	std::vector<String> FilterCriteria;
+	TObjectList *mdFilterCriteria;
+
 	std::vector<String> FunctionalOptions;
+	TObjectList *mdFunctionalOptions;
+
 	std::vector<String> FunctionalOptionsParameters;
+	TObjectList *mdFunctionalOptionsParameters;
+
 	std::vector<String> HTTPServices;
+	TObjectList *mdHTTPServices;
+
 	std::vector<String> InformationRegisters;
+	TObjectList *mdInformationRegisters;
+
 	std::vector<String> Interfaces;
+	TObjectList *mdInterfaces;
 
 	std::vector<String> Reports;
+	TObjectList *mdReports;
+
 	std::vector<String> Roles;
+	TObjectList *mdRoles;
+
 	std::vector<String> Bots;
+	TObjectList *mdBots;
+
 	std::vector<String> ScheduledJobs;
+	TObjectList *mdScheduledJobs;
+
 	std::vector<String> SessionParameters;
+	TObjectList *mdSessionParameters;
+
 	std::vector<String> SettingsStorages;
+	TObjectList *mdSettingsStorages;
+
 	std::vector<String> StyleItems;
+	TObjectList *mdStyleItems;
+
 	std::vector<String> Styles;
+	TObjectList *mdStyles;
 
 	// необходимо хранить иерархию
 	std::vector<SubSys> Subsystems;
+	TObjectList *mdSubsystems;
 
 	std::vector<String> Tasks;
+	TObjectList *mdTasks;
+
 	std::vector<String> WebServices;
+	TObjectList *mdWebServices;
+
 	std::vector<String> WSReferences;
+	TObjectList *mdWSReferences;
+
 	std::vector<String> XDTOPackages;
+	TObjectList *mdXDTOPackages;
+
 	std::vector<String> IntegrationServices;
+	TObjectList *mdIntegrationServices;
+
 	std::vector<String> Sequences;
-
-
+	TObjectList *mdSequences;
 
 	v8catalog *GlobalCF;
 };
