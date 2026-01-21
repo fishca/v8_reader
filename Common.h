@@ -28,6 +28,7 @@ String __fastcall hexstring(TStream* str);
 //---------------------------------------------------------------------------
 String __fastcall GetNameFormCatalogs(v8catalog *cf, String &guid_md);
 String __fastcall GetNameFormReports(v8catalog *cf, String &guid_md);
+String __fastcall GetNameFormPVH(v8catalog *cf, String &guid_md);
 String __fastcall GetNameMoxCatalogs(v8catalog *cf, String &guid_md);
 
 //---------------------------------------------------------------------------

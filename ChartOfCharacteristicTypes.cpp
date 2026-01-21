@@ -32,14 +32,14 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 	attributes.clear();
 	tree* node_att = root_data;
 
-	node_att = &(*node_att)[0][6][1]; // количество элементов
+	node_att = &(*node_att)[0][3][1]; // количество элементов
 	int CountAtt = node_att->get_value().ToInt();
 	int Delta = CountAtt - 2;
 	for (int i = 0; i < CountAtt; i++)
 	{
 		try {
 			tree* node_att_att = root_data;
-			node_att_att = &(*node_att_att)[0][6][i+CountAtt-Delta][0][1][1][1][2];
+			node_att_att = &(*node_att_att)[0][3][i+CountAtt-Delta][0][1][1][1][2];
 			String NameAtt = node_att_att->get_value();
 			attributes.push_back(NameAtt);  // здесь уже имена
 
@@ -72,7 +72,7 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 		curNodeChild = curNodeChild->get_next();
 		if (curNodeChild)
 		{
-			String NameForm = GetNameFormCatalogs(parent, curNodeChild->get_value());
+			String NameForm = GetNameFormPVH(parent, curNodeChild->get_value());
 			forms.push_back(NameForm);  // здесь уже имена
 		}
 	}
@@ -81,21 +81,21 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 	comands.clear();
 	tree* node_att_c = root_data;
 
-	node_att_c = &(*node_att_c)[0][4][1]; // количество элементов
+	node_att_c = &(*node_att_c)[0][6][1]; // количество элементов
 
 	int CountCom = node_att_c->get_value().ToInt();
 	int DeltaCom = CountCom - 2;
 	for (int i = 0; i < CountCom; i++)
 	{
 		tree* node_com = root_data;
-		node_com = &(*node_com)[0][4][i+CountCom-DeltaCom][0][1][3][2][9][2];
+		node_com = &(*node_com)[0][6][i+CountCom-DeltaCom][0][1][3][2][9][2];
 		String NameCom = node_com->get_value();
 		comands.push_back(NameCom);  // здесь уже имена
 	}
 	// Получаем макеты
 	moxels.clear();
 	tree* node_mox = root_data;
-	node_mox = &(*node_mox)[0][3][0];
+	node_mox = &(*node_mox)[0][4][0];
 
 	int CountMox = (node_mox->get_next())->get_value().ToInt();
 	tree* curNodeChildMox = node_mox->get_next();

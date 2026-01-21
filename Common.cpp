@@ -487,6 +487,28 @@ String __fastcall GetNameFormReports(v8catalog *cf, String &guid_md)
 	return Result;
 }
 
+String __fastcall GetNameFormPVH(v8catalog *cf, String &guid_md)
+{
+	String Result = "";
+	v8file *filedata = cf->GetFile(guid_md);
+	if(!filedata)
+	{
+		return Result;
+	}
+	tree* tree_md = get_treeFromV8file(filedata);
+	if(!tree_md)
+	{
+		return Result;
+	}
+	tree* node = tree_md;
+
+	node = &(*node)[0][1][1][2]; // guid подсистемы
+
+	Result = node->get_value(); // имя подсистемы
+
+	return Result;
+}
+
 
 String __fastcall GetNameMoxCatalogs(v8catalog *cf, String &guid_md)
 {
