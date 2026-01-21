@@ -3,47 +3,25 @@
 #pragma hdrstop
 
 #include "Common.h"
-#include "Catalogs.h"
+#include "ChartOfCharacteristicTypes.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-__fastcall TCatalogs::TCatalogs()
+__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes()
 {
 	guid   = "";
 	name   = "";
 	parent = NULL;
 }
 
-__fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid)
+__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid)
 {
 	guid      = _guid;
 	parent    = _parent;
 	root_data = get_treeFromV8file(parent->GetFile(_guid));
 }
 
-String GetNameFormAtt(v8catalog *cf, String &guid_md)
-{
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
-
-	node = &(*node)[0][1][1][1][2]; // guid подсистемы
-
-	Result = node->get_value(); // имя подсистемы
-
-	return Result;
-}
-
-__fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const String& _name)
+__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid, const String &_name)
 {
 	name      = _name;
 	guid      = _guid;
@@ -131,11 +109,8 @@ __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const S
 		}
 
 	}
-
 }
 
-__fastcall TCatalogs::~TCatalogs()
+__fastcall TChartOfCharacteristicTypes::~TChartOfCharacteristicTypes()
 {
-	// TODO: Реализовать
 }
-

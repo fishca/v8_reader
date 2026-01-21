@@ -1,14 +1,15 @@
 ﻿//---------------------------------------------------------------------------
 
-#ifndef DocumentsH
-#define DocumentsH
-//---------------------------------------------------------------------------
+#ifndef NumeratorsH
+#define NumeratorsH
+
 #include <vector>
 #include "Class_1CD.h"
 #include "APIcfBase.h"
 #include "Parse_tree.h"
 
-class TDocuments : public TObject
+//---------------------------------------------------------------------------
+class TNumerators : public TObject
 {
 public:
 
@@ -24,11 +25,10 @@ public:
 	std::vector<String> tabulars;    // список табличных частей
 	std::vector<String> forms;       // список форм
 	/* TODO : Реализовать класс */
-	__fastcall TDocuments();
-	__fastcall TDocuments(v8catalog *_parent, const String& _guid);
-	__fastcall TDocuments(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TDocuments();
+	__fastcall TNumerators();
+	__fastcall TNumerators(v8catalog *_parent, const String& _guid);
+	__fastcall TNumerators(v8catalog *_parent, const String& _guid, const String& _name);
+	__fastcall ~TNumerators();
 };
-
 
 #endif

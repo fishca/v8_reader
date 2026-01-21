@@ -2,54 +2,10 @@
 
 #pragma hdrstop
 
+#include "Common.h"
 #include "Documents.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
-
-String GetNameFormCatalogs(v8catalog *cf, String &guid_md)
-{
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
-
-	node = &(*node)[0][1][1][1][2]; // guid подсистемы
-
-	Result = node->get_value(); // имя подсистемы
-
-	return Result;
-}
-
-String GetNameMoxCatalogs(v8catalog *cf, String &guid_md)
-{
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
-
-	node = &(*node)[0][1][2][2]; // guid подсистемы
-
-	Result = node->get_value(); // имя подсистемы
-
-	return Result;
-}
-
 
 __fastcall TDocuments::TDocuments()
 {

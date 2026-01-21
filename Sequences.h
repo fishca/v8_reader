@@ -1,14 +1,15 @@
 ﻿//---------------------------------------------------------------------------
 
-#ifndef DocumentsH
-#define DocumentsH
-//---------------------------------------------------------------------------
+#ifndef SequencesH
+#define SequencesH
+
 #include <vector>
 #include "Class_1CD.h"
 #include "APIcfBase.h"
 #include "Parse_tree.h"
 
-class TDocuments : public TObject
+//---------------------------------------------------------------------------
+class TSequences : public TObject
 {
 public:
 
@@ -24,11 +25,10 @@ public:
 	std::vector<String> tabulars;    // список табличных частей
 	std::vector<String> forms;       // список форм
 	/* TODO : Реализовать класс */
-	__fastcall TDocuments();
-	__fastcall TDocuments(v8catalog *_parent, const String& _guid);
-	__fastcall TDocuments(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TDocuments();
+	__fastcall TSequences();
+	__fastcall TSequences(v8catalog *_parent, const String& _guid);
+	__fastcall TSequences(v8catalog *_parent, const String& _guid, const String& _name);
+	__fastcall ~TSequences();
 };
-
 
 #endif
