@@ -21,7 +21,7 @@ jobs:
         echo "Building the project..."
         cd /d "S:/work/CPP/BDS13/v8reader"
         call "C:/Program Files (x86)/Embarcadero/Studio/37.0/bin/rsvars.bat"        
-        msbuild "S:/work/CPP/BDS13/v8reader/v8reader.cbproj" /p:Configuration=Debug /p:Platform=Win32 /v:normal
+        msbuild "S:/work/CPP/BDS13/v8reader/v8reader.cbproj" /p:Configuration=Debug /p:Platform=Win32 /m
         
         echo "Build finished."
 
