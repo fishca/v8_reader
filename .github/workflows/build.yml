@@ -34,7 +34,7 @@ jobs:
         # Îáû÷íî áèíàðíèê ñîçäàåòñÿ â ïîäïàïêå Win32/Release
   release:
     # Запускаем ТОЛЬКО при пуше тега
-    if: startsWith(github.ref, 'refs/tags/')
+    # if: startsWith(github.ref, 'refs/tags/')
     # Ждем успешной сборки
     needs: build
     runs-on: ubuntu-latest # Для этого job подходит стандартный runner
