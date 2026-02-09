@@ -48,7 +48,7 @@ jobs:
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
         with:
-          name: v8reader.zip
+          name: v8reader
 
       # 2. Создаем релиз на GitHub
       - name: Create GitHub Release
