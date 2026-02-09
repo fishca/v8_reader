@@ -155,7 +155,7 @@ TStream* __fastcall read_block_16(TStream* stream_from, __int64 start, TStream* 
 
 	while(start != V8_FF64_SIGNATURE)
     {
-		stream_from->Seek(start, soFromBeginning);
+		stream_from->Seek(start + V8_OFFSET_8316, soFromBeginning);
 		stream_from->Read(temp_buf, 55);
 
 		curlen = hex_to_int16(&temp_buf[19]);
@@ -2001,6 +2001,11 @@ void __fastcall v8catalog::HalfOpen(const String& name)
     	data = new TFileStream(name, fmOpenReadWrite);
 
 	Lock->Release();
+}
+
+void __fastcall v8catalog::ClearIs8316()
+{
+    is_8316 = false;
 }
 
 //void __fastcall v8catalog::set_leave_data(bool ld)

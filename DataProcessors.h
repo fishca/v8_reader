@@ -1,33 +1,21 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef DataProcessorsH
 #define DataProcessorsH
-//---------------------------------------------------------------------------
-#include <vector>
-#include "Class_1CD.h"
-#include "APIcfBase.h"
-#include "Parse_tree.h"
 
-class TDataProcessors : public TObject
+#include "MetadataObjectWithSections.h"
+
+//---------------------------------------------------------------------------
+
+class TDataProcessors : public MetadataObjectWithSections
 {
 public:
-
-	tree*  root_data;
-	v8catalog* parent;
-
-	String name;
-	String guid;
-
-	std::vector<String> attributes;  // список реквизитов
-	std::vector<String> comands;     // список команд
-	std::vector<String> moxels;      // список макетов
-	std::vector<String> tabulars;    // список табличных частей
-	std::vector<String> forms;       // список форм
-	/* TODO : Реализовать класс */
 	__fastcall TDataProcessors();
 	__fastcall TDataProcessors(v8catalog *_parent, const String& _guid);
 	__fastcall TDataProcessors(v8catalog *_parent, const String& _guid, const String& _name);
 	__fastcall ~TDataProcessors();
+
+	void __fastcall initializeFromTree() override;
 };
 
 #endif

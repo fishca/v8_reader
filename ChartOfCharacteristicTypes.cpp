@@ -7,27 +7,30 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes()
+__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes():BaseMetadataObject()
 {
-	guid   = "";
-	name   = "";
-	parent = NULL;
 }
 
-__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid)
+__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid) : BaseMetadataObject(_parent, _guid)
 {
-	guid      = _guid;
-	parent    = _parent;
-	root_data = get_treeFromV8file(parent->GetFile(_guid));
+	initializeFromTree();
 }
 
-__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid, const String &_name)
+__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid, const String &_name) : BaseMetadataObject(_parent, _guid, _name)
 {
-	name      = _name;
-	guid      = _guid;
-	parent    = _parent;
-	root_data = get_treeFromV8file(parent->GetFile(_guid));
+	initializeFromTree();
+}
 
+__fastcall TChartOfCharacteristicTypes::~TChartOfCharacteristicTypes()
+{
+}
+
+void __fastcall TChartOfCharacteristicTypes::initializeFromTree()
+{
+
+	if (!root_data) return;
+
+	auto& attributes = getAttributes();
 	// Получаем имена реквизитов
 	attributes.clear();
 	tree* node_att = root_data;
@@ -41,12 +44,13 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 			tree* node_att_att = root_data;
 			node_att_att = &(*node_att_att)[0][3][i+CountAtt-Delta][0][1][1][1][2];
 			String NameAtt = node_att_att->get_value();
-			attributes.push_back(NameAtt);  // здесь уже имена
+			attributes.push_back(std::make_unique<TRequisite>(NameAtt, ""));
 
 		} catch (...) {
 		}
 	}
 	// Получаем табличные части
+	auto& tabulars = getTabularSections();
 	tabulars.clear();
 	tree* node_att_t = root_data;
 	node_att_t = &(*node_att_t)[0][5][1]; // количество элементов
@@ -57,10 +61,11 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 		tree* node_att_tab = root_data;
 		node_att_tab = &(*node_att_tab)[0][5][i+CountAttTab-DeltaTab][0][1][5][1][2];
 		String NameAttTab = node_att_tab->get_value();
-		tabulars.push_back(NameAttTab);  // здесь уже имена
+		tabulars.push_back(std::make_unique<TTabular>(NameAttTab, ""));
 	}
 
 	// Получаем имена форм
+	auto& forms = getForms();
 	forms.clear();
 	tree* node = root_data;
 	node = &(*node)[0][7][0];
@@ -73,11 +78,12 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 		if (curNodeChild)
 		{
 			String NameForm = GetNameFormPVH(parent, curNodeChild->get_value());
-			forms.push_back(NameForm);  // здесь уже имена
+			forms.push_back(std::make_unique<TForm1C>(NameForm, ""));
 		}
 	}
 
 	// Получаем имена команд
+	auto& comands = getCommands();
 	comands.clear();
 	tree* node_att_c = root_data;
 
@@ -90,9 +96,10 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 		tree* node_com = root_data;
 		node_com = &(*node_com)[0][6][i+CountCom-DeltaCom][0][1][3][2][9][2];
 		String NameCom = node_com->get_value();
-		comands.push_back(NameCom);  // здесь уже имена
+		comands.push_back(std::make_unique<TComand>(NameCom, ""));
 	}
 	// Получаем макеты
+	auto& moxels = getLayouts();
 	moxels.clear();
 	tree* node_mox = root_data;
 	node_mox = &(*node_mox)[0][4][0];
@@ -105,12 +112,8 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_
 		if (curNodeChildMox)
 		{
 			String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
-			moxels.push_back(NameMox);  // здесь уже имена
+			moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
 		}
 
 	}
-}
-
-__fastcall TChartOfCharacteristicTypes::~TChartOfCharacteristicTypes()
-{
 }

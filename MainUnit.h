@@ -22,9 +22,23 @@
 
 #include <System.Contnrs.hpp>
 
+#include "Requisite.h"
+#include "Comand.h"
+#include "Moxel.h"
+#include "Tabular.h"
+#include "Form.h"
+#include "Enums.h"
+
+
+
 #include "guids.h"
 #include "MessageRegistration.h"
+#include "MetaDataManager.h"
 #include "Parse_tree.h"
+#include "SynEdit.hpp"
+#include "SynMemo.hpp"
+#include "SynEditHighlighter.hpp"
+#include "SynHighlighterCpp.hpp"
 
 class Messager;
 
@@ -33,6 +47,15 @@ struct SubSys
 	String              name;
 	std::vector<String> children;
 };
+
+struct VirtualTreeData
+{
+	String Name;
+    String text_module;
+	int Age;
+	int ImgIndex;
+};
+
 
 //---------------------------------------------------------------------------
 class TMainForm : public TForm
@@ -58,11 +81,13 @@ __published:	// IDE-managed Components
 	TMenuItem *N2;
 	TTabSheet *TabModuleObject;
 	TTabSheet *TabModuleManager;
-	TMemo *MemoObject;
-	TMemo *МemoManager;
 	TListView *ListViewMessager;
 	TSplitter *Splitter1;
 	TTabSheet *TabSheet1;
+	TSynMemo *MemoObject;
+	TSynMemo *MemoManager;
+	TPanel *Panel1;
+	TSynCppSyn *SynCppSyn1;
 	void __fastcall btnOpenEditNameClick(TObject *Sender);
 	void __fastcall btnGOClick(TObject *Sender);
 	void __fastcall VirtualStringTreeValue1CInitNode(TBaseVirtualTree *Sender, PVirtualNode ParentNode,
@@ -76,15 +101,77 @@ __published:	// IDE-managed Components
 	void __fastcall ActionFileOpenExecute(TObject *Sender);
 	void __fastcall ActionOpenCFExecute(TObject *Sender);
 	void __fastcall FormDestroy(TObject *Sender);
+	void __fastcall VirtualStringTreeValue1CClick(TObject *Sender);
 
 
 private:	// User declarations
 	Messager* mess; // регистратор сообщений
+    std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
 	void __fastcall TreeInit();
 	void __fastcall	FillVirtualTree();
 	void __fastcall FillTreeMD(PVirtualNode parentNode, TObjectList *mdData, const String& md_name, int imgIndex);
+	void __fastcall FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, TObjectList *mdData, const String& md_name, int imgIndex);
+	void __fastcall fillEnumTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TEnums* CurCat);
+	void __fastcall fillCatalogsTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
+						int i, int imgIndex, String name,
+						const std::vector<std::unique_ptr<TRequisite>>& attributes,
+						const std::vector<std::unique_ptr<TTabular>>& tabulars,
+						const std::vector<std::unique_ptr<TForm1C>>& forms,
+						const std::vector<std::unique_ptr<TComand>>& comands,
+						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillJournalTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
+						int i, int imgIndex, String name,
+						const std::vector<std::unique_ptr<TRequisite>>& attributes,
+						const std::vector<std::unique_ptr<TTabular>>& tabulars,
+						const std::vector<std::unique_ptr<TForm1C>>& forms,
+						const std::vector<std::unique_ptr<TComand>>& comands,
+						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillChartAccTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
+						int i, int imgIndex, String name,
+						const std::vector<std::unique_ptr<TRequisite>>& attributes,
+						const std::vector<std::unique_ptr<TAccountingFlag>>& accflags,
+						const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimaccflags,
+						const std::vector<std::unique_ptr<TTabular>>& tabulars,
+						const std::vector<std::unique_ptr<TForm1C>>& forms,
+						const std::vector<std::unique_ptr<TComand>>& comands,
+						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillInformationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
+						int i, int imgIndex, String name,
+						const std::vector<std::unique_ptr<TRequisite>>& attributes,
+						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+						const std::vector<std::unique_ptr<TRequisite>>& resources,
+						const std::vector<std::unique_ptr<TForm1C>>& forms,
+						const std::vector<std::unique_ptr<TComand>>& comands,
+						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillAccumulationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
+						int i, int imgIndex, String name,
+						const std::vector<std::unique_ptr<TRequisite>>& attributes,
+						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+						const std::vector<std::unique_ptr<TRequisite>>& resources,
+						const std::vector<std::unique_ptr<TForm1C>>& forms,
+						const std::vector<std::unique_ptr<TComand>>& comands,
+						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillAccountingRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
+						int i, int imgIndex, String name,
+						const std::vector<std::unique_ptr<TRequisite>>& attributes,
+						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+						const std::vector<std::unique_ptr<TRequisite>>& resources,
+						const std::vector<std::unique_ptr<TAccountingFlag>>& accountingFlags,
+						const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimensionAccountingFlags,
+						const std::vector<std::unique_ptr<TForm1C>>& forms,
+						const std::vector<std::unique_ptr<TComand>>& comands,
+						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillCalculationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
+						int i, int imgIndex, String name,
+						const std::vector<std::unique_ptr<TRequisite>>& attributes,
+						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+						const std::vector<std::unique_ptr<TRequisite>>& resources,
+						const std::vector<std::unique_ptr<TForm1C>>& forms,
+						const std::vector<std::unique_ptr<TComand>>& comands,
+						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+
 	String ConfigName;
 
 	std::vector<String> Catalogs;
@@ -254,12 +341,6 @@ public:
 };
 
 
-struct VirtualTreeData
-{
-	String Name;
-	int Age;
-    int ImgIndex;
-};
 
 void get_cf_name(v8catalog* cf, Messager* mess);
 void get_cf_name(tree* tr,      Messager* mess);

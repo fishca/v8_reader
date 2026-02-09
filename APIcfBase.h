@@ -238,7 +238,7 @@ class v8catalog
 	bool is_emptymodified;
 	bool is_modified;
 
-    bool is_8316;
+	bool is_8316;
 
 	void __fastcall free_block(int start);
 
@@ -283,6 +283,7 @@ class v8catalog
 	void __fastcall HalfClose();
 	void __fastcall HalfOpen(const String& name);
 	//void __fastcall set_leave_data(bool ld);
+    void __fastcall ClearIs8316();
 };
 
 //===========================================================================

@@ -2,6 +2,146 @@
 
 #pragma hdrstop
 
+#include "Common.h"
 #include "ChartOfAccounts.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
+
+
+__fastcall TChartOfAccounts::TChartOfAccounts()
+{
+	guid   = "";
+	name   = "";
+	parent = NULL;
+}
+
+__fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid)
+{
+	guid      = _guid;
+	parent    = _parent;
+	root_data = get_treeFromV8file(parent->GetFile(_guid));
+}
+
+__fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name)
+{
+	name      = _name;
+	guid      = _guid;
+	parent    = _parent;
+	root_data = get_treeFromV8file(parent->GetFile(_guid));
+
+	// Получаем имена реквизитов
+	attributes.clear();
+	tree* node_att = root_data;
+
+	node_att = &(*node_att)[0][7][1]; // количество элементов
+	int CountAtt = node_att->get_value().ToInt();
+	int Delta = CountAtt - 2;
+	for (int i = 0; i < CountAtt; i++)
+	{
+		try {
+			tree* node_att_att = root_data;
+			node_att_att = &(*node_att_att)[0][7][i+CountAtt-Delta][0][1][1][1][2];
+			String NameAtt = node_att_att->get_value();
+			attributes.push_back(std::make_unique<TRequisite>(NameAtt, ""));
+		} catch (...) {
+		}
+	}
+
+	// получаем признаки учета
+	accflags.clear();
+	tree* node_acc = root_data;
+	node_acc = &(*node_acc)[0][8][1]; // количество элементов
+	int CountAcc = node_acc->get_value().ToInt();
+	int DeltaAcc = CountAcc - 2;
+	for (int i = 0; i < CountAcc; i++)
+	{
+		tree* node_acc_acc = root_data;
+		node_acc_acc = &(*node_acc_acc)[0][8][i+CountAcc-DeltaAcc][0][1][1][1][2];
+		String NameAcc = node_acc_acc->get_value();
+		accflags.push_back(std::make_unique<TAccountingFlag>(NameAcc, ""));
+	}
+
+	// получаем признаки учета субконто
+	dimaccflags.clear();
+	tree* node_acc_dim = root_data;
+	node_acc_dim = &(*node_acc_dim)[0][9][1]; // количество элементов
+	int CountAcc_dim = node_acc_dim->get_value().ToInt();
+	int DeltaAcc_dim = CountAcc_dim - 2;
+	for (int i = 0; i < CountAcc_dim; i++)
+	{
+		tree* node_acc_acc_dim = root_data;
+		node_acc_acc_dim = &(*node_acc_acc_dim)[0][9][i+CountAcc_dim-DeltaAcc_dim][0][1][1][1][2];
+		String NameAcc_dim = node_acc_acc_dim->get_value();
+		dimaccflags.push_back(std::make_unique<TDimensionAccountingFlag>(NameAcc_dim, ""));
+	}
+
+
+	// Получаем табличные части
+	tabulars.clear();
+	tree* node_att_t = root_data;
+	node_att_t = &(*node_att_t)[0][5][1]; // количество элементов
+	int CountAttTab = node_att_t->get_value().ToInt();
+	int DeltaTab = CountAttTab - 2;
+	for (int i = 0; i < CountAttTab; i++)
+	{
+		tree* node_att_tab = root_data;
+		node_att_tab = &(*node_att_tab)[0][5][i+CountAttTab-DeltaTab][0][1][5][1][2];
+		String NameAttTab = node_att_tab->get_value();
+		tabulars.push_back(std::make_unique<TTabular>(NameAttTab, ""));
+	}
+
+	// Получаем имена форм
+	forms.clear();
+	tree* node = root_data;
+	node = &(*node)[0][6][0];
+
+	int CountChild = (node->get_next())->get_value().ToInt();
+	tree* curNodeChild = node->get_next();
+	while (curNodeChild)
+	{
+		curNodeChild = curNodeChild->get_next();
+		if (curNodeChild)
+		{
+			String NameForm = GetNameFormPVH(parent, curNodeChild->get_value());
+			forms.push_back(std::make_unique<TForm1C>(NameForm, ""));
+		}
+	}
+
+	// Получаем имена команд
+	comands.clear();
+	tree* node_att_c = root_data;
+
+	node_att_c = &(*node_att_c)[0][3][1]; // количество элементов
+
+	int CountCom = node_att_c->get_value().ToInt();
+	int DeltaCom = CountCom - 2;
+	for (int i = 0; i < CountCom; i++)
+	{
+		tree* node_com = root_data;
+		node_com = &(*node_com)[0][3][i+CountCom-DeltaCom][0][1][3][2][9][2];
+		String NameCom = node_com->get_value();
+		comands.push_back(std::make_unique<TComand>(NameCom, ""));
+	}
+	// Получаем макеты
+	moxels.clear();
+	tree* node_mox = root_data;
+	node_mox = &(*node_mox)[0][4][0];
+
+	int CountMox = (node_mox->get_next())->get_value().ToInt();
+	tree* curNodeChildMox = node_mox->get_next();
+	while (curNodeChildMox)
+	{
+		curNodeChildMox = curNodeChildMox->get_next();
+		if (curNodeChildMox)
+		{
+			String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
+			moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
+		}
+	}
+}
+
+__fastcall TChartOfAccounts::~TChartOfAccounts()
+{
+
+}
+

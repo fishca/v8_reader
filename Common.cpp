@@ -442,8 +442,7 @@ String __fastcall hexstring(TStream* str)
 	return s;
 }
 
-
-String __fastcall GetNameFormCatalogs(v8catalog *cf, String &guid_md)
+String __fastcall GetNameFromTreePath(v8catalog *cf, String &guid_md, const std::vector<int>& path)
 {
 	String Result = "";
 	v8file *filedata = cf->GetFile(guid_md);
@@ -458,77 +457,96 @@ String __fastcall GetNameFormCatalogs(v8catalog *cf, String &guid_md)
 	}
 	tree* node = tree_md;
 
-	node = &(*node)[0][1][1][1][2]; // guid подсистемы
+	//node = &(*node)[0][1][1][1][2]; // guid подсистемы
+	for(size_t i = 0; i < path.size(); ++i)
+	{
+		node = &(*node)[path[i]];
+	}
 
 	Result = node->get_value(); // имя подсистемы
 
 	return Result;
+}
+
+String __fastcall GetNameFormCatalogs(v8catalog *cf, String &guid_md)
+{
+	std::vector<int> path = {0, 1, 1, 1, 2};
+	return GetNameFromTreePath(cf, guid_md, path);
 }
 
 String __fastcall GetNameFormReports(v8catalog *cf, String &guid_md)
 {
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
+	std::vector<int> path = {0, 1, 1, 1, 1, 2};
+	return GetNameFromTreePath(cf, guid_md, path);
 
-	node = &(*node)[0][1][1][1][1][2]; // guid подсистемы
-
-	Result = node->get_value(); // имя подсистемы
-
-	return Result;
+//	String Result = "";
+//	v8file *filedata = cf->GetFile(guid_md);
+//	if(!filedata)
+//	{
+//		return Result;
+//	}
+//	tree* tree_md = get_treeFromV8file(filedata);
+//	if(!tree_md)
+//	{
+//		return Result;
+//	}
+//	tree* node = tree_md;
+//
+//	node = &(*node)[0][1][1][1][1][2]; // guid подсистемы
+//
+//	Result = node->get_value(); // имя подсистемы
+//
+//	return Result;
 }
 
 String __fastcall GetNameFormPVH(v8catalog *cf, String &guid_md)
 {
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
+	std::vector<int> path = {0, 1, 1, 2};
+	return GetNameFromTreePath(cf, guid_md, path);
 
-	node = &(*node)[0][1][1][2]; // guid подсистемы
-
-	Result = node->get_value(); // имя подсистемы
-
-	return Result;
+//	String Result = "";
+//	v8file *filedata = cf->GetFile(guid_md);
+//	if(!filedata)
+//	{
+//		return Result;
+//	}
+//	tree* tree_md = get_treeFromV8file(filedata);
+//	if(!tree_md)
+//	{
+//		return Result;
+//	}
+//	tree* node = tree_md;
+//
+//	node = &(*node)[0][1][1][2]; // guid подсистемы
+//
+//	Result = node->get_value(); // имя подсистемы
+//
+//	return Result;
 }
 
 
 String __fastcall GetNameMoxCatalogs(v8catalog *cf, String &guid_md)
 {
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
+	std::vector<int> path = {0, 1, 2, 2};
+	return GetNameFromTreePath(cf, guid_md, path);
 
-	node = &(*node)[0][1][2][2]; // guid подсистемы
-
-	Result = node->get_value(); // имя подсистемы
-
-	return Result;
+//	String Result = "";
+//	v8file *filedata = cf->GetFile(guid_md);
+//	if(!filedata)
+//	{
+//		return Result;
+//	}
+//	tree* tree_md = get_treeFromV8file(filedata);
+//	if(!tree_md)
+//	{
+//		return Result;
+//	}
+//	tree* node = tree_md;
+//
+//	node = &(*node)[0][1][2][2]; // guid подсистемы
+//
+//	Result = node->get_value(); // имя подсистемы
+//
+//	return Result;
 }
 

@@ -4,6 +4,7 @@
 #define CommonH
 
 //#include <vcl.h>
+#include <vector>
 #include "APIcfBase.h"
 #include <System.Classes.hpp>
 
@@ -26,10 +27,13 @@ String __fastcall tohex64(__int64 n);
 String __fastcall hexstring(char* buf, int n);
 String __fastcall hexstring(TStream* str);
 //---------------------------------------------------------------------------
+
+String __fastcall GetNameFromTreePath(v8catalog *cf, String &guid_md, const std::vector<int>& path);
+
 String __fastcall GetNameFormCatalogs(v8catalog *cf, String &guid_md);
-String __fastcall GetNameFormReports(v8catalog *cf, String &guid_md);
-String __fastcall GetNameFormPVH(v8catalog *cf, String &guid_md);
-String __fastcall GetNameMoxCatalogs(v8catalog *cf, String &guid_md);
+String __fastcall GetNameFormReports(v8catalog  *cf, String &guid_md);
+String __fastcall GetNameFormPVH(v8catalog      *cf, String &guid_md);
+String __fastcall GetNameMoxCatalogs(v8catalog  *cf, String &guid_md);
 
 //---------------------------------------------------------------------------
 #endif
