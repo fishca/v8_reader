@@ -75,7 +75,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std
 	VirtualStringTreeValue1C->NodeDataSize = sizeof(VirtualTreeData);
 	mess = new Messager(ListViewMessager, StatusBar1);
 	msreg = mess;
-	mess->setlogfile(L"S:\\work\\CPP\\BDS13\\v8reader\\Win32\\Debug\\v8reader.log");
+	//mess->setlogfile(L"S:\\work\\CPP\\BDS13\\v8reader\\Win32\\Debug\\v8reader.log");
 
 	mdCatalogs = new TObjectList(true);
 	mdLanguages = new TObjectList(true);
