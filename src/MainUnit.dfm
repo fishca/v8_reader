@@ -136,7 +136,7 @@ object MainForm: TMainForm
       Top = 1
       Width = 571
       Height = 507
-      ActivePage = TabModuleObject
+      ActivePage = TabSheet1
       Align = alClient
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText

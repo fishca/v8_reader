@@ -3,6 +3,7 @@
 #pragma hdrstop
 
 #include <System.IOUtils.hpp>
+
 #include <windows.h>
 
 #include <vector>
@@ -53,8 +54,7 @@
 #include "XDTOPackages.h"
 #include "WebServices.h"
 #include "HTTPServices.h"
-
-//#include "CommonModules.h"
+#include "Langs.h"
 
 
 
@@ -75,7 +75,9 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std
 	VirtualStringTreeValue1C->NodeDataSize = sizeof(VirtualTreeData);
 	mess = new Messager(ListViewMessager, StatusBar1);
 	msreg = mess;
-	//mess->setlogfile(L"S:\\work\\CPP\\BDS13\\v8reader\\Win32\\Debug\\v8reader.log");
+	String appDir = ExtractFilePath(ParamStr(0));
+	String logfile = TPath::Combine(appDir, "v8reader.log");
+	mess->setlogfile(logfile);
 
 	mdCatalogs = new TObjectList(true);
 	mdLanguages = new TObjectList(true);
@@ -1105,7 +1107,7 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, TObjectList *mdDa
                 TDocuments* CurCat = static_cast<TDocuments*>(mdData->Items[i]);
                 fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
-            else if (md_name == md_Reports)
+			else if (md_name == md_Reports)
             {
                 TReports* CurCat = static_cast<TReports*>(mdData->Items[i]);
 				fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
@@ -1134,7 +1136,7 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, TObjectList *mdDa
                 TJournals* CurCat = static_cast<TJournals*>(mdData->Items[i]);
                 fillJournalTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
-        }
+		}
         else if (chartAccTypes.count(md_name))
         {
             // Обработка типов, подобных планам счетов
@@ -1163,7 +1165,7 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, TObjectList *mdDa
             else if (md_name == md_AccountingRegisters)
             {
                 TAccountingRegisters* CurCat = static_cast<TAccountingRegisters*>(mdData->Items[i]);
-                fillAccountingRegisterTree(mdData, childNode, childData, i, imgIndex, CurCat->name,
+				fillAccountingRegisterTree(mdData, childNode, childData, i, imgIndex, CurCat->name,
                     CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
                     CurCat->getAccountingFlags(), CurCat->getDimensionAccountingFlags(),
                     CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
@@ -1430,6 +1432,14 @@ void __fastcall TMainForm::FillVirtualTree() {
 					{
 						TSettingsStorages* CurSS = static_cast<TSettingsStorages*>(item);
 						childDataCom->Name = CurSS->name;
+						childDataCom->Age = 99;
+						childDataCom->ImgIndex = categoryCom.imgIndex;
+						childDataCom->text_module = L"";
+					}
+					else if (categoryCom.name == md_Languages)
+					{
+						TLangs* CurLang = static_cast<TLangs*>(item);
+						childDataCom->Name = CurLang->name;
 						childDataCom->Age = 99;
 						childDataCom->ImgIndex = categoryCom.imgIndex;
 						childDataCom->text_module = L"";
@@ -2884,7 +2894,10 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 				MainForm->mdCatalogs->Add(CurCatalogs);
 			}
 			else if (guid_md == GUID_Languages)
-			{}
+			{
+				TLangs* CurLang = new TLangs(cf, curNode->get_value(), val);
+                MainForm->mdLanguages->Add(CurLang);
+			}
 			else if (guid_md == GUID_CommonModules)
 			{
 				// TODO: Реализовать чтение общих модулей
