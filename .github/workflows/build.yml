@@ -71,7 +71,7 @@ jobs:
             Автоматический релиз версии ${{ github.ref_name }}.
             ### Что нового
             - Описание изменений здесь...
-          draft: false # false = опубликовать сразу
+          draft: true # false = опубликовать сразу
           prerelease: false
           files: |
             ./release-files/*
