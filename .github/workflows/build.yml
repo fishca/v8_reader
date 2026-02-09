@@ -18,12 +18,13 @@ jobs:
     - name: Setup Build Environment
       shell: cmd
       run: |
-        call "C:\Program Files (x86)\Embarcadero\Studio\37.0\bin\rsvars.bat"
         echo "C++Builder environment set."
     - name: Build Project (Debug)
       shell: cmd
       run: |
         echo "Building the project..."
+        call "C:/Program Files (x86)/Embarcadero/Studio/37.0/bin/rsvars.bat"
+        cd /d "S:/work/CPP/BDS13/v8reader"
         msbuild "S:/work/CPP/BDS13/v8reader/v8reader.cbproj" /p:Configuration=Debug /p:Platform=Win32 /m
         echo "Build finished."
 
