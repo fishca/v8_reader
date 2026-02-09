@@ -8,8 +8,8 @@ on:
 
 jobs:
   build:
-    # Ключевой момент: указываем метки вашего runner
-    runs-on: [self-hosted, windows, cppbuilder]
+    # ГЉГ«ГѕГ·ГҐГўГ®Г© Г¬Г®Г¬ГҐГ­ГІ: ГіГЄГ Г§Г»ГўГ ГҐГ¬ Г¬ГҐГІГЄГЁ ГўГ ГёГҐГЈГ® runner
+    runs-on: [Windows, x64, Self-hosted]
 
     steps:
     - name: Checkout repository
@@ -27,4 +27,4 @@ jobs:
       with:
         name: v8reader
         path: S:/work/CPP/BDS13/v8reader/Release/v8reader.exe
-        # Обычно бинарник создается в подпапке Win32/Release
+        # ГЋГЎГ»Г·Г­Г® ГЎГЁГ­Г Г°Г­ГЁГЄ Г±Г®Г§Г¤Г ГҐГІГ±Гї Гў ГЇГ®Г¤ГЇГ ГЇГЄГҐ Win32/Release
