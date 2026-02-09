@@ -1,0 +1,30 @@
+name: Build C++Builder Project (Self-hosted)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    # Ключевой момент: указываем метки вашего runner
+    runs-on: [self-hosted, windows, cppbuilder]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Project (Release)
+      shell: cmd
+      run: |
+        echo "Building the project..."
+        msbuild "S:/work/CPP/BDS13/v8reader/v8reader.cbproj" /p:Configuration=Release /p:Platform=Win32 /m
+        echo "Build finished."
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: v8reader
+        path: S:/work/CPP/BDS13/v8reader/Release/v8reader.exe
+        # Обычно бинарник создается в подпапке Win32/Release
