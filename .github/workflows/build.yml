@@ -21,7 +21,8 @@ jobs:
         echo "Building the project..."
         cd /d "S:/work/CPP/BDS13/v8reader"
         call "C:/Program Files (x86)/Embarcadero/Studio/37.0/bin/rsvars.bat"        
-        msbuild "S:/work/CPP/BDS13/v8reader/v8reader.cbproj" /p:Configuration=Release /p:Platform=Win32 /m
+        msbuild "S:/work/CPP/BDS13/v8reader/v8reader.cbproj" /p:Configuration=Release /p:Platform=Win32 /v:normal
+        
         echo "Build finished."
 
     - name: Upload Build Artifact
