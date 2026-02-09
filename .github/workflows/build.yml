@@ -32,3 +32,38 @@ jobs:
         name: v8reader
         path: S:/work/CPP/BDS13/v8reader/Win32/Debug/v8reader.exe
         # Îáû÷íî áèíàðíèê ñîçäàåòñÿ â ïîäïàïêå Win32/Release
+  release:
+    # Запускаем ТОЛЬКО при пуше тега
+    if: startsWith(github.ref, 'refs/tags/')
+    # Ждем успешной сборки
+    needs: build
+    runs-on: ubuntu-latest # Для этого job подходит стандартный runner
+
+    # Необходимое разрешение для создания релизов[citation:4][citation:8]
+    permissions:
+      contents: write
+    
+    steps:
+      # 1. Скачиваем артефакты, которые загрузил job 'build'
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: v8reader-windows-bin
+
+      # 2. Создаем релиз на GitHub
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1 # Популярная и простая в настройке альтернатива[citation:4][citation:7]
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }} # Имя тега (например, v1.0.0)
+          name: Release ${{ github.ref_name }}
+          body: |
+            Автоматический релиз версии ${{ github.ref_name }}.
+            ### Что нового
+            - Описание изменений здесь...
+          draft: false # false = опубликовать сразу
+          prerelease: false
+          # files: указывать не нужно, т.к. артефакты уже в рабочей директории
+          # action автоматически загрузит все файлы из текущей папки[citation:4]      
