@@ -23,10 +23,7 @@ jobs:
       shell: cmd
       run: |
         echo "Building the project..."
-        call "C:\Program Files (x86)\Embarcadero\Studio\37.0\bin\rsvars.bat"
-        set INCLUDE="C:\Program Files (x86)\Embarcadero\Studio\37.0\include\windows\rtl";%INCLUDE%
-        cd /d "S:\work\CPP\BDS13\v8reader"
-        msbuild v8reader.cbproj /p:Configuration=Debug /p:Platform=Win32 /m
+        call build_v8reader.cmd
         echo "Build finished."
 
     - name: Upload Build Artifact
