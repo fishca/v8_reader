@@ -23,7 +23,7 @@ jobs:
       shell: cmd
       run: |
         echo "Building the project..."
-        call build_v8reader.cmd
+        call E:\actions-runner\build_v8reader.cmd
         echo "Build finished."
 
     - name: Upload Build Artifact
