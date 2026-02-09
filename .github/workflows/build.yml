@@ -49,6 +49,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: v8reader
+          path: ./release-files  # Скачиваем в конкретную папку
+      # 2. Проверяем, что скачали
+      - name: Debug - List downloaded files
+        run: |
+          echo "Содержимое папки release-files:"
+          ls -la ./release-files/
+          echo "---"
+          find ./release-files -type f          
 
       # 2. Создаем релиз на GitHub
       - name: Create GitHub Release
