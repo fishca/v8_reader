@@ -11,7 +11,8 @@
 static InfoRegisterTreePaths GetAccountingRegistersPaths()
 {
     InfoRegisterTreePaths paths;
-    // Пути для регистров бухгалтерии
+    
+	// Пути для регистров бухгалтерии
     paths.attIdx = 7;
     paths.attItemPath = {0, 1, 1, 1, 2};
 
