@@ -4,6 +4,7 @@
 #define Parse_treeH
 
 #include <vcl.h>
+#include <memory>
 #pragma hdrstop
 
 #include "NodeTypes.h"
@@ -45,6 +46,9 @@ public:
 };
 
 typedef tree* treeptr;
+
+typedef std::unique_ptr<tree> tree_unique_ptr;
+typedef std::shared_ptr<tree> tree_shared_ptr;
 
 
 

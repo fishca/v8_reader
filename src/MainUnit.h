@@ -21,6 +21,7 @@
 #include <Vcl.ExtCtrls.hpp>
 
 #include <System.Contnrs.hpp>
+#include <memory>
 
 #include "Requisite.h"
 #include "Comand.h"
@@ -35,6 +36,7 @@
 #include "MessageRegistration.h"
 #include "MetaDataManager.h"
 #include "Parse_tree.h"
+#include "SmartPointers.h"
 #include "SynEdit.hpp"
 #include "SynMemo.hpp"
 #include "SynEditHighlighter.hpp"
@@ -320,7 +322,7 @@ public:		// User declarations
 	std::vector<String> Sequences;
 	TObjectList *mdSequences;
 
-	v8catalog *GlobalCF;
+	std::unique_ptr<v8catalog> GlobalCF;
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TMainForm *MainForm;

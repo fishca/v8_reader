@@ -642,91 +642,91 @@ void MetaDataManager::fill_md(v8catalog *cf, tree* tr, String guid_md)
 }
 
 // Метод для получения списка параметров сеанса
-vector<shared_ptr<TSessionParameters>>& MetaDataManager::getSessionParameters()
+std::vector<std::shared_ptr<TSessionParameters>>& MetaDataManager::getSessionParameters()
 {
 	return SessionParameters;
 }
 
 // Метод для получения списка общих реквизитов
-vector<shared_ptr<TCommonAttributes>>& MetaDataManager::getCommonAttributes()
+std::vector<std::shared_ptr<TCommonAttributes>>& MetaDataManager::getCommonAttributes()
 {
 	return CommonAttributes;
 }
 
 // Метод для получения списка общих команд
-vector<shared_ptr<TCommonCommands>>& MetaDataManager::getCommonCommands()
+std::vector<std::shared_ptr<TCommonCommands>>& MetaDataManager::getCommonCommands()
 {
 	return CommonCommands;
 }
 
 // Метод для получения списка общих макетов
-vector<shared_ptr<TCommonTemplates>>& MetaDataManager::getCommonTemplates()
+std::vector<std::shared_ptr<TCommonTemplates>>& MetaDataManager::getCommonTemplates()
 {
 	return CommonTemplates;
 }
 
 // Метод для получения списка групп команд
-vector<shared_ptr<TCommandGroups>>& MetaDataManager::getCommandGroups()
+std::vector<std::shared_ptr<TCommandGroups>>& MetaDataManager::getCommandGroups()
 {
 	return CommandGroups;
 }
 
 // Метод для получения списка планов обмена
-vector<shared_ptr<TExchangePlans>>& MetaDataManager::getExchangePlans()
+std::vector<std::shared_ptr<TExchangePlans>>& MetaDataManager::getExchangePlans()
 {
 	return ExchangePlans;
 }
 
 // Метод для получения списка подписок на события
-vector<shared_ptr<TEventSubscriptions>>& MetaDataManager::getEventSubscriptions()
+std::vector<std::shared_ptr<TEventSubscriptions>>& MetaDataManager::getEventSubscriptions()
 {
 	return EventSubscriptions;
 }
 
 // Метод для получения списка регламентных заданий
-vector<shared_ptr<TScheduledJobs>>& MetaDataManager::getScheduledJobs()
+std::vector<std::shared_ptr<TScheduledJobs>>& MetaDataManager::getScheduledJobs()
 {
 	return ScheduledJobs;
 }
 
 // Метод для получения списка ботов
-vector<shared_ptr<TBots>>& MetaDataManager::getBots()
+std::vector<std::shared_ptr<TBots>>& MetaDataManager::getBots()
 {
 	return Bots;
 }
 
 // Метод для получения списка функциональных опций
-vector<shared_ptr<TFunctionalOptions>>& MetaDataManager::getFunctionalOptions()
+std::vector<std::shared_ptr<TFunctionalOptions>>& MetaDataManager::getFunctionalOptions()
 {
 	return FunctionalOptions;
 }
 
 // Метод для получения списка параметров функциональных опций
-vector<shared_ptr<TFunctionalOptionsParameters>>& MetaDataManager::getFunctionalOptionsParameters()
+std::vector<std::shared_ptr<TFunctionalOptionsParameters>>& MetaDataManager::getFunctionalOptionsParameters()
 {
 	return FunctionalOptionsParameters;
 }
 
 // Метод для получения списка определяемых типов
-vector<shared_ptr<TDefinedTypes>>& MetaDataManager::getDefinedTypes()
+std::vector<std::shared_ptr<TDefinedTypes>>& MetaDataManager::getDefinedTypes()
 {
 	return DefinedTypes;
 }
 
 // Метод для получения списка хранилищ настроек
-vector<shared_ptr<TSettingsStorages>>& MetaDataManager::getSettingsStorages()
+std::vector<std::shared_ptr<TSettingsStorages>>& MetaDataManager::getSettingsStorages()
 {
 	return SettingsStorages;
 }
 
 // Метод для получения списка интерфейсов
-vector<shared_ptr<TInterfaces>>& MetaDataManager::getInterfaces()
+std::vector<std::shared_ptr<TInterfaces>>& MetaDataManager::getInterfaces()
 {
 	return Interfaces;
 }
 
 // Метод для получения списка констант
-vector<shared_ptr<TConstants>>& MetaDataManager::getConstants()
+std::vector<std::shared_ptr<TConstants>>& MetaDataManager::getConstants()
 {
 	return Constants;
 }

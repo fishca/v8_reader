@@ -2386,12 +2386,8 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		  String filename = dlgOpenCF->FileName;
 		  EditNameCF->Text = filename;
 
-		  // Удаляем предыдущую конфигурацию
-		  if (GlobalCF)
-		  {
-			  delete GlobalCF;
-			  GlobalCF = nullptr;
-		  }
+		  // Удаляем предыдущую конфигурацию (автоматически через unique_ptr)
+		  GlobalCF.reset();
 
 		  // Очищаем все TObjectList
 		  mdCatalogs->Clear();
@@ -2443,9 +2439,9 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		  mdIntegrationServices->Clear();
 		  mdSequences->Clear();
 
-		  GlobalCF = new v8catalog(filename, true);
+		  GlobalCF = std::make_unique<v8catalog>(filename, true);
 
-		  get_cf_name(GlobalCF, mess);
+		  get_cf_name(GlobalCF.get(), mess);
 
 		  VirtualStringTreeValue1C->BeginUpdate();
 		  try
@@ -2709,9 +2705,7 @@ String GetNameSubsystem(v8catalog *cf, String &guid_md)
 
 	Result = node->get_value(); // имя подсистемы
 
-	delete tree_md;
 
-	return Result;
 }
 
 void GetListChildrenSubsystem(v8catalog *cf, String &guid_md, std::vector<String>& child)
@@ -2744,7 +2738,6 @@ void GetListChildrenSubsystem(v8catalog *cf, String &guid_md, std::vector<String
 
 	}
 
-	delete tree_md;
 }
 
 
@@ -2758,7 +2751,7 @@ void fill_subsystem(tree* tr, std::vector<SubSys> &md_subsys)
 
 	String guid_md = GUID_Subsystems;
 
-	v8catalog *cf = MainForm->GlobalCF;
+	v8catalog *cf = MainForm->GlobalCF.get();
 
 	tree* node_md = find_node_by_guid(tr, guid_md);
 
@@ -2794,7 +2787,7 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 	tree* node;
 	String s;
 
-	v8catalog *cf = MainForm->GlobalCF;
+	v8catalog *cf = MainForm->GlobalCF.get();
 
 	//tree* node_md = find_node_by_guid(tr, guid_md); //"cf4abea6-37b2-11d4-940f-008048da11f9"
 
@@ -3109,7 +3102,6 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 				MainForm->mdBots->Add(CurBot);
 			}
 			md_list.push_back(val);
-			delete tree_md;
 		}
 
 	}
@@ -3411,7 +3403,7 @@ void get_cf_name(tree* tr, Messager* mess)
 
 void __fastcall TMainForm::FormDestroy(TObject *Sender)
 {
-	delete GlobalCF;
+	// GlobalCF автоматически удаляется через std::unique_ptr
 }
 //---------------------------------------------------------------------------
 

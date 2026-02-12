@@ -4,6 +4,7 @@
 #define ChartOfAccountsH
 //---------------------------------------------------------------------------
 #include <vector>
+#include <memory>
 #include "Class_1CD.h"
 #include "APIcfBase.h"
 #include "Parse_tree.h"
@@ -17,7 +18,7 @@
 class TChartOfAccounts : public TObject
 {
 public:
-	tree*  root_data;
+	std::unique_ptr<tree> root_data;
 	v8catalog* parent;
 
 	String name;

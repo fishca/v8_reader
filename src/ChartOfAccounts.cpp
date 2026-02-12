@@ -19,7 +19,7 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 {
 	guid      = _guid;
 	parent    = _parent;
-	root_data = get_treeFromV8file(parent->GetFile(_guid));
+	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 }
 
 __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name)
@@ -27,11 +27,11 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 	name      = _name;
 	guid      = _guid;
 	parent    = _parent;
-	root_data = get_treeFromV8file(parent->GetFile(_guid));
+	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 
 	// Получаем имена реквизитов
 	attributes.clear();
-	tree* node_att = root_data;
+	tree* node_att = root_data.get();
 
 	node_att = &(*node_att)[0][7][1]; // количество элементов
 	int CountAtt = node_att->get_value().ToInt();
@@ -39,7 +39,7 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 	for (int i = 0; i < CountAtt; i++)
 	{
 		try {
-			tree* node_att_att = root_data;
+			tree* node_att_att = root_data.get();
 			node_att_att = &(*node_att_att)[0][7][i+CountAtt-Delta][0][1][1][1][2];
 			String NameAtt = node_att_att->get_value();
 			attributes.push_back(std::make_unique<TRequisite>(NameAtt, ""));
@@ -49,13 +49,13 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 
 	// получаем признаки учета
 	accflags.clear();
-	tree* node_acc = root_data;
+	tree* node_acc = root_data.get();
 	node_acc = &(*node_acc)[0][8][1]; // количество элементов
 	int CountAcc = node_acc->get_value().ToInt();
 	int DeltaAcc = CountAcc - 2;
 	for (int i = 0; i < CountAcc; i++)
 	{
-		tree* node_acc_acc = root_data;
+		tree* node_acc_acc = root_data.get();
 		node_acc_acc = &(*node_acc_acc)[0][8][i+CountAcc-DeltaAcc][0][1][1][1][2];
 		String NameAcc = node_acc_acc->get_value();
 		accflags.push_back(std::make_unique<TAccountingFlag>(NameAcc, ""));
@@ -63,13 +63,13 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 
 	// получаем признаки учета субконто
 	dimaccflags.clear();
-	tree* node_acc_dim = root_data;
+	tree* node_acc_dim = root_data.get();
 	node_acc_dim = &(*node_acc_dim)[0][9][1]; // количество элементов
 	int CountAcc_dim = node_acc_dim->get_value().ToInt();
 	int DeltaAcc_dim = CountAcc_dim - 2;
 	for (int i = 0; i < CountAcc_dim; i++)
 	{
-		tree* node_acc_acc_dim = root_data;
+		tree* node_acc_acc_dim = root_data.get();
 		node_acc_acc_dim = &(*node_acc_acc_dim)[0][9][i+CountAcc_dim-DeltaAcc_dim][0][1][1][1][2];
 		String NameAcc_dim = node_acc_acc_dim->get_value();
 		dimaccflags.push_back(std::make_unique<TDimensionAccountingFlag>(NameAcc_dim, ""));
@@ -78,13 +78,13 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 
 	// Получаем табличные части
 	tabulars.clear();
-	tree* node_att_t = root_data;
+	tree* node_att_t = root_data.get();
 	node_att_t = &(*node_att_t)[0][5][1]; // количество элементов
 	int CountAttTab = node_att_t->get_value().ToInt();
 	int DeltaTab = CountAttTab - 2;
 	for (int i = 0; i < CountAttTab; i++)
 	{
-		tree* node_att_tab = root_data;
+		tree* node_att_tab = root_data.get();
 		node_att_tab = &(*node_att_tab)[0][5][i+CountAttTab-DeltaTab][0][1][5][1][2];
 		String NameAttTab = node_att_tab->get_value();
 		tabulars.push_back(std::make_unique<TTabular>(NameAttTab, ""));
@@ -92,7 +92,7 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 
 	// Получаем имена форм
 	forms.clear();
-	tree* node = root_data;
+	tree* node = root_data.get();
 	node = &(*node)[0][6][0];
 
 	int CountChild = (node->get_next())->get_value().ToInt();
@@ -109,7 +109,7 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 
 	// Получаем имена команд
 	comands.clear();
-	tree* node_att_c = root_data;
+	tree* node_att_c = root_data.get();
 
 	node_att_c = &(*node_att_c)[0][3][1]; // количество элементов
 
@@ -117,14 +117,14 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 	int DeltaCom = CountCom - 2;
 	for (int i = 0; i < CountCom; i++)
 	{
-		tree* node_com = root_data;
+		tree* node_com = root_data.get();
 		node_com = &(*node_com)[0][3][i+CountCom-DeltaCom][0][1][3][2][9][2];
 		String NameCom = node_com->get_value();
 		comands.push_back(std::make_unique<TComand>(NameCom, ""));
 	}
 	// Получаем макеты
 	moxels.clear();
-	tree* node_mox = root_data;
+	tree* node_mox = root_data.get();
 	node_mox = &(*node_mox)[0][4][0];
 
 	int CountMox = (node_mox->get_next())->get_value().ToInt();
