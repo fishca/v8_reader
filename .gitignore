@@ -69,6 +69,7 @@ __history/
 # RAD Studio user settings
 *.dproj.local
 *.cbproj.local
+Compile
 
 # Deployment files
 *.deployproj
