@@ -12,6 +12,7 @@
 #include "Bots.h"
 #include "CommonAttributes.h"
 #include "CommonCommands.h"
+#include "TConstants.h"
 #include "CommandGroups.h"
 #include "CommonTemplates.h"
 #include "ExchangePlans.h"
@@ -722,4 +723,10 @@ vector<shared_ptr<TSettingsStorages>>& MetaDataManager::getSettingsStorages()
 vector<shared_ptr<TInterfaces>>& MetaDataManager::getInterfaces()
 {
 	return Interfaces;
+}
+
+// Метод для получения списка констант
+vector<shared_ptr<TConstants>>& MetaDataManager::getConstants()
+{
+	return Constants;
 }

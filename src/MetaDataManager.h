@@ -24,6 +24,7 @@
 #include "Bots.h"
 #include "CommonAttributes.h"
 #include "CommonCommands.h"
+#include "TConstants.h"
 #include "CommonTemplates.h"
 #include "CommandGroups.h"
 #include "ExchangePlans.h"
@@ -47,6 +48,7 @@ private:
 	vector<shared_ptr<TBots>> Bots;
 	vector<shared_ptr<TCommonAttributes>> CommonAttributes;
 	vector<shared_ptr<TCommonCommands>> CommonCommands;
+	vector<shared_ptr<TConstants>> Constants;
 	vector<shared_ptr<TCommonTemplates>> CommonTemplates;
 	vector<shared_ptr<TCommandGroups>> CommandGroups;
 	vector<shared_ptr<TExchangePlans>> ExchangePlans;
@@ -68,6 +70,7 @@ public:
 	vector<shared_ptr<TBots>>& getBots();
 	vector<shared_ptr<TCommonAttributes>>& getCommonAttributes();
 	vector<shared_ptr<TCommonCommands>>& getCommonCommands();
+	vector<shared_ptr<TConstants>>& getConstants();
 	vector<shared_ptr<TCommonTemplates>>& getCommonTemplates();
 	vector<shared_ptr<TCommandGroups>>& getCommandGroups();
 	vector<shared_ptr<TExchangePlans>>& getExchangePlans();

@@ -37,6 +37,7 @@
 #include "EventSubscriptions.h"
 #include "Roles.h"
 #include "CommonCommands.h"
+#include "TConstants.h"
 #include "CommonPictures.h"
 #include "CommandGroups.h"
 #include "CommonForms.h"
@@ -1556,6 +1557,19 @@ void __fastcall TMainForm::FillVirtualTree() {
 		{
 			FillTreeMD(parentNode, MainForm->mdCalculationRegisters, md_CalculationRegisters, category.imgIndex);
 		}
+		else if (category.name == md_Constants)
+		{
+			// Константы
+			for (int i = 0; i < MainForm->mdConstants->Count; i++)
+			{
+				PVirtualNode childNodeConst = VirtualStringTreeValue1C->AddChild(parentNode);
+				VirtualTreeData *childDataConst = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeConst);
+				TConstants* CurConstant = static_cast<TConstants*>(MainForm->mdConstants->Items[i]);
+				childDataConst->Name = CurConstant->name;
+				childDataConst->Age = 30;
+				childDataConst->ImgIndex = category.imgIndex;
+			}
+		}
 		else if (category.name == md_InformationRegisters)
 		{
 			FillTreeMD(parentNode, MainForm->mdInformationRegisters, md_InformationRegisters, category.imgIndex);
@@ -2996,7 +3010,10 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 			else if (guid_md == GUID_WSReferences)
 			{}
 			else if (guid_md == GUID_Constants)
-			{}
+			{
+				TConstants* CurConstant = new TConstants(cf, curNode->get_value(), val);
+				MainForm->mdConstants->Add(CurConstant);
+			}
 			else if (guid_md == GUID_Documents)
 			{
 				TDocuments* CurDocuments = new TDocuments(cf, curNode->get_value(), val);
@@ -3183,7 +3200,7 @@ void get_cf_name(tree* tr, Messager* mess)
 
 	// константы
 	fill_md(tr, GUID_Constants, MainForm->Constants);
-	mess->AddMessage(L"Константы обработаны", MessageState::msInfo);
+	mess->AddMessage(L"Константы обработаны: " + IntToStr((int)MainForm->Constants.size()), MessageState::msInfo);
 
 	// обработки
 	fill_md(tr, GUID_DataProcessors, MainForm->DataProcessors);
