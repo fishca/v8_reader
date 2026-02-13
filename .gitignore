@@ -70,6 +70,7 @@ __history/
 *.dproj.local
 *.cbproj.local
 Compile
+.vscode
 
 # Deployment files
 *.deployproj

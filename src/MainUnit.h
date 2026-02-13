@@ -19,8 +19,11 @@
 #include <Vcl.ActnList.hpp>
 #include <Vcl.Menus.hpp>
 #include <Vcl.ExtCtrls.hpp>
+#include "SynEdit.hpp"
+#include "SynEditHighlighter.hpp"
+#include "SynHighlighterCpp.hpp"
+#include "SynMemo.hpp"
 
-#include <System.Contnrs.hpp>
 #include <memory>
 
 #include "Requisite.h"
@@ -113,214 +116,111 @@ public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
 	void __fastcall TreeInit();
 	void __fastcall	FillVirtualTree();
-	void __fastcall FillTreeMD(PVirtualNode parentNode, TObjectList *mdData, const String& md_name, int imgIndex);
-	void __fastcall FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, TObjectList *mdData, const String& md_name, int imgIndex);
+	void __fastcall FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
+	void __fastcall FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
 	void __fastcall fillEnumTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TEnums* CurCat);
-	void __fastcall fillCatalogsTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TTabular>>& tabulars,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillJournalTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TTabular>>& tabulars,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillChartAccTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TAccountingFlag>>& accflags,
-						const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimaccflags,
-						const std::vector<std::unique_ptr<TTabular>>& tabulars,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillInformationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillAccumulationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillAccountingRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TAccountingFlag>>& accountingFlags,
-						const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimensionAccountingFlags,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillCalculationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
+					const std::vector<std::unique_ptr<TRequisite>>& attributes,
+					const std::vector<std::unique_ptr<TTabular>>& tabulars,
+					const std::vector<std::unique_ptr<TForm1C>>& forms,
+					const std::vector<std::unique_ptr<TComand>>& comands,
+					const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
+					const std::vector<std::unique_ptr<TRequisite>>& attributes,
+					const std::vector<std::unique_ptr<TTabular>>& tabulars,
+					const std::vector<std::unique_ptr<TForm1C>>& forms,
+					const std::vector<std::unique_ptr<TComand>>& comands,
+					const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
+					const std::vector<std::unique_ptr<TRequisite>>& attributes,
+					const std::vector<std::unique_ptr<TAccountingFlag>>& accflags,
+					const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimaccflags,
+					const std::vector<std::unique_ptr<TTabular>>& tabulars,
+					const std::vector<std::unique_ptr<TForm1C>>& forms,
+					const std::vector<std::unique_ptr<TComand>>& comands,
+					const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
+					const std::vector<std::unique_ptr<TRequisite>>& attributes,
+					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+					const std::vector<std::unique_ptr<TRequisite>>& resources,
+					const std::vector<std::unique_ptr<TForm1C>>& forms,
+					const std::vector<std::unique_ptr<TComand>>& comands,
+					const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
+					const std::vector<std::unique_ptr<TRequisite>>& attributes,
+					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+					const std::vector<std::unique_ptr<TRequisite>>& resources,
+					const std::vector<std::unique_ptr<TForm1C>>& forms,
+					const std::vector<std::unique_ptr<TComand>>& comands,
+					const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
+					const std::vector<std::unique_ptr<TRequisite>>& attributes,
+					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+					const std::vector<std::unique_ptr<TRequisite>>& resources,
+					const std::vector<std::unique_ptr<TAccountingFlag>>& accountingFlags,
+					const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimensionAccountingFlags,
+					const std::vector<std::unique_ptr<TForm1C>>& forms,
+					const std::vector<std::unique_ptr<TComand>>& comands,
+					const std::vector<std::unique_ptr<TMoxel>>& moxels);
+	void __fastcall fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
+					const std::vector<std::unique_ptr<TRequisite>>& attributes,
+					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
+					const std::vector<std::unique_ptr<TRequisite>>& resources,
+					const std::vector<std::unique_ptr<TForm1C>>& forms,
+					const std::vector<std::unique_ptr<TComand>>& comands,
+					const std::vector<std::unique_ptr<TMoxel>>& moxels);
 
 	String ConfigName;
 
-	std::vector<String> Catalogs;
-	TObjectList *mdCatalogs;
-
-	std::vector<String> Commonss;
-	TObjectList *mdCommonss;
-
-	std::vector<String> Languages;
-	TObjectList *mdLanguages;
-
-	std::vector<String> AccumulationRegisters;
-	TObjectList *mdAccumulationRegisters;
-
-	std::vector<String> AccountingRegisters;
-	TObjectList *mdAccountingRegisters;
-
-	std::vector<String> CalculationRegisters;
-	TObjectList *mdCalculationRegisters;
-
-	std::vector<String> BusinessProcesses;
-	TObjectList *mdBusinessProcesses;
-
-	std::vector<String> ChartsOfCharacteristicTypes;
-	TObjectList *mdChartsOfCharacteristicTypes;
-
-	std::vector<String> CommandGroups;
-	TObjectList *mdCommandGroups;
-
-	std::vector<String> CommonAttributes;
-	TObjectList *mdCommonAttributes;
-
-	std::vector<String> CommonCommands;
-	TObjectList *mdCommonCommands;
-
-
-	std::vector<String> CommonForms;
-	TObjectList *mdCommonForms;
-
-	std::vector<String> CommonModules;
-	TObjectList *mdCommonModules;
-
-	std::vector<String> CommonPictures;
-	TObjectList *mdCommonPictures;
-
-	std::vector<String> CommonTemplates;
-	TObjectList *mdCommonTemplates;
-
-	std::vector<String> Constants;
-	TObjectList *mdConstants;
-
-	std::vector<String> DataProcessors;
-	TObjectList *mdDataProcessors;
-
-	std::vector<String> DefinedTypes;
-	TObjectList *mdDefinedTypes;
-
-	std::vector<String> DocumentJournals;
-	TObjectList *mdDocumentJournals;
-
-	std::vector<String> DocumentNumerators;
-	TObjectList *mdDocumentNumerators;
-
-	std::vector<String> Documents;
-	TObjectList *mdDocuments;
-
-	std::vector<String> Enums;
-	TObjectList *mdEnums;
-
-	std::vector<String> EventSubscriptions;
-	TObjectList *mdEventSubscriptions;
-
-	std::vector<String> ExchangePlans;
-	TObjectList *mdExchangePlans;
-
-	std::vector<String> ChartOfAccounts;
-	TObjectList *mdChartOfAccounts;
-
-	std::vector<String> ChartOfCalculationTypes;
-	TObjectList *mdChartOfCalculationTypes;
-
-	std::vector<String> ExternalDataSources;
-	TObjectList *mdExternalDataSources;
-
-	std::vector<String> FilterCriteria;
-	TObjectList *mdFilterCriteria;
-
-	std::vector<String> FunctionalOptions;
-	TObjectList *mdFunctionalOptions;
-
-	std::vector<String> FunctionalOptionsParameters;
-	TObjectList *mdFunctionalOptionsParameters;
-
-	std::vector<String> HTTPServices;
-	TObjectList *mdHTTPServices;
-
-	std::vector<String> InformationRegisters;
-	TObjectList *mdInformationRegisters;
-
-	std::vector<String> Interfaces;
-	TObjectList *mdInterfaces;
-
-	std::vector<String> Reports;
-	TObjectList *mdReports;
-
-	std::vector<String> Roles;
-	TObjectList *mdRoles;
-
-	std::vector<String> Bots;
-	TObjectList *mdBots;
-
-	std::vector<String> ScheduledJobs;
-	TObjectList *mdScheduledJobs;
-
-	std::vector<String> SessionParameters;
-	TObjectList *mdSessionParameters;
-
-	std::vector<String> SettingsStorages;
-	TObjectList *mdSettingsStorages;
-
-	std::vector<String> StyleItems;
-	TObjectList *mdStyleItems;
-
-	std::vector<String> Styles;
-	TObjectList *mdStyles;
-
-	// необходимо хранить иерархию
+	MetadataVector<TObject> mdCatalogs;
+	MetadataVector<TObject> mdCommonss;
+	MetadataVector<TObject> mdLanguages;
+	MetadataVector<TObject> mdAccumulationRegisters;
+	MetadataVector<TObject> mdAccountingRegisters;
+	MetadataVector<TObject> mdCalculationRegisters;
+	MetadataVector<TObject> mdBusinessProcesses;
+	MetadataVector<TObject> mdChartsOfCharacteristicTypes;
+	MetadataVector<TObject> mdCommandGroups;
+	MetadataVector<TObject> mdCommonAttributes;
+	MetadataVector<TObject> mdCommonCommands;
+	MetadataVector<TObject> mdCommonForms;
+	MetadataVector<TObject> mdCommonModules;
+	MetadataVector<TObject> mdCommonPictures;
+	MetadataVector<TObject> mdCommonTemplates;
+	MetadataVector<TObject> mdConstants;
+	MetadataVector<TObject> mdDataProcessors;
+	MetadataVector<TObject> mdDefinedTypes;
+	MetadataVector<TObject> mdDocumentJournals;
+	MetadataVector<TObject> mdDocumentNumerators;
+	MetadataVector<TObject> mdDocuments;
+	MetadataVector<TObject> mdEnums;
+	MetadataVector<TObject> mdEventSubscriptions;
+	MetadataVector<TObject> mdExchangePlans;
+	MetadataVector<TObject> mdChartOfAccounts;
+	MetadataVector<TObject> mdChartOfCalculationTypes;
+	MetadataVector<TObject> mdExternalDataSources;
+	MetadataVector<TObject> mdFilterCriteria;
+	MetadataVector<TObject> mdFunctionalOptions;
+	MetadataVector<TObject> mdFunctionalOptionsParameters;
+	MetadataVector<TObject> mdHTTPServices;
+	MetadataVector<TObject> mdInformationRegisters;
+	MetadataVector<TObject> mdInterfaces;
+	MetadataVector<TObject> mdReports;
+	MetadataVector<TObject> mdRoles;
+	MetadataVector<TObject> mdBots;
+	MetadataVector<TObject> mdScheduledJobs;
+	MetadataVector<TObject> mdSessionParameters;
+	MetadataVector<TObject> mdSettingsStorages;
+	MetadataVector<TObject> mdStyleItems;
+	MetadataVector<TObject> mdStyles;
 	std::vector<SubSys> Subsystems;
-	TObjectList *mdSubsystems;
-
-	std::vector<String> Tasks;
-	TObjectList *mdTasks;
-
-	std::vector<String> WebServices;
-	TObjectList *mdWebServices;
-
-	std::vector<String> WSReferences;
-	TObjectList *mdWSReferences;
-
-	std::vector<String> XDTOPackages;
-	TObjectList *mdXDTOPackages;
-
-	std::vector<String> IntegrationServices;
-	TObjectList *mdIntegrationServices;
-
-	std::vector<String> Sequences;
-	TObjectList *mdSequences;
+	MetadataVector<TObject> mdSubsystems;
+	MetadataVector<TObject> mdTasks;
+	MetadataVector<TObject> mdWebServices;
+	MetadataVector<TObject> mdWSReferences;
+	MetadataVector<TObject> mdXDTOPackages;
+	MetadataVector<TObject> mdIntegrationServices;
+	MetadataVector<TObject> mdSequences;
 
 	std::unique_ptr<v8catalog> GlobalCF;
 };

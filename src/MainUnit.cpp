@@ -66,6 +66,10 @@
 #pragma link "SynMemo"
 #pragma link "SynEditHighlighter"
 #pragma link "SynHighlighterCpp"
+#pragma link "SynEdit"
+#pragma link "SynEditHighlighter"
+#pragma link "SynHighlighterCpp"
+#pragma link "SynMemo"
 #pragma resource "*.dfm"
 TMainForm *MainForm;
 MessageRegistrator* msreg;
@@ -79,54 +83,6 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std
 	String appDir = ExtractFilePath(ParamStr(0));
 	String logfile = TPath::Combine(appDir, "v8reader.log");
 	mess->setlogfile(logfile);
-
-	mdCatalogs = new TObjectList(true);
-	mdLanguages = new TObjectList(true);
-	mdAccumulationRegisters = new TObjectList(true);
-	mdAccountingRegisters = new TObjectList(true);
-	mdCalculationRegisters = new TObjectList(true);
-	mdBusinessProcesses = new TObjectList(true);
-	mdChartsOfCharacteristicTypes = new TObjectList(true);
-	mdCommandGroups = new TObjectList(true);
-	mdCommonAttributes = new TObjectList(true);
-	mdCommonCommands = new TObjectList(true);
-	mdCommonForms = new TObjectList(true);
-	mdCommonModules = new TObjectList(true);
-	mdCommonPictures = new TObjectList(true);
-	mdCommonTemplates = new TObjectList(true);
-	mdConstants = new TObjectList(true);
-	mdDataProcessors = new TObjectList(true);
-	mdDefinedTypes = new TObjectList(true);
-	mdDocumentJournals = new TObjectList(true);
-	mdDocumentNumerators = new TObjectList(true);
-	mdDocuments = new TObjectList(true);
-	mdEnums = new TObjectList(true);
-	mdEventSubscriptions = new TObjectList(true);
-	mdExchangePlans = new TObjectList(true);
-	mdChartOfAccounts = new TObjectList(true);
-	mdChartOfCalculationTypes = new TObjectList(true);
-	mdExternalDataSources = new TObjectList(true);
-	mdFilterCriteria = new TObjectList(true);
-	mdFunctionalOptions = new TObjectList(true);
-	mdFunctionalOptionsParameters = new TObjectList(true);
-	mdHTTPServices = new TObjectList(true);
-	mdInformationRegisters = new TObjectList(true);
-	mdInterfaces = new TObjectList(true);
-	mdReports = new TObjectList(true);
-	mdRoles = new TObjectList(true);
-	mdBots = new TObjectList(true);
-	mdScheduledJobs = new TObjectList(true);
-	mdSessionParameters = new TObjectList(true);
-	mdSettingsStorages = new TObjectList(true);
-	mdStyleItems = new TObjectList(true);
-	mdStyles = new TObjectList(true);
-	mdSubsystems = new TObjectList(true);
-	mdTasks = new TObjectList(true);
-	mdWebServices = new TObjectList(true);
-	mdWSReferences = new TObjectList(true);
-	mdXDTOPackages = new TObjectList(true);
-	mdIntegrationServices = new TObjectList(true);
-	mdSequences = new TObjectList(true);
 
 }
 //---------------------------------------------------------------------------
@@ -181,42 +137,29 @@ void __fastcall TMainForm::VirtualStringTreeValue1CGetText(TBaseVirtualTree *Sen
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, TObjectList *mdData, const String& md_name, int imgIndex)
+void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
 {
-	TObject *CurCat;
-
-	for(int i = 0; i < mdData->Count; i++)
+	for(size_t i = 0; i < mdData.size(); i++)
 	{
+		TObject *CurCat = nullptr;
+		if (md_name == md_Catalogs)
+			CurCat = dynamic_cast<TCatalogs*>(mdData[i].get());
+		else if(md_name == md_Documents)
+			CurCat = dynamic_cast<TDocuments*>(mdData[i].get());
+		else if(md_name == md_DocumentJournals)
+			CurCat = dynamic_cast<TJournals*>(mdData[i].get());
+		else if(md_name == md_Enums)
+			CurCat = dynamic_cast<TEnums*>(mdData[i].get());
+		else if(md_name == md_Reports)
+			CurCat = dynamic_cast<TReports*>(mdData[i].get());
+		else if(md_name == md_DataProcessors)
+			CurCat = dynamic_cast<TDataProcessors*>(mdData[i].get());
+		else if(md_name == md_ChartsOfCharacteristicTypes)
+			CurCat = dynamic_cast<TChartOfCharacteristicTypes*>(mdData[i].get());
+		if (!CurCat) continue;
+
 		PVirtualNode childNode = tree1C->AddChild(parentNode);
 		VirtualTreeData *childData = (VirtualTreeData*)tree1C->GetNodeData(childNode);
-		if (md_name == md_Catalogs)
-		{
-			CurCat = static_cast<TCatalogs*>(mdData->Items[i]);
-		}
-		else if(md_name == md_Documents)
-		{
-			CurCat = static_cast<TDocuments*>(mdData->Items[i]);
-		}
-		else if(md_name == md_DocumentJournals)
-		{
-			CurCat = static_cast<TJournals*>(mdData->Items[i]);
-		}
-		else if(md_name == md_Enums)
-		{
-			CurCat = static_cast<TEnums*>(mdData->Items[i]);
-		}
-		else if(md_name == md_Reports)
-		{
-			CurCat = static_cast<TReports*>(mdData->Items[i]);
-		}
-		else if(md_name == md_DataProcessors)
-		{
-			CurCat = static_cast<TDataProcessors*>(mdData->Items[i]);
-		}
-		else if(md_name == md_ChartsOfCharacteristicTypes)
-		{
-			CurCat = static_cast<TChartOfCharacteristicTypes*>(mdData->Items[i]);
-		}
 
 //		childData->Name = CurCat->GetName();
 //		childData->Age = 30;
@@ -241,8 +184,7 @@ void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtu
 	}
 }
 
-void __fastcall TMainForm::fillCatalogsTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
+void __fastcall TMainForm::fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
 						const std::vector<std::unique_ptr<TRequisite>>& attributes,
 						const std::vector<std::unique_ptr<TTabular>>& tabulars,
 						const std::vector<std::unique_ptr<TForm1C>>& forms,
@@ -333,8 +275,7 @@ void __fastcall TMainForm::fillCatalogsTree(TObjectList *mdData, PVirtualNode ch
 
 }
 
-void __fastcall TMainForm::fillAccumulationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
+void __fastcall TMainForm::fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
 						const std::vector<std::unique_ptr<TRequisite>>& attributes,
 						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
 						const std::vector<std::unique_ptr<TRequisite>>& resources,
@@ -437,8 +378,7 @@ void __fastcall TMainForm::fillAccumulationRegisterTree(TObjectList *mdData, PVi
 	}
 }
 
-void __fastcall TMainForm::fillAccountingRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
+void __fastcall TMainForm::fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
 						const std::vector<std::unique_ptr<TRequisite>>& attributes,
 						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
 						const std::vector<std::unique_ptr<TRequisite>>& resources,
@@ -573,8 +513,7 @@ void __fastcall TMainForm::fillAccountingRegisterTree(TObjectList *mdData, PVirt
 	}
 }
 
-void __fastcall TMainForm::fillCalculationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
+void __fastcall TMainForm::fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
 						const std::vector<std::unique_ptr<TRequisite>>& attributes,
 						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
 						const std::vector<std::unique_ptr<TRequisite>>& resources,
@@ -677,8 +616,7 @@ void __fastcall TMainForm::fillCalculationRegisterTree(TObjectList *mdData, PVir
 	}
 }
 
-void __fastcall TMainForm::fillInformationRegisterTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
+void __fastcall TMainForm::fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
 						const std::vector<std::unique_ptr<TRequisite>>& attributes,
 						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
 						const std::vector<std::unique_ptr<TRequisite>>& resources,
@@ -782,8 +720,7 @@ void __fastcall TMainForm::fillInformationRegisterTree(TObjectList *mdData, PVir
 	}
 }
 
-void __fastcall TMainForm::fillChartAccTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
+void __fastcall TMainForm::fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
 						const std::vector<std::unique_ptr<TRequisite>>& attributes,
 						const std::vector<std::unique_ptr<TAccountingFlag>>& accflags,
 						const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimaccflags,
@@ -912,8 +849,7 @@ void __fastcall TMainForm::fillChartAccTree(TObjectList *mdData, PVirtualNode ch
 }
 
 
-void __fastcall TMainForm::fillJournalTree(TObjectList *mdData, PVirtualNode childNode, VirtualTreeData *childData,
-						int i, int imgIndex, String name,
+void __fastcall TMainForm::fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
 						const std::vector<std::unique_ptr<TRequisite>>& attributes,
 						const std::vector<std::unique_ptr<TTabular>>& tabulars,
 						const std::vector<std::unique_ptr<TForm1C>>& forms,
@@ -1076,202 +1012,178 @@ void __fastcall TMainForm::fillEnumTree(PVirtualNode childNode, VirtualTreeData 
     }
 }
 
-void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, TObjectList *mdData, const String& md_name, int imgIndex)
+void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
 {
-    // Карта для типов, использующих fillCatalogsTree
     static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Documents, md_Reports, md_DataProcessors, md_ChartsOfCharacteristicTypes, md_ChartOfCalculationTypes};
-
-    // Карта для типов, использующих fillJournalTree
     static const std::unordered_set<String> journalTypes = {md_DocumentJournals};
-
-    // Карта для типов, использующих fillChartAccTree
     static const std::unordered_set<String> chartAccTypes = {md_ChartOfAccounts};
-
-    // Карта для типов, использующих fillInformationRegisterTree
     static const std::unordered_set<String> informationRegisterTypes = {md_InformationRegisters, md_AccumulationRegisters, md_AccountingRegisters, md_CalculationRegisters};
 
-	for(int i = 0; i < mdData->Count; i++)
+	for(size_t i = 0; i < mdData.size(); i++)
 	{
 		PVirtualNode childNode = VirtualStringTreeValue1C->AddChild(parentNode);
 		VirtualTreeData *childData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNode);
 
         if (catalogTypes.count(md_name))
         {
-            // Обработка типов, подобных каталогам
             if (md_name == md_Catalogs)
             {
-                TCatalogs* CurCat = static_cast<TCatalogs*>(mdData->Items[i]);
-                fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                TCatalogs* CurCat = dynamic_cast<TCatalogs*>(mdData[i].get());
+                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
             else if (md_name == md_Documents)
             {
-                TDocuments* CurCat = static_cast<TDocuments*>(mdData->Items[i]);
-                fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                TDocuments* CurCat = dynamic_cast<TDocuments*>(mdData[i].get());
+                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
 			else if (md_name == md_Reports)
             {
-                TReports* CurCat = static_cast<TReports*>(mdData->Items[i]);
-				fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                TReports* CurCat = dynamic_cast<TReports*>(mdData[i].get());
+                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
 			}
 			else if (md_name == md_DataProcessors)
 			{
-				TDataProcessors* CurCat = static_cast<TDataProcessors*>(mdData->Items[i]);
-				fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+				TDataProcessors* CurCat = dynamic_cast<TDataProcessors*>(mdData[i].get());
+				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
 			}
             else if (md_name == md_ChartsOfCharacteristicTypes)
             {
-                TChartOfCharacteristicTypes* CurCat = static_cast<TChartOfCharacteristicTypes*>(mdData->Items[i]);
-				fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                TChartOfCharacteristicTypes* CurCat = dynamic_cast<TChartOfCharacteristicTypes*>(mdData[i].get());
+                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
 			else if (md_name == md_ChartOfCalculationTypes)
 			{
-				TChartOfCalculationTypes* CurCat = static_cast<TChartOfCalculationTypes*>(mdData->Items[i]);
-				fillCatalogsTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+				TChartOfCalculationTypes* CurCat = dynamic_cast<TChartOfCalculationTypes*>(mdData[i].get());
+				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
 			}
 		}
         else if (journalTypes.count(md_name))
         {
-            // Обработка типов, подобных журналам
             if (md_name == md_DocumentJournals)
             {
-                TJournals* CurCat = static_cast<TJournals*>(mdData->Items[i]);
-                fillJournalTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                TJournals* CurCat = dynamic_cast<TJournals*>(mdData[i].get());
+                if (CurCat) fillJournalTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
 		}
         else if (chartAccTypes.count(md_name))
         {
-            // Обработка типов, подобных планам счетов
             if (md_name == md_ChartOfAccounts)
             {
-                TChartOfAccounts* CurCat = static_cast<TChartOfAccounts*>(mdData->Items[i]);
-                fillChartAccTree(mdData, childNode, childData, i, imgIndex, CurCat->name, CurCat->attributes, CurCat->accflags, CurCat->dimaccflags, CurCat->tabulars, CurCat->forms, CurCat->comands, CurCat->moxels);
+                TChartOfAccounts* CurCat = dynamic_cast<TChartOfAccounts*>(mdData[i].get());
+                if (CurCat) fillChartAccTree(childNode, childData, imgIndex, CurCat->name, CurCat->attributes, CurCat->accflags, CurCat->dimaccflags, CurCat->tabulars, CurCat->forms, CurCat->comands, CurCat->moxels);
             }
         }
         else if (informationRegisterTypes.count(md_name))
         {
             if (md_name == md_InformationRegisters)
             {
-                TInformationRegisters* CurCat = static_cast<TInformationRegisters*>(mdData->Items[i]);
-                fillInformationRegisterTree(mdData, childNode, childData, i, imgIndex, CurCat->name,
+                TInformationRegisters* CurCat = dynamic_cast<TInformationRegisters*>(mdData[i].get());
+                if (CurCat) fillInformationRegisterTree(childNode, childData, imgIndex, CurCat->name,
                     CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
                     CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
             else if (md_name == md_AccumulationRegisters)
             {
-                TAccumulationRegisters* CurCat = static_cast<TAccumulationRegisters*>(mdData->Items[i]);
-                fillAccumulationRegisterTree(mdData, childNode, childData, i, imgIndex, CurCat->name,
+                TAccumulationRegisters* CurCat = dynamic_cast<TAccumulationRegisters*>(mdData[i].get());
+                if (CurCat) fillAccumulationRegisterTree(childNode, childData, imgIndex, CurCat->name,
                     CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
                     CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
             else if (md_name == md_AccountingRegisters)
             {
-                TAccountingRegisters* CurCat = static_cast<TAccountingRegisters*>(mdData->Items[i]);
-				fillAccountingRegisterTree(mdData, childNode, childData, i, imgIndex, CurCat->name,
+                TAccountingRegisters* CurCat = dynamic_cast<TAccountingRegisters*>(mdData[i].get());
+                if (CurCat) fillAccountingRegisterTree(childNode, childData, imgIndex, CurCat->name,
                     CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
                     CurCat->getAccountingFlags(), CurCat->getDimensionAccountingFlags(),
                     CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
             else if (md_name == md_CalculationRegisters)
             {
-                TCalculationRegisters* CurCat = static_cast<TCalculationRegisters*>(mdData->Items[i]);
-                fillCalculationRegisterTree(mdData, childNode, childData, i, imgIndex, CurCat->name,
+                TCalculationRegisters* CurCat = dynamic_cast<TCalculationRegisters*>(mdData[i].get());
+                if (CurCat) fillCalculationRegisterTree(childNode, childData, imgIndex, CurCat->name,
                     CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
                     CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
             }
         }
         else if (md_name == md_Enums)
         {
-            // Специальная обработка для перечислений
-            TEnums* CurCat = static_cast<TEnums*>(mdData->Items[i]);
-            fillEnumTree(childNode, childData, imgIndex, CurCat);
+            TEnums* CurCat = dynamic_cast<TEnums*>(mdData[i].get());
+            if (CurCat) fillEnumTree(childNode, childData, imgIndex, CurCat);
 		}
         else
         {
-            // Простые типы: только имя и изображение
             if (md_name == md_DocumentNumerators)
             {
-                TNumerators* CurCat = static_cast<TNumerators*>(mdData->Items[i]);
-				childData->Name = CurCat->name;
-				childData->Age = 30;
-				childData->ImgIndex = imgIndex;
+                TNumerators* CurCat = dynamic_cast<TNumerators*>(mdData[i].get());
+                if (CurCat) { childData->Name = CurCat->name; childData->Age = 30; childData->ImgIndex = imgIndex; }
 			}
 			else if (md_name == md_Sequences)
 			{
-				TSequences* CurCat = static_cast<TSequences*>(mdData->Items[i]);
-				childData->Name = CurCat->name;
-				childData->Age = 30;
-				childData->ImgIndex = imgIndex;
+				TSequences* CurCat = dynamic_cast<TSequences*>(mdData[i].get());
+                if (CurCat) { childData->Name = CurCat->name; childData->Age = 30; childData->ImgIndex = imgIndex; }
 			}
 		}
 	}
 }
 
 void __fastcall TMainForm::FillVirtualTree() {
-	// Структура для хранения данных о категориях
 	struct CategoryData
 	{
-		//const std::vector<String>& data;
-		TObjectList *data;
+		const MetadataVector<TObject>* data;
 		const String name;
 		int imgIndex;
 		int age;
 	};
 
-	// Массив с описанием всех категорий
 	std::vector<CategoryData> md_categories = {
-		{MainForm->mdCommonss,                    md_Common,                      84,  25},
-		{MainForm->mdConstants,                   md_Constants,                   0,   25},
-		{MainForm->mdCatalogs,                    md_Catalogs,                    1,   25},
-		{MainForm->mdDocuments,                   md_Documents,                   4,   25},
-		{MainForm->mdDocumentJournals,            md_DocumentJournals,            5,   25},
-		{MainForm->mdEnums,                       md_Enums,                       2,   25},
-		{MainForm->mdReports,                     md_Reports,                     9,   25},
-		{MainForm->mdDataProcessors,              md_DataProcessors,              7,   25},
-		{MainForm->mdChartsOfCharacteristicTypes, md_ChartsOfCharacteristicTypes, 16,  25},
-		{MainForm->mdChartOfAccounts,             md_ChartOfAccounts,             116, 25},
-		{MainForm->mdChartOfCalculationTypes,     md_ChartOfCalculationTypes,     17,  25},
-		{MainForm->mdInformationRegisters,        md_InformationRegisters,        14,  25},
-		{MainForm->mdAccumulationRegisters,       md_AccumulationRegisters,       13,  25},
-		{MainForm->mdAccountingRegisters,         md_AccountingRegisters,         117, 25},
-		{MainForm->mdCalculationRegisters,        md_CalculationRegisters,        18,  25},
-		{MainForm->mdBusinessProcesses,           md_BusinessProcesses,           58,  25},
-		{MainForm->mdTasks,                       md_Tasks,                       59,  25},
-		{MainForm->mdExternalDataSources,         md_ExternalDataSources,         27,  25}
+		{&MainForm->mdCommonss,                    md_Common,                      84,  25},
+		{&MainForm->mdConstants,                   md_Constants,                   0,   25},
+		{&MainForm->mdCatalogs,                    md_Catalogs,                    1,   25},
+		{&MainForm->mdDocuments,                   md_Documents,                   4,   25},
+		{&MainForm->mdDocumentJournals,            md_DocumentJournals,            5,   25},
+		{&MainForm->mdEnums,                       md_Enums,                       2,   25},
+		{&MainForm->mdReports,                     md_Reports,                     9,   25},
+		{&MainForm->mdDataProcessors,              md_DataProcessors,              7,   25},
+		{&MainForm->mdChartsOfCharacteristicTypes, md_ChartsOfCharacteristicTypes, 16,  25},
+		{&MainForm->mdChartOfAccounts,             md_ChartOfAccounts,             116, 25},
+		{&MainForm->mdChartOfCalculationTypes,     md_ChartOfCalculationTypes,     17,  25},
+		{&MainForm->mdInformationRegisters,        md_InformationRegisters,        14,  25},
+		{&MainForm->mdAccumulationRegisters,       md_AccumulationRegisters,       13,  25},
+		{&MainForm->mdAccountingRegisters,         md_AccountingRegisters,         117, 25},
+		{&MainForm->mdCalculationRegisters,        md_CalculationRegisters,        18,  25},
+		{&MainForm->mdBusinessProcesses,           md_BusinessProcesses,           58,  25},
+		{&MainForm->mdTasks,                       md_Tasks,                       59,  25},
+		{&MainForm->mdExternalDataSources,         md_ExternalDataSources,         27,  25}
 	};
 
-
-	// Массив с описанием всех категорий
 	std::vector<CategoryData> md_categoriesCommon = {
-
-		//{MainForm->Subsystems,                  "Подсистемы",                     73,  25},
-		{MainForm->mdCommonModules,               md_CommonModules,                   87,  25},
-		{MainForm->mdSessionParameters,           md_SessionParameters,               90,  25},
-		{MainForm->mdRoles,                       md_Roles,                           81,  25},
-		{MainForm->mdCommonAttributes,            md_CommonAttributes,                24,  25},
-		{MainForm->mdExchangePlans,               md_ExchangePlans,                   41,  25},
-		{MainForm->mdFilterCriteria,              md_FilterCriteria,                  85,  25},
-		{MainForm->mdEventSubscriptions,          md_EventSubscriptions,              100, 25},
-		{MainForm->mdScheduledJobs,               md_ScheduledJobs,                   104, 25},
-		{MainForm->mdBots,                        md_Bots,                            132, 25},
-		{MainForm->mdFunctionalOptions,           md_FunctionalOptions,               108, 25},
-		{MainForm->mdFunctionalOptionsParameters, md_FunctionalOptionsParameters,     109, 25},
-		{MainForm->mdDefinedTypes,                md_DefinedTypes,                    111, 25},
-		{MainForm->mdSettingsStorages,            md_SettingsStorages,                52,  25},
-		{MainForm->mdCommonCommands,              md_CommonCommands,                  98,  25},
-		{MainForm->mdCommonTemplates,             md_CommonTemplates,                 79,  25},
-		{MainForm->mdCommandGroups,               md_CommandGroups,                   99,  25},
-		{MainForm->mdCommonForms,                 md_CommonForms,                     86,  25},
-		{MainForm->mdInterfaces,                  md_Interfaces,                      80,  25},
-		{MainForm->mdCommonTemplates,             md_CommonTemplates,                 79,  25},
-		{MainForm->mdCommonPictures,              md_CommonPictures,                  77,  25},
-		{MainForm->mdXDTOPackages,                md_XDTOPackages,                    91,  25},
-		{MainForm->mdWebServices,                 md_WebServices,                     92,  25},
-		{MainForm->mdHTTPServices,                md_HTTPServices,                    113, 25},
-		{MainForm->mdWSReferences,                md_WSReferences,                    96,  25},
-		{MainForm->mdIntegrationServices,         md_IntegrationServices,             131, 25},
-		{MainForm->mdStyleItems,                  md_StyleItems,                      76,  25},
-		{MainForm->mdStyles,                      md_Styles,                          75,  25},
-		{MainForm->mdLanguages,                   md_Languages,                       73,  25}
+		{&MainForm->mdCommonModules,               md_CommonModules,                   87,  25},
+		{&MainForm->mdSessionParameters,           md_SessionParameters,               90,  25},
+		{&MainForm->mdRoles,                       md_Roles,                           81,  25},
+		{&MainForm->mdCommonAttributes,            md_CommonAttributes,                24,  25},
+		{&MainForm->mdExchangePlans,               md_ExchangePlans,                   41,  25},
+		{&MainForm->mdFilterCriteria,              md_FilterCriteria,                  85,  25},
+		{&MainForm->mdEventSubscriptions,          md_EventSubscriptions,              100, 25},
+		{&MainForm->mdScheduledJobs,               md_ScheduledJobs,                   104, 25},
+		{&MainForm->mdBots,                        md_Bots,                            132, 25},
+		{&MainForm->mdFunctionalOptions,           md_FunctionalOptions,               108, 25},
+		{&MainForm->mdFunctionalOptionsParameters, md_FunctionalOptionsParameters,     109, 25},
+		{&MainForm->mdDefinedTypes,                md_DefinedTypes,                    111, 25},
+		{&MainForm->mdSettingsStorages,            md_SettingsStorages,                52,  25},
+		{&MainForm->mdCommonCommands,              md_CommonCommands,                  98,  25},
+		{&MainForm->mdCommonTemplates,             md_CommonTemplates,                 79,  25},
+		{&MainForm->mdCommandGroups,               md_CommandGroups,                   99,  25},
+		{&MainForm->mdCommonForms,                 md_CommonForms,                     86,  25},
+		{&MainForm->mdInterfaces,                  md_Interfaces,                      80,  25},
+		{&MainForm->mdCommonPictures,              md_CommonPictures,                  77,  25},
+		{&MainForm->mdXDTOPackages,                md_XDTOPackages,                    91,  25},
+		{&MainForm->mdWebServices,                 md_WebServices,                     92,  25},
+		{&MainForm->mdHTTPServices,                md_HTTPServices,                    113, 25},
+		{&MainForm->mdWSReferences,                md_WSReferences,                   96,  25},
+		{&MainForm->mdIntegrationServices,         md_IntegrationServices,             131, 25},
+		{&MainForm->mdStyleItems,                  md_StyleItems,                      76,  25},
+		{&MainForm->mdStyles,                      md_Styles,                          75,  25},
+		{&MainForm->mdLanguages,                   md_Languages,                       73,  25}
 	};
 
 
@@ -1304,110 +1216,110 @@ void __fastcall TMainForm::FillVirtualTree() {
 				parentNodeDataCom->Age = categoryCom.age;
 				parentNodeDataCom->ImgIndex = categoryCom.imgIndex;
 
-				for (const auto& item : categoryCom.data)
+				for (const auto& item : *categoryCom.data)
 				{
 					PVirtualNode childNodeCom = VirtualStringTreeValue1C->AddChild(parentNodeCom);
 					VirtualTreeData *childDataCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeCom);
 
 					if (categoryCom.name == md_CommonModules)
 					{
-						TCommonModules* CurModule = static_cast<TCommonModules*>(item);
+						TCommonModules* CurModule = static_cast<TCommonModules*>(item.get());
 						childDataCom->Name = CurModule->name;
 						childDataCom->text_module = CurModule->GetText();
 					}
 					else if (categoryCom.name == md_SessionParameters)
 					{
-						TSessionParameters* CurParam = static_cast<TSessionParameters*>(item);
+						TSessionParameters* CurParam = static_cast<TSessionParameters*>(item.get());
 						childDataCom->Name = CurParam->name;
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_CommonAttributes)
 					{
-						TCommonAttributes* CurCommonAtt = static_cast<TCommonAttributes*>(item);
+						TCommonAttributes* CurCommonAtt = static_cast<TCommonAttributes*>(item.get());
 						childDataCom->Name = CurCommonAtt->name;
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_ExchangePlans)
 					{
-						TExchangePlans* CurExchPlan = static_cast<TExchangePlans*>(item);
+						TExchangePlans* CurExchPlan = static_cast<TExchangePlans*>(item.get());
 						childDataCom->Name = CurExchPlan->GetExchangePlanName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_FilterCriteria)
 					{
-						TFilterCriteria* CurFilter = static_cast<TFilterCriteria*>(item);
+						TFilterCriteria* CurFilter = static_cast<TFilterCriteria*>(item.get());
 						childDataCom->Name = CurFilter->GetFilterCriteriaName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_EventSubscriptions)
 					{
-						TEventSubscriptions* CurEventSub = static_cast<TEventSubscriptions*>(item);
+						TEventSubscriptions* CurEventSub = static_cast<TEventSubscriptions*>(item.get());
 						childDataCom->Name = CurEventSub->GetEventSubscriptionName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_ScheduledJobs)
 					{
-						TScheduledJobs* CurScheduledJob = static_cast<TScheduledJobs*>(item);
+						TScheduledJobs* CurScheduledJob = static_cast<TScheduledJobs*>(item.get());
 						childDataCom->Name = CurScheduledJob->GetScheduledJobsName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_CommonCommands)
 					{
-						TCommonCommands* CurCommonCommand = static_cast<TCommonCommands*>(item);
+						TCommonCommands* CurCommonCommand = static_cast<TCommonCommands*>(item.get());
 						childDataCom->Name = CurCommonCommand->GetCommandName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_CommandGroups)
 					{
-						TCommandGroups* CurCommandGroup = static_cast<TCommandGroups*>(item);
+						TCommandGroups* CurCommandGroup = static_cast<TCommandGroups*>(item.get());
 						childDataCom->Name = CurCommandGroup->GetCommandName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_CommonForms)
 					{
-						TCommonForms* CurCommonForm = static_cast<TCommonForms*>(item);
+						TCommonForms* CurCommonForm = static_cast<TCommonForms*>(item.get());
 						childDataCom->Name = CurCommonForm->GetFormName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_Interfaces)
 					{
-						TInterfaces* CurInterface = static_cast<TInterfaces*>(item);
+						TInterfaces* CurInterface = static_cast<TInterfaces*>(item.get());
 						childDataCom->Name = CurInterface->GetInterfaceName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_CommonTemplates)
 					{
-						TCommonTemplates* CurCommonTemplate = static_cast<TCommonTemplates*>(item);
+						TCommonTemplates* CurCommonTemplate = static_cast<TCommonTemplates*>(item.get());
 						childDataCom->Name = CurCommonTemplate->GetTemplateName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_CommonPictures)
 					{
-						TCommonPictures* CurCommonPicture = static_cast<TCommonPictures*>(item);
+						TCommonPictures* CurCommonPicture = static_cast<TCommonPictures*>(item.get());
 						childDataCom->Name = CurCommonPicture->GetPictureName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_XDTOPackages)
 					{
-						TXDTOPackages* CurXDTOPackage = static_cast<TXDTOPackages*>(item);
+						TXDTOPackages* CurXDTOPackage = static_cast<TXDTOPackages*>(item.get());
 						childDataCom->Name = CurXDTOPackage->GetXDTOPackageName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_WebServices)
 					{
-						TWebServices* CurWebService = static_cast<TWebServices*>(item);
+						TWebServices* CurWebService = static_cast<TWebServices*>(item.get());
 						childDataCom->Name = CurWebService->GetWebServiceName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_HTTPServices)
 					{
-						THTTPServices* CurHTTPServices = static_cast<THTTPServices*>(item);
+						THTTPServices* CurHTTPServices = static_cast<THTTPServices*>(item.get());
 						childDataCom->Name = CurHTTPServices->GetHTTPServicesName();
 						childDataCom->text_module = L"";
 					}
 					else if (categoryCom.name == md_FunctionalOptions)
 					{
-						TFunctionalOptions* CurFO = static_cast<TFunctionalOptions*>(item);
+						TFunctionalOptions* CurFO = static_cast<TFunctionalOptions*>(item.get());
 						childDataCom->Name = CurFO->name;
 						childDataCom->text_module = L"";
 						childDataCom->Age = 99;
@@ -1415,7 +1327,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 					}
 					else if (categoryCom.name == md_FunctionalOptionsParameters)
 					{
-						TFunctionalOptionsParameters* CurFOP = static_cast<TFunctionalOptionsParameters*>(item);
+						TFunctionalOptionsParameters* CurFOP = static_cast<TFunctionalOptionsParameters*>(item.get());
 						childDataCom->Name = CurFOP->name;
 						childDataCom->Age = 99;
 						childDataCom->ImgIndex = categoryCom.imgIndex;
@@ -1423,7 +1335,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 					}
 					else if (categoryCom.name == md_DefinedTypes)
 					{
-						TDefinedTypes* CurDT = static_cast<TDefinedTypes*>(item);
+						TDefinedTypes* CurDT = static_cast<TDefinedTypes*>(item.get());
 						childDataCom->Name = CurDT->name;
 						childDataCom->Age = 99;
 						childDataCom->ImgIndex = categoryCom.imgIndex;
@@ -1431,7 +1343,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 					}
 					else if (categoryCom.name == md_SettingsStorages)
 					{
-						TSettingsStorages* CurSS = static_cast<TSettingsStorages*>(item);
+						TSettingsStorages* CurSS = static_cast<TSettingsStorages*>(item.get());
 						childDataCom->Name = CurSS->name;
 						childDataCom->Age = 99;
 						childDataCom->ImgIndex = categoryCom.imgIndex;
@@ -1439,7 +1351,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 					}
 					else if (categoryCom.name == md_Languages)
 					{
-						TLangs* CurLang = static_cast<TLangs*>(item);
+						TLangs* CurLang = static_cast<TLangs*>(item.get());
 						childDataCom->Name = CurLang->name;
 						childDataCom->Age = 99;
 						childDataCom->ImgIndex = categoryCom.imgIndex;
@@ -1454,14 +1366,14 @@ void __fastcall TMainForm::FillVirtualTree() {
 					childDataCom->ImgIndex = categoryCom.imgIndex;
 				}
 
-				// Для Roles добавляем элементы из MainForm->Roles (vector<String>)
+				// Для Roles добавляем элементы из MainForm->mdRoles
 				if (categoryCom.name == md_Roles)
 				{
-					for (size_t i = 0; i < MainForm->Roles.size(); i++)
+					for (size_t i = 0; i < MainForm->mdRoles.size(); i++)
 					{
 						PVirtualNode childNodeRoles = VirtualStringTreeValue1C->AddChild(parentNodeCom);
 						VirtualTreeData *childDataRoles = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeRoles);
-						childDataRoles->Name = MainForm->Roles[i];
+						childDataRoles->Name = static_cast<TRoles*>(MainForm->mdRoles[i].get())->GetRoleName();
 						childDataRoles->Age = 99;
 						childDataRoles->ImgIndex = categoryCom.imgIndex;
 						childDataRoles->text_module = L"";
@@ -1469,12 +1381,12 @@ void __fastcall TMainForm::FillVirtualTree() {
 				}
 
 
-				// Для Bots добавляем элементы из MainForm->mdBots (TObjectList)
-				if (categoryCom.name == md_Bots && MainForm->mdBots != nullptr && MainForm->mdBots->Count > 0)
+				// Для Bots добавляем элементы из MainForm->mdBots
+				if (categoryCom.name == md_Bots && !MainForm->mdBots.empty())
 				{
-					for (int i = 0; i < MainForm->mdBots->Count; i++)
+					for (size_t i = 0; i < MainForm->mdBots.size(); i++)
 					{
-						TBots* CurBot = static_cast<TBots*>(MainForm->mdBots->Items[i]);
+						TBots* CurBot = static_cast<TBots*>(MainForm->mdBots[i].get());
 						PVirtualNode childNodeBots = VirtualStringTreeValue1C->AddChild(parentNodeCom);
 						VirtualTreeData *childDataBots = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeBots);
 						childDataBots->Name = CurBot->name;
@@ -1559,12 +1471,11 @@ void __fastcall TMainForm::FillVirtualTree() {
 		}
 		else if (category.name == md_Constants)
 		{
-			// Константы
-			for (int i = 0; i < MainForm->mdConstants->Count; i++)
+			for (size_t i = 0; i < MainForm->mdConstants.size(); i++)
 			{
 				PVirtualNode childNodeConst = VirtualStringTreeValue1C->AddChild(parentNode);
 				VirtualTreeData *childDataConst = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeConst);
-				TConstants* CurConstant = static_cast<TConstants*>(MainForm->mdConstants->Items[i]);
+				TConstants* CurConstant = static_cast<TConstants*>(MainForm->mdConstants[i].get());
 				childDataConst->Name = CurConstant->name;
 				childDataConst->Age = 30;
 				childDataConst->ImgIndex = category.imgIndex;
@@ -1587,757 +1498,757 @@ void __fastcall TMainForm::FillVirtualTree() {
 
 void __fastcall TMainForm::TreeInit()
 {
-	// Корень конфигурации
-	VirtualStringTreeValue1C->Clear();
-	PVirtualNode RootNode = VirtualStringTreeValue1C->AddChild(nullptr);
-
-	VirtualTreeData *RootData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(RootNode);
-
-
-
-
-	// Добавляем дочерний узел
-	PVirtualNode ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	VirtualTreeData *ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_Common; // Общие
-	ChildData->Age = 30;
-	ChildData->ImgIndex = 84;
-
-	//================================= поддерево Общие ==============================================
-	PVirtualNode ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	VirtualTreeData *ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_Subsystems; //"Подсистемы";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 74;
-	// у подсистем есть иерархия, так что это нужно переделать
-	for(int i = 0; i < MainForm->Subsystems.size(); i++)
-	{
-		PVirtualNode ChildNodeSub = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataSub = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeSub);
-		ChildNodeDataSub->Name = MainForm->Subsystems[i].name;
-		ChildNodeDataSub->Age = 30;
-		ChildNodeDataSub->ImgIndex = 74;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_CommonModules; //"Общие модули";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 87;
-	for(int i = 0; i < MainForm->CommonModules.size(); i++)
-	{
-		PVirtualNode ChildNodeCommonModules = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataCommonModules = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCommonModules);
-		ChildNodeDataCommonModules->Name = MainForm->CommonModules[i];
-		ChildNodeDataCommonModules->Age = 30;
-		ChildNodeDataCommonModules->ImgIndex = 87;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_SessionParameters; //"Параметры сеанса";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 90;
-	for(int i = 0; i < MainForm->SessionParameters.size(); i++)
-	{
-		PVirtualNode ChildNodePar = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataPar = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodePar);
-		ChildNodeDataPar->Name = MainForm->SessionParameters[i];
-		ChildNodeDataPar->Age = 30;
-		ChildNodeDataPar->ImgIndex = 90;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_Roles; //"Роли";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 81;
-	for(int i = 0; i < MainForm->Roles.size(); i++)
-	{
-		PVirtualNode ChildNodeRoles = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataRoles = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeRoles);
-		ChildNodeDataRoles->Name = MainForm->Roles[i];
-		ChildNodeDataRoles->Age = 30;
-		ChildNodeDataRoles->ImgIndex = 81;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_CommonAttributes; // "Общие реквизиты";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 24;
-	for(int i = 0; i < MainForm->CommonAttributes .size(); i++)
-	{
-		PVirtualNode ChildNodeCommonAtt = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataCommonAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCommonAtt);
-		ChildNodeDataCommonAtt->Name = MainForm->CommonAttributes[i];
-		ChildNodeDataCommonAtt->Age = 30;
-		ChildNodeDataCommonAtt->ImgIndex = 24;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_ExchangePlans; //"Планы обмена";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 41;
-	for(int i = 0; i < MainForm->ExchangePlans.size(); i++)
-	{
-		PVirtualNode ChildNodeExch = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataExch = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeExch);
-		ChildNodeDataExch->Name = MainForm->ExchangePlans[i];
-		ChildNodeDataExch->Age = 30;
-		ChildNodeDataExch->ImgIndex = 41;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_FilterCriteria; //"Критерии отбора";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 85;
-	for(int i = 0; i < MainForm->FilterCriteria.size(); i++)
-	{
-		PVirtualNode ChildNodeFC = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataFC = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeFC);
-		ChildNodeDataFC->Name = MainForm->FilterCriteria[i];
-		ChildNodeDataFC->Age = 30;
-		ChildNodeDataFC->ImgIndex = 85;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_EventSubscriptions; //"Подписки на события";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 100;
-	for(int i = 0; i < MainForm->EventSubscriptions.size(); i++)
-	{
-		PVirtualNode ChildNodeEvt = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataEvt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeEvt);
-		ChildNodeDataEvt->Name = MainForm->EventSubscriptions[i];
-		ChildNodeDataEvt->Age = 30;
-		ChildNodeDataEvt->ImgIndex = 100;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_ScheduledJobs; //"Регламентные задания";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 104;
-	for(int i = 0; i < MainForm->ScheduledJobs.size(); i++)
-	{
-		PVirtualNode ChildNodeJobs = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataJobs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeJobs);
-		ChildNodeDataJobs->Name = MainForm->ScheduledJobs[i];
-		ChildNodeDataJobs->Age = 30;
-		ChildNodeDataJobs->ImgIndex = 104;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_Bots; //"Боты";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 132;
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_FunctionalOptions; //"Функциональные опции";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 108;
-	for(int i = 0; i < MainForm->FunctionalOptions.size(); i++)
-	{
-		PVirtualNode ChildNodeFO = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataFO = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeFO);
-		ChildNodeDataFO->Name = MainForm->FunctionalOptions[i];
-		ChildNodeDataFO->Age = 30;
-		ChildNodeDataFO->ImgIndex = 108;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_FunctionalOptionsParameters; //"Параметры функциональных опций";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 109;
-	for(int i = 0; i < MainForm->FunctionalOptionsParameters .size(); i++)
-	{
-		PVirtualNode ChildNodeFOP = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataFOP = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeFOP);
-		ChildNodeDataFOP->Name = MainForm->FunctionalOptionsParameters[i];
-		ChildNodeDataFOP->Age = 30;
-		ChildNodeDataFOP->ImgIndex = 109;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_DefinedTypes; //"Определяемые типы";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 111;
-	for(int i = 0; i < MainForm->DefinedTypes.size(); i++)
-	{
-		PVirtualNode ChildNodeDT = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataDT = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDT);
-		ChildNodeDataDT->Name = MainForm->DefinedTypes[i];
-		ChildNodeDataDT->Age = 30;
-		ChildNodeDataDT->ImgIndex = 111;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_SettingsStorages; //"Хранилища настроек";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 52;
-	for(int i = 0; i < MainForm->SettingsStorages.size(); i++)
-	{
-		PVirtualNode ChildNodeSS = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataSS = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeSS);
-		ChildNodeDataSS->Name = MainForm->SettingsStorages[i];
-		ChildNodeDataSS->Age = 30;
-		ChildNodeDataSS->ImgIndex = 52;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_CommonCommands; //"Общие команды";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 98;
-	for(int i = 0; i < MainForm->CommonCommands.size(); i++)
-	{
-		PVirtualNode ChildNodeComCom = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataComCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeComCom);
-		ChildNodeDataComCom->Name = MainForm->CommonCommands[i];
-		ChildNodeDataComCom->Age = 30;
-		ChildNodeDataComCom->ImgIndex = 98;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_CommandGroups; //"Группы команд";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 99;
-	for(int i = 0; i < MainForm->mdCommandGroups->Count; i++)
-	{
-		PVirtualNode ChildNodeComGroup = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataComGroup = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeComGroup);
-		TCommandGroups* CurCommandGroup = static_cast<TCommandGroups*>(MainForm->mdCommandGroups->Items[i]);
-		ChildNodeDataComGroup->Name = CurCommandGroup->GetCommandName();
-		ChildNodeDataComGroup->Age = 30;
-		ChildNodeDataComGroup->ImgIndex = 99;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_CommonForms; //"Общие формы";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 86;
-	for(int i = 0; i < MainForm->mdCommonForms->Count; i++)
-	{
-		PVirtualNode ChildNodeComF = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataComF = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeComF);
-		TCommonForms* CurCommonForm = static_cast<TCommonForms*>(MainForm->mdCommonForms->Items[i]);
-		ChildNodeDataComF->Name = CurCommonForm->GetFormName();
-		ChildNodeDataComF->Age = 30;
-		ChildNodeDataComF->ImgIndex = 86;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_Interfaces; //"Интерфейсы";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 80;
-	for(int i = 0; i < MainForm->mdInterfaces->Count; i++)
-	{
-		PVirtualNode ChildNodeInt = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataInt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeInt);
-		TInterfaces* CurInterface = static_cast<TInterfaces*>(MainForm->mdInterfaces->Items[i]);
-		ChildNodeDataInt->Name = CurInterface->GetInterfaceName();
-		ChildNodeDataInt->Age = 30;
-		ChildNodeDataInt->ImgIndex = 80;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_CommonTemplates;//"Общие макеты";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 79;
-	for(int i = 0; i < MainForm->CommonTemplates.size(); i++)
-	{
-		PVirtualNode ChildNodeCTemp = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataCTemp = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCTemp);
-		ChildNodeDataCTemp->Name = MainForm->CommonTemplates[i];
-		ChildNodeDataCTemp->Age = 30;
-		ChildNodeDataCTemp->ImgIndex = 79;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_CommonPictures; //"Общие картинки";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 77;
-	for(int i = 0; i < MainForm->CommonPictures.size(); i++)
-	{
-		PVirtualNode ChildNodePic = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataPic = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodePic);
-		ChildNodeDataPic->Name = MainForm->CommonPictures[i];
-		ChildNodeDataPic->Age = 30;
-		ChildNodeDataPic->ImgIndex = 77;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_XDTOPackages; //"XDTO-пакеты";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 91;
-	for(int i = 0; i < MainForm->XDTOPackages.size(); i++)
-	{
-		PVirtualNode ChildNodeXDTO = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataXDTO = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeXDTO);
-		ChildNodeDataXDTO->Name = MainForm->XDTOPackages[i];
-		ChildNodeDataXDTO->Age = 30;
-		ChildNodeDataXDTO->ImgIndex = 91;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_WebServices; //"Web-сервисы";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 92;
-	for(int i = 0; i < MainForm->WebServices.size(); i++)
-	{
-		PVirtualNode ChildNodeWS = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataWS = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeWS);
-		ChildNodeDataWS->Name = MainForm->WebServices[i];
-		ChildNodeDataWS->Age = 30;
-		ChildNodeDataWS->ImgIndex = 92;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_HTTPServices; //"HTTP-сервисы";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 113;
-	for(int i = 0; i < MainForm->mdHTTPServices->Count; i++)
-	{
-		PVirtualNode ChildNodeHTTPServices = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataHTTPServices = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeHTTPServices);
-		THTTPServices* CurHTTPService = static_cast<THTTPServices*>(MainForm->mdHTTPServices->Items[i]);
-		ChildNodeDataHTTPServices->Name = CurHTTPService->GetHTTPServicesName();
-		ChildNodeDataHTTPServices->Age = 30;
-		ChildNodeDataHTTPServices->ImgIndex = 113;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_WSReferences; //"WS-ссылки";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 96;
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_IntegrationServices; //"Сервисы интеграции";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 131;
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_StyleItems; //"Элементы стиля";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 76;
-	for(int i = 0; i < MainForm->StyleItems.size(); i++)
-	{
-		PVirtualNode ChildNodeStlStl = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataStlStl = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeStlStl);
-		ChildNodeDataStlStl->Name = MainForm->StyleItems[i];
-		ChildNodeDataStlStl->Age = 30;
-		ChildNodeDataStlStl->ImgIndex = 76;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_Styles; //"Стили";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 75;
-	for(int i = 0; i < MainForm->Styles.size(); i++)
-	{
-		PVirtualNode ChildNodeStl = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataStl = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeStl);
-		ChildNodeDataStl->Name = MainForm->Styles[i];
-		ChildNodeDataStl->Age = 30;
-		ChildNodeDataStl->ImgIndex = 75;
-	}
-
-	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
-	ChildData1->Name = md_Languages; // "Языки";
-	ChildData1->Age = 30;
-	ChildData1->ImgIndex = 73;
-
-	for(int i = 0; i < MainForm->Languages.size(); i++)
-	{
-		PVirtualNode ChildNodeLang = VirtualStringTreeValue1C->AddChild(ChildNode1);
-		VirtualTreeData *ChildNodeDataLang = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeLang);
-		ChildNodeDataLang->Name = MainForm->Languages[i];
-		ChildNodeDataLang->Age = 30;
-		ChildNodeDataLang->ImgIndex = 73;
-	}
-	//================================================================================================
-
-	// Константы
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_Constants; // "Константы";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 0;
-	for(int i = 0; i < MainForm->Constants.size(); i++)
-	{
-		PVirtualNode ChildNodeConst = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataConst = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeConst);
-		ChildNodeDataConst->Name = MainForm->Constants[i];
-		ChildNodeDataConst->Age = 30;
-		ChildNodeDataConst->ImgIndex = 0;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_Catalogs; // "Справочники";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 1;
-
-	for(int i = 0; i < MainForm->mdCatalogs->Count; i++)
-	{
-		PVirtualNode ChildNodeCatalogs = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataCatalogs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatalogs);
-		TCatalogs* CurCat = static_cast<TCatalogs*>(MainForm->mdCatalogs->Items[i]);
-		ChildNodeDataCatalogs->Name = CurCat->name;
-		ChildNodeDataCatalogs->Age = 30;
-		ChildNodeDataCatalogs->ImgIndex = 1;
-
-		// Реквизиты
-		PVirtualNode ChildNodeCatAtt = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
-		VirtualTreeData *ChildNodeDataCatAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatAtt);
-		ChildNodeDataCatAtt->Name = "Реквизиты";
-		ChildNodeDataCatAtt->Age = 30;
-		ChildNodeDataCatAtt->ImgIndex = 83;
-		// Список Реквизитов
-		for (i = 0; i < CurCat->getAttributes().size(); i++)
-		{
-			PVirtualNode ChildNodeCatCurAtt = VirtualStringTreeValue1C->AddChild(ChildNodeCatAtt);
-			VirtualTreeData *ChildNodeDataCatCurAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurAtt);
-			ChildNodeDataCatCurAtt->Name = ((CurCat->getAttributes())[i])->name;
-			ChildNodeDataCatCurAtt->Age = 30;
-			ChildNodeDataCatCurAtt->ImgIndex = 83;
-		}
-
-		// Табличные части
-		PVirtualNode ChildNodeCatTabs = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
-		VirtualTreeData *ChildNodeDataCatTabs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatTabs);
-		ChildNodeDataCatTabs->Name = "Табличные части";
-		ChildNodeDataCatTabs->Age = 30;
-		ChildNodeDataCatTabs->ImgIndex = 82;
-		// Список ТЧ
-		for (i = 0; i < CurCat->getTabularSections().size(); i++)
-		{
-			PVirtualNode ChildNodeCatCurAtt = VirtualStringTreeValue1C->AddChild(ChildNodeCatTabs);
-			VirtualTreeData *ChildNodeDataCatCurAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurAtt);
-			ChildNodeDataCatCurAtt->Name = ((CurCat->getTabularSections())[i])->name;
-			ChildNodeDataCatCurAtt->Age = 30;
-			ChildNodeDataCatCurAtt->ImgIndex = 82;
-		}
-
-		// Формы
-		PVirtualNode ChildNodeCatForm = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
-		VirtualTreeData *ChildNodeDataCatForm = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatForm);
-		ChildNodeDataCatForm->Name = "Формы";
-		ChildNodeDataCatForm->Age = 30;
-		ChildNodeDataCatForm->ImgIndex = 86;
-		// Список форм
-		for (i = 0; i < CurCat->getForms().size(); i++)
-		{
-			PVirtualNode ChildNodeCatCurForm = VirtualStringTreeValue1C->AddChild(ChildNodeCatForm);
-			VirtualTreeData *ChildNodeDataCatCurForm = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurForm);
-			ChildNodeDataCatCurForm->Name = ((CurCat->getForms())[i])->name;
-			ChildNodeDataCatCurForm->Age = 30;
-			ChildNodeDataCatCurForm->ImgIndex = 86;
-		}
-
-		// Команды
-		PVirtualNode ChildNodeCatCom = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
-		VirtualTreeData *ChildNodeDataCatCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCom);
-		ChildNodeDataCatCom->Name = "Команды";
-		ChildNodeDataCatCom->Age = 30;
-		ChildNodeDataCatCom->ImgIndex = 98;
-		// Список команд
-		for (i = 0; i < CurCat->getCommands().size(); i++)
-		{
-			PVirtualNode ChildNodeCatCurCom = VirtualStringTreeValue1C->AddChild(ChildNodeCatCom);
-			VirtualTreeData *ChildNodeDataCatCurCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurCom);
-			ChildNodeDataCatCurCom->Name = ((CurCat->getCommands())[i])->name;
-			ChildNodeDataCatCurCom->Age = 30;
-			ChildNodeDataCatCurCom->ImgIndex = 98;
-		}
-		// Макеты
-		PVirtualNode ChildNodeCatMoxel = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
-		VirtualTreeData *ChildNodeDataCatMoxel = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatMoxel);
-		ChildNodeDataCatMoxel->Name = "Макеты";
-		ChildNodeDataCatMoxel->Age = 30;
-		ChildNodeDataCatMoxel->ImgIndex = 79;
-		// Список макетов
-		for (i = 0; i < CurCat->getLayouts().size(); i++)
-		{
-			PVirtualNode ChildNodeCatCurMox = VirtualStringTreeValue1C->AddChild(ChildNodeCatMoxel);
-			VirtualTreeData *ChildNodeDataCatCurMox = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurMox);
-			ChildNodeDataCatCurMox->Name = ((CurCat->getLayouts())[i])->name;
-			ChildNodeDataCatCurMox->Age = 30;
-			ChildNodeDataCatCurMox->ImgIndex = 79;
-		}
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_Documents; // "Документы";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 4;
-
-	//================================================================================
-
-	PVirtualNode ChildNode2 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	VirtualTreeData *ChildData2 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode2);
-	ChildData2->Name = md_DocumentNumerators; // "Нумераторы";
-	ChildData2->Age = 30;
-	ChildData2->ImgIndex = 8;
-	for(int i = 0; i < MainForm->DocumentNumerators.size(); i++)
-	{
-		PVirtualNode ChildNodeDocsNum = VirtualStringTreeValue1C->AddChild(ChildNode2);
-		VirtualTreeData *ChildNodeDataDocsNum = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDocsNum);
-		ChildNodeDataDocsNum->Name = MainForm->DocumentNumerators[i];
-		ChildNodeDataDocsNum->Age = 30;
-		ChildNodeDataDocsNum->ImgIndex = 8;
-	}
-
-	PVirtualNode ChildNode3 = VirtualStringTreeValue1C->AddChild(ChildNode);
-	VirtualTreeData *ChildData3 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode3);
-	ChildData3->Name = md_Sequences; // "Последовательности";
-	ChildData3->Age = 30;
-	ChildData3->ImgIndex = 12;
-	for(int i = 0; i < MainForm->Sequences.size(); i++)
-	{
-		PVirtualNode ChildNodeSeq = VirtualStringTreeValue1C->AddChild(ChildNode3);
-		VirtualTreeData *ChildNodeDataSeq = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeSeq);
-		ChildNodeDataSeq->Name = MainForm->Sequences[i];
-		ChildNodeDataSeq->Age = 30;
-		ChildNodeDataSeq->ImgIndex = 12;
-	}
-
-	for(int i = 0; i < MainForm->Documents.size(); i++)
-	{
-		PVirtualNode ChildNodeDocs = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataDocs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDocs);
-		ChildNodeDataDocs->Name = MainForm->Documents[i];
-		ChildNodeDataDocs->Age = 30;
-		ChildNodeDataDocs->ImgIndex = 4;
-	}
-
-	//================================================================================
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_DocumentJournals; //"Журналы документов";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 5;
-
-	for(int i = 0; i < MainForm->DocumentJournals.size(); i++)
-	{
-		PVirtualNode ChildNodeDocsJ = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataDocsJ = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDocsJ);
-		ChildNodeDataDocsJ->Name = MainForm->DocumentJournals[i];
-		ChildNodeDataDocsJ->Age = 30;
-		ChildNodeDataDocsJ->ImgIndex = 5;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_Enums; // "Перечисления";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 2;
-	for(int i = 0; i < MainForm->Enums.size(); i++)
-	{
-		PVirtualNode ChildNodeEnums = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataEnums = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeEnums);
-		ChildNodeDataEnums->Name = MainForm->Enums[i];
-		ChildNodeDataEnums->Age = 30;
-		ChildNodeDataEnums->ImgIndex = 2;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_Reports; // "Отчеты";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 9;
-	for(int i = 0; i < MainForm->Reports.size(); i++)
-	{
-		PVirtualNode ChildNodeReports = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataReports = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeReports);
-		ChildNodeDataReports->Name = MainForm->Reports[i];
-		ChildNodeDataReports->Age = 30;
-		ChildNodeDataReports->ImgIndex = 9;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_DataProcessors; // "Обработки";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 7;
-	for(int i = 0; i < MainForm->DataProcessors.size(); i++)
-	{
-		PVirtualNode ChildNodeDP = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataDP = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDP);
-		ChildNodeDataDP->Name = MainForm->DataProcessors[i];
-		ChildNodeDataDP->Age = 30;
-		ChildNodeDataDP->ImgIndex = 7;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_ChartsOfCharacteristicTypes ;// "Планы видов характеристик";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 16;
-	for(int i = 0; i < MainForm->ChartsOfCharacteristicTypes.size(); i++)
-	{
-		PVirtualNode ChildNodeChartsTypes = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataChartsTypes = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeChartsTypes);
-		ChildNodeDataChartsTypes->Name = MainForm->ChartsOfCharacteristicTypes[i];
-		ChildNodeDataChartsTypes->Age = 30;
-		ChildNodeDataChartsTypes->ImgIndex = 16;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_ChartOfAccounts; // "Планы счетов";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 116;
-	for(int i = 0; i < MainForm->ChartOfAccounts.size(); i++)
-	{
-		PVirtualNode ChildNodeChartOfAccounts = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataChartOfAccounts = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeChartOfAccounts);
-		ChildNodeDataChartOfAccounts->Name = MainForm->ChartOfAccounts[i];
-		ChildNodeDataChartOfAccounts->Age = 30;
-		ChildNodeDataChartOfAccounts->ImgIndex = 116;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_ChartOfCalculationTypes; // "Планы видов расчета";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 17;
-	for(int i = 0; i < MainForm->ChartOfCalculationTypes.size(); i++)
-	{
-		PVirtualNode ChildNodeChartOfCalculationTypes = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataChartOfCalculationTypes = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeChartOfCalculationTypes);
-		ChildNodeDataChartOfCalculationTypes->Name = MainForm->ChartOfCalculationTypes[i];
-		ChildNodeDataChartOfCalculationTypes->Age = 30;
-		ChildNodeDataChartOfCalculationTypes->ImgIndex = 17;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_InformationRegisters; // "Регистры сведений";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 14;
-	for(int i = 0; i < MainForm->InformationRegisters.size(); i++)
-	{
-		PVirtualNode ChildNodeIReg = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataIReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeIReg);
-		ChildNodeDataIReg->Name = MainForm->InformationRegisters[i];
-		ChildNodeDataIReg->Age = 30;
-		ChildNodeDataIReg->ImgIndex = 14;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_AccumulationRegisters; // "Регистры накопления";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 13;
-	for(int i = 0; i < MainForm->AccumulationRegisters.size(); i++)
-	{
-		PVirtualNode ChildNodeAReg = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataAReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeAReg);
-		ChildNodeDataAReg->Name = MainForm->AccumulationRegisters[i];
-		ChildNodeDataAReg->Age = 30;
-		ChildNodeDataAReg->ImgIndex = 13;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_AccountingRegisters; // "Регистры бухгалтерии";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 117;
-	for(int i = 0; i < MainForm->AccountingRegisters.size(); i++)
-	{
-		PVirtualNode ChildNodeAccReg = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataAccReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeAccReg);
-		ChildNodeDataAccReg->Name = MainForm->AccountingRegisters[i];
-		ChildNodeDataAccReg->Age = 30;
-		ChildNodeDataAccReg->ImgIndex = 117;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_CalculationRegisters; //  "Регистры расчета";
-	ChildData->Age = 18;
-	ChildData->ImgIndex = 18;
-	for(int i = 0; i < MainForm->CalculationRegisters.size(); i++)
-	{
-		PVirtualNode ChildNodeCalcReg = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataCalcReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCalcReg);
-		ChildNodeDataCalcReg->Name = MainForm->CalculationRegisters[i];
-		ChildNodeDataCalcReg->Age = 30;
-		ChildNodeDataCalcReg->ImgIndex = 18;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_BusinessProcesses; // "Бизнес-процессы";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 58;
-	for(int i = 0; i < MainForm->BusinessProcesses.size(); i++)
-	{
-		PVirtualNode ChildNodeBP = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataBP = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeBP);
-		ChildNodeDataBP->Name = MainForm->BusinessProcesses[i];
-		ChildNodeDataBP->Age = 30;
-		ChildNodeDataBP->ImgIndex = 58;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_Tasks; // "Задачи";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 59;
-	for(int i = 0; i < MainForm->Tasks.size(); i++)
-	{
-		PVirtualNode ChildNodeTasks = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataTasks = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeTasks);
-		ChildNodeDataTasks->Name = MainForm->Tasks[i];
-		ChildNodeDataTasks->Age = 30;
-		ChildNodeDataTasks->ImgIndex = 59;
-	}
-
-	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
-	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
-	ChildData->Name = md_ExternalDataSources; // "Внешние источники данных";
-	ChildData->Age = 25;
-	ChildData->ImgIndex = 27;
-	for(int i = 0; i < MainForm->ExternalDataSources.size(); i++)
-	{
-		PVirtualNode ChildNodeEDS = VirtualStringTreeValue1C->AddChild(ChildNode);
-		VirtualTreeData *ChildNodeDataEDS = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeEDS);
-		ChildNodeDataEDS->Name = MainForm->ExternalDataSources[i];
-		ChildNodeDataEDS->Age = 30;
-		ChildNodeDataEDS->ImgIndex = 27;
-	}
-
-	VirtualStringTreeValue1C->Expanded[RootNode] = true;
-
-	RootData->Name = MainForm->ConfigName;
-	RootData->Age = 100;
-	RootData->ImgIndex = 72;
+//	// Корень конфигурации
+//	VirtualStringTreeValue1C->Clear();
+//	PVirtualNode RootNode = VirtualStringTreeValue1C->AddChild(nullptr);
+//
+//	VirtualTreeData *RootData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(RootNode);
+//
+//
+//
+//
+//	// Добавляем дочерний узел
+//	PVirtualNode ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	VirtualTreeData *ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_Common; // Общие
+//	ChildData->Age = 30;
+//	ChildData->ImgIndex = 84;
+//
+//	//================================= поддерево Общие ==============================================
+//	PVirtualNode ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	VirtualTreeData *ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_Subsystems; //"Подсистемы";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 74;
+//	// у подсистем есть иерархия, так что это нужно переделать
+//	for(int i = 0; i < MainForm->Subsystems.size(); i++)
+//	{
+//		PVirtualNode ChildNodeSub = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataSub = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeSub);
+//		ChildNodeDataSub->Name = MainForm->Subsystems[i].name;
+//		ChildNodeDataSub->Age = 30;
+//		ChildNodeDataSub->ImgIndex = 74;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_CommonModules; //"Общие модули";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 87;
+//	for(size_t i = 0; i < MainForm->mdCommonModules.size(); i++)
+//	{
+//		PVirtualNode ChildNodeCommonModules = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataCommonModules = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCommonModules);
+//		ChildNodeDataCommonModules->Name = static_cast<TCommonModules*>(MainForm->mdCommonModules[i].get())->name;
+//		ChildNodeDataCommonModules->Age = 30;
+//		ChildNodeDataCommonModules->ImgIndex = 87;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_SessionParameters; //"Параметры сеанса";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 90;
+//	for(size_t i = 0; i < MainForm->mdSessionParameters.size(); i++)
+//	{
+//		PVirtualNode ChildNodePar = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataPar = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodePar);
+//		ChildNodeDataPar->Name = static_cast<TSessionParameters*>(MainForm->mdSessionParameters[i].get())->name;
+//		ChildNodeDataPar->Age = 30;
+//		ChildNodeDataPar->ImgIndex = 90;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_Roles; //"Роли";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 81;
+//	for(size_t i = 0; i < MainForm->mdRoles.size(); i++)
+//	{
+//		PVirtualNode ChildNodeRoles = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataRoles = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeRoles);
+//		ChildNodeDataRoles->Name = static_cast<TRoles*>(MainForm->mdRoles[i].get())->GetRoleName();
+//		ChildNodeDataRoles->Age = 30;
+//		ChildNodeDataRoles->ImgIndex = 81;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_CommonAttributes; // "Общие реквизиты";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 24;
+//	for(int i = 0; i < MainForm->CommonAttributes .size(); i++)
+//	{
+//		PVirtualNode ChildNodeCommonAtt = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataCommonAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCommonAtt);
+//		ChildNodeDataCommonAtt->Name = MainForm->CommonAttributes[i];
+//		ChildNodeDataCommonAtt->Age = 30;
+//		ChildNodeDataCommonAtt->ImgIndex = 24;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_ExchangePlans; //"Планы обмена";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 41;
+//	for(int i = 0; i < MainForm->ExchangePlans.size(); i++)
+//	{
+//		PVirtualNode ChildNodeExch = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataExch = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeExch);
+//		ChildNodeDataExch->Name = MainForm->ExchangePlans[i];
+//		ChildNodeDataExch->Age = 30;
+//		ChildNodeDataExch->ImgIndex = 41;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_FilterCriteria; //"Критерии отбора";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 85;
+//	for(int i = 0; i < MainForm->FilterCriteria.size(); i++)
+//	{
+//		PVirtualNode ChildNodeFC = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataFC = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeFC);
+//		ChildNodeDataFC->Name = MainForm->FilterCriteria[i];
+//		ChildNodeDataFC->Age = 30;
+//		ChildNodeDataFC->ImgIndex = 85;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_EventSubscriptions; //"Подписки на события";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 100;
+//	for(int i = 0; i < MainForm->EventSubscriptions.size(); i++)
+//	{
+//		PVirtualNode ChildNodeEvt = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataEvt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeEvt);
+//		ChildNodeDataEvt->Name = MainForm->EventSubscriptions[i];
+//		ChildNodeDataEvt->Age = 30;
+//		ChildNodeDataEvt->ImgIndex = 100;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_ScheduledJobs; //"Регламентные задания";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 104;
+//	for(int i = 0; i < MainForm->ScheduledJobs.size(); i++)
+//	{
+//		PVirtualNode ChildNodeJobs = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataJobs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeJobs);
+//		ChildNodeDataJobs->Name = MainForm->ScheduledJobs[i];
+//		ChildNodeDataJobs->Age = 30;
+//		ChildNodeDataJobs->ImgIndex = 104;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_Bots; //"Боты";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 132;
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_FunctionalOptions; //"Функциональные опции";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 108;
+//	for(int i = 0; i < MainForm->FunctionalOptions.size(); i++)
+//	{
+//		PVirtualNode ChildNodeFO = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataFO = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeFO);
+//		ChildNodeDataFO->Name = MainForm->FunctionalOptions[i];
+//		ChildNodeDataFO->Age = 30;
+//		ChildNodeDataFO->ImgIndex = 108;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_FunctionalOptionsParameters; //"Параметры функциональных опций";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 109;
+//	for(int i = 0; i < MainForm->FunctionalOptionsParameters .size(); i++)
+//	{
+//		PVirtualNode ChildNodeFOP = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataFOP = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeFOP);
+//		ChildNodeDataFOP->Name = MainForm->FunctionalOptionsParameters[i];
+//		ChildNodeDataFOP->Age = 30;
+//		ChildNodeDataFOP->ImgIndex = 109;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_DefinedTypes; //"Определяемые типы";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 111;
+//	for(int i = 0; i < MainForm->DefinedTypes.size(); i++)
+//	{
+//		PVirtualNode ChildNodeDT = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataDT = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDT);
+//		ChildNodeDataDT->Name = MainForm->DefinedTypes[i];
+//		ChildNodeDataDT->Age = 30;
+//		ChildNodeDataDT->ImgIndex = 111;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_SettingsStorages; //"Хранилища настроек";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 52;
+//	for(int i = 0; i < MainForm->SettingsStorages.size(); i++)
+//	{
+//		PVirtualNode ChildNodeSS = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataSS = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeSS);
+//		ChildNodeDataSS->Name = MainForm->SettingsStorages[i];
+//		ChildNodeDataSS->Age = 30;
+//		ChildNodeDataSS->ImgIndex = 52;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_CommonCommands; //"Общие команды";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 98;
+//	for(int i = 0; i < MainForm->CommonCommands.size(); i++)
+//	{
+//		PVirtualNode ChildNodeComCom = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataComCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeComCom);
+//		ChildNodeDataComCom->Name = MainForm->CommonCommands[i];
+//		ChildNodeDataComCom->Age = 30;
+//		ChildNodeDataComCom->ImgIndex = 98;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_CommandGroups; //"Группы команд";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 99;
+//	for(size_t i = 0; i < MainForm->mdCommandGroups.size(); i++)
+//	{
+//		PVirtualNode ChildNodeComGroup = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataComGroup = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeComGroup);
+//		TCommandGroups* CurCommandGroup = static_cast<TCommandGroups*>(MainForm->mdCommandGroups[i].get());
+//		ChildNodeDataComGroup->Name = CurCommandGroup->GetCommandName();
+//		ChildNodeDataComGroup->Age = 30;
+//		ChildNodeDataComGroup->ImgIndex = 99;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_CommonForms; //"Общие формы";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 86;
+//	for(size_t i = 0; i < MainForm->mdCommonForms.size(); i++)
+//	{
+//		PVirtualNode ChildNodeComF = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataComF = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeComF);
+//		TCommonForms* CurCommonForm = static_cast<TCommonForms*>(MainForm->mdCommonForms[i].get());
+//		ChildNodeDataComF->Name = CurCommonForm->GetFormName();
+//		ChildNodeDataComF->Age = 30;
+//		ChildNodeDataComF->ImgIndex = 86;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_Interfaces; //"Интерфейсы";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 80;
+//	for(size_t i = 0; i < MainForm->mdInterfaces.size(); i++)
+//	{
+//		PVirtualNode ChildNodeInt = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataInt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeInt);
+//		TInterfaces* CurInterface = static_cast<TInterfaces*>(MainForm->mdInterfaces[i].get());
+//		ChildNodeDataInt->Name = CurInterface->GetInterfaceName();
+//		ChildNodeDataInt->Age = 30;
+//		ChildNodeDataInt->ImgIndex = 80;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_CommonTemplates;//"Общие макеты";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 79;
+//	for(size_t i = 0; i < MainForm->mdCommonTemplates.size(); i++)
+//	{
+//		PVirtualNode ChildNodeCTemp = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataCTemp = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCTemp);
+//		ChildNodeDataCTemp->Name = static_cast<TCommonTemplates*>(MainForm->mdCommonTemplates[i].get())->GetTemplateName();
+//		ChildNodeDataCTemp->Age = 30;
+//		ChildNodeDataCTemp->ImgIndex = 79;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_CommonPictures; //"Общие картинки";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 77;
+//	for(size_t i = 0; i < MainForm->mdCommonPictures.size(); i++)
+//	{
+//		PVirtualNode ChildNodePic = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataPic = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodePic);
+//		ChildNodeDataPic->Name = static_cast<TCommonPictures*>(MainForm->mdCommonPictures[i].get())->GetPictureName();
+//		ChildNodeDataPic->Age = 30;
+//		ChildNodeDataPic->ImgIndex = 77;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_XDTOPackages; //"XDTO-пакеты";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 91;
+//	for(size_t i = 0; i < MainForm->mdXDTOPackages.size(); i++)
+//	{
+//		PVirtualNode ChildNodeXDTO = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataXDTO = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeXDTO);
+//		ChildNodeDataXDTO->Name = static_cast<TXDTOPackages*>(MainForm->mdXDTOPackages[i].get())->GetXDTOPackageName();
+//		ChildNodeDataXDTO->Age = 30;
+//		ChildNodeDataXDTO->ImgIndex = 91;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_WebServices; //"Web-сервисы";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 92;
+//	for(size_t i = 0; i < MainForm->mdWebServices.size(); i++)
+//	{
+//		PVirtualNode ChildNodeWS = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataWS = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeWS);
+//		ChildNodeDataWS->Name = static_cast<TWebServices*>(MainForm->mdWebServices[i].get())->GetWebServiceName();
+//		ChildNodeDataWS->Age = 30;
+//		ChildNodeDataWS->ImgIndex = 92;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_HTTPServices; //"HTTP-сервисы";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 113;
+//	for(size_t i = 0; i < MainForm->mdHTTPServices.size(); i++)
+//	{
+//		PVirtualNode ChildNodeHTTPServices = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataHTTPServices = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeHTTPServices);
+//		THTTPServices* CurHTTPService = static_cast<THTTPServices*>(MainForm->mdHTTPServices[i].get());
+//		ChildNodeDataHTTPServices->Name = CurHTTPService->GetHTTPServicesName();
+//		ChildNodeDataHTTPServices->Age = 30;
+//		ChildNodeDataHTTPServices->ImgIndex = 113;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_WSReferences; //"WS-ссылки";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 96;
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_IntegrationServices; //"Сервисы интеграции";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 131;
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_StyleItems; //"Элементы стиля";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 76;
+//	for(int i = 0; i < MainForm->StyleItems.size(); i++)
+//	{
+//		PVirtualNode ChildNodeStlStl = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataStlStl = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeStlStl);
+//		ChildNodeDataStlStl->Name = MainForm->StyleItems[i];
+//		ChildNodeDataStlStl->Age = 30;
+//		ChildNodeDataStlStl->ImgIndex = 76;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_Styles; //"Стили";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 75;
+//	for(int i = 0; i < MainForm->Styles.size(); i++)
+//	{
+//		PVirtualNode ChildNodeStl = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataStl = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeStl);
+//		ChildNodeDataStl->Name = MainForm->Styles[i];
+//		ChildNodeDataStl->Age = 30;
+//		ChildNodeDataStl->ImgIndex = 75;
+//	}
+//
+//	ChildNode1 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	ChildData1 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode1);
+//	ChildData1->Name = md_Languages; // "Языки";
+//	ChildData1->Age = 30;
+//	ChildData1->ImgIndex = 73;
+//
+//	for(size_t i = 0; i < MainForm->mdLanguages.size(); i++)
+//	{
+//		PVirtualNode ChildNodeLang = VirtualStringTreeValue1C->AddChild(ChildNode1);
+//		VirtualTreeData *ChildNodeDataLang = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeLang);
+//		ChildNodeDataLang->Name = static_cast<TLangs*>(MainForm->mdLanguages[i].get())->name;
+//		ChildNodeDataLang->Age = 30;
+//		ChildNodeDataLang->ImgIndex = 73;
+//	}
+//	//================================================================================================
+//
+//	// Константы
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_Constants; // "Константы";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 0;
+//	for(size_t i = 0; i < MainForm->mdConstants.size(); i++)
+//	{
+//		PVirtualNode ChildNodeConst = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataConst = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeConst);
+//		ChildNodeDataConst->Name = static_cast<TConstants*>(MainForm->mdConstants[i].get())->name;
+//		ChildNodeDataConst->Age = 30;
+//		ChildNodeDataConst->ImgIndex = 0;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_Catalogs; // "Справочники";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 1;
+//
+//	for(size_t i = 0; i < MainForm->mdCatalogs.size(); i++)
+//	{
+//		PVirtualNode ChildNodeCatalogs = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataCatalogs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatalogs);
+//		TCatalogs* CurCat = static_cast<TCatalogs*>(MainForm->mdCatalogs[i].get());
+//		ChildNodeDataCatalogs->Name = CurCat->name;
+//		ChildNodeDataCatalogs->Age = 30;
+//		ChildNodeDataCatalogs->ImgIndex = 1;
+//
+//		// Реквизиты
+//		PVirtualNode ChildNodeCatAtt = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
+//		VirtualTreeData *ChildNodeDataCatAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatAtt);
+//		ChildNodeDataCatAtt->Name = "Реквизиты";
+//		ChildNodeDataCatAtt->Age = 30;
+//		ChildNodeDataCatAtt->ImgIndex = 83;
+//		// Список Реквизитов
+//		for (size_t j = 0; j < CurCat->getAttributes().size(); j++)
+//		{
+//			PVirtualNode ChildNodeCatCurAtt = VirtualStringTreeValue1C->AddChild(ChildNodeCatAtt);
+//			VirtualTreeData *ChildNodeDataCatCurAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurAtt);
+//			ChildNodeDataCatCurAtt->Name = ((CurCat->getAttributes())[i])->name;
+//			ChildNodeDataCatCurAtt->Age = 30;
+//			ChildNodeDataCatCurAtt->ImgIndex = 83;
+//		}
+//
+//		// Табличные части
+//		PVirtualNode ChildNodeCatTabs = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
+//		VirtualTreeData *ChildNodeDataCatTabs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatTabs);
+//		ChildNodeDataCatTabs->Name = "Табличные части";
+//		ChildNodeDataCatTabs->Age = 30;
+//		ChildNodeDataCatTabs->ImgIndex = 82;
+//		// Список ТЧ
+//		for (size_t j = 0; j < CurCat->getTabularSections().size(); j++)
+//		{
+//			PVirtualNode ChildNodeCatCurAtt = VirtualStringTreeValue1C->AddChild(ChildNodeCatTabs);
+//			VirtualTreeData *ChildNodeDataCatCurAtt = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurAtt);
+//			ChildNodeDataCatCurAtt->Name = ((CurCat->getTabularSections())[j])->name;
+//			ChildNodeDataCatCurAtt->Age = 30;
+//			ChildNodeDataCatCurAtt->ImgIndex = 82;
+//		}
+//
+//		// Формы
+//		PVirtualNode ChildNodeCatForm = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
+//		VirtualTreeData *ChildNodeDataCatForm = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatForm);
+//		ChildNodeDataCatForm->Name = "Формы";
+//		ChildNodeDataCatForm->Age = 30;
+//		ChildNodeDataCatForm->ImgIndex = 86;
+//		// Список форм
+//		for (size_t j = 0; j < CurCat->getForms().size(); j++)
+//		{
+//			PVirtualNode ChildNodeCatCurForm = VirtualStringTreeValue1C->AddChild(ChildNodeCatForm);
+//			VirtualTreeData *ChildNodeDataCatCurForm = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurForm);
+//			ChildNodeDataCatCurForm->Name = ((CurCat->getForms())[j])->name;
+//			ChildNodeDataCatCurForm->Age = 30;
+//			ChildNodeDataCatCurForm->ImgIndex = 86;
+//		}
+//
+//		// Команды
+//		PVirtualNode ChildNodeCatCom = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
+//		VirtualTreeData *ChildNodeDataCatCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCom);
+//		ChildNodeDataCatCom->Name = "Команды";
+//		ChildNodeDataCatCom->Age = 30;
+//		ChildNodeDataCatCom->ImgIndex = 98;
+//		// Список команд
+//		for (size_t j = 0; j < CurCat->getCommands().size(); j++)
+//		{
+//			PVirtualNode ChildNodeCatCurCom = VirtualStringTreeValue1C->AddChild(ChildNodeCatCom);
+//			VirtualTreeData *ChildNodeDataCatCurCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurCom);
+//			ChildNodeDataCatCurCom->Name = ((CurCat->getCommands())[j])->name;
+//			ChildNodeDataCatCurCom->Age = 30;
+//			ChildNodeDataCatCurCom->ImgIndex = 98;
+//		}
+//		// Макеты
+//		PVirtualNode ChildNodeCatMoxel = VirtualStringTreeValue1C->AddChild(ChildNodeCatalogs);
+//		VirtualTreeData *ChildNodeDataCatMoxel = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatMoxel);
+//		ChildNodeDataCatMoxel->Name = "Макеты";
+//		ChildNodeDataCatMoxel->Age = 30;
+//		ChildNodeDataCatMoxel->ImgIndex = 79;
+//		// Список макетов
+//		for (size_t j = 0; j < CurCat->getLayouts().size(); j++)
+//		{
+//			PVirtualNode ChildNodeCatCurMox = VirtualStringTreeValue1C->AddChild(ChildNodeCatMoxel);
+//			VirtualTreeData *ChildNodeDataCatCurMox = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCatCurMox);
+//			ChildNodeDataCatCurMox->Name = ((CurCat->getLayouts())[j])->name;
+//			ChildNodeDataCatCurMox->Age = 30;
+//			ChildNodeDataCatCurMox->ImgIndex = 79;
+//		}
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_Documents; // "Документы";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 4;
+//
+//	//================================================================================
+//
+//	PVirtualNode ChildNode2 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	VirtualTreeData *ChildData2 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode2);
+//	ChildData2->Name = md_DocumentNumerators; // "Нумераторы";
+//	ChildData2->Age = 30;
+//	ChildData2->ImgIndex = 8;
+//	for(size_t i = 0; i < MainForm->mdDocumentNumerators.size(); i++)
+//	{
+//		PVirtualNode ChildNodeDocsNum = VirtualStringTreeValue1C->AddChild(ChildNode2);
+//		VirtualTreeData *ChildNodeDataDocsNum = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDocsNum);
+//		ChildNodeDataDocsNum->Name = static_cast<TNumerators*>(MainForm->mdDocumentNumerators[i].get())->name;
+//		ChildNodeDataDocsNum->Age = 30;
+//		ChildNodeDataDocsNum->ImgIndex = 8;
+//	}
+//
+//	PVirtualNode ChildNode3 = VirtualStringTreeValue1C->AddChild(ChildNode);
+//	VirtualTreeData *ChildData3 = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode3);
+//	ChildData3->Name = md_Sequences; // "Последовательности";
+//	ChildData3->Age = 30;
+//	ChildData3->ImgIndex = 12;
+//	for(size_t i = 0; i < MainForm->mdSequences.size(); i++)
+//	{
+//		PVirtualNode ChildNodeSeq = VirtualStringTreeValue1C->AddChild(ChildNode3);
+//		VirtualTreeData *ChildNodeDataSeq = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeSeq);
+//		ChildNodeDataSeq->Name = static_cast<TSequences*>(MainForm->mdSequences[i].get())->name;
+//		ChildNodeDataSeq->Age = 30;
+//		ChildNodeDataSeq->ImgIndex = 12;
+//	}
+//
+//	for(size_t i = 0; i < MainForm->mdDocuments.size(); i++)
+//	{
+//		PVirtualNode ChildNodeDocs = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataDocs = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDocs);
+//		ChildNodeDataDocs->Name = static_cast<TDocuments*>(MainForm->mdDocuments[i].get())->name;
+//		ChildNodeDataDocs->Age = 30;
+//		ChildNodeDataDocs->ImgIndex = 4;
+//	}
+//
+//	//================================================================================
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_DocumentJournals; //"Журналы документов";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 5;
+//
+//	for(size_t i = 0; i < MainForm->mdDocumentJournals.size(); i++)
+//	{
+//		PVirtualNode ChildNodeDocsJ = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataDocsJ = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDocsJ);
+//		ChildNodeDataDocsJ->Name = static_cast<TJournals*>(MainForm->mdDocumentJournals[i].get())->name;
+//		ChildNodeDataDocsJ->Age = 30;
+//		ChildNodeDataDocsJ->ImgIndex = 5;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_Enums; // "Перечисления";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 2;
+//	for(size_t i = 0; i < MainForm->mdEnums.size(); i++)
+//	{
+//		PVirtualNode ChildNodeEnums = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataEnums = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeEnums);
+//		ChildNodeDataEnums->Name = static_cast<TEnums*>(MainForm->mdEnums[i].get())->name;
+//		ChildNodeDataEnums->Age = 30;
+//		ChildNodeDataEnums->ImgIndex = 2;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_Reports; // "Отчеты";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 9;
+//	for(size_t i = 0; i < MainForm->mdReports.size(); i++)
+//	{
+//		PVirtualNode ChildNodeReports = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataReports = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeReports);
+//		ChildNodeDataReports->Name = static_cast<TReports*>(MainForm->mdReports[i].get())->name;
+//		ChildNodeDataReports->Age = 30;
+//		ChildNodeDataReports->ImgIndex = 9;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_DataProcessors; // "Обработки";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 7;
+//	for(int i = 0; i < MainForm->DataProcessors.size(); i++)
+//	{
+//		PVirtualNode ChildNodeDP = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataDP = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDP);
+//		ChildNodeDataDP->Name = MainForm->DataProcessors[i];
+//		ChildNodeDataDP->Age = 30;
+//		ChildNodeDataDP->ImgIndex = 7;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_ChartsOfCharacteristicTypes ;// "Планы видов характеристик";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 16;
+//	for(int i = 0; i < MainForm->ChartsOfCharacteristicTypes.size(); i++)
+//	{
+//		PVirtualNode ChildNodeChartsTypes = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataChartsTypes = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeChartsTypes);
+//		ChildNodeDataChartsTypes->Name = MainForm->ChartsOfCharacteristicTypes[i];
+//		ChildNodeDataChartsTypes->Age = 30;
+//		ChildNodeDataChartsTypes->ImgIndex = 16;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_ChartOfAccounts; // "Планы счетов";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 116;
+//	for(int i = 0; i < MainForm->ChartOfAccounts.size(); i++)
+//	{
+//		PVirtualNode ChildNodeChartOfAccounts = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataChartOfAccounts = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeChartOfAccounts);
+//		ChildNodeDataChartOfAccounts->Name = MainForm->ChartOfAccounts[i];
+//		ChildNodeDataChartOfAccounts->Age = 30;
+//		ChildNodeDataChartOfAccounts->ImgIndex = 116;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_ChartOfCalculationTypes; // "Планы видов расчета";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 17;
+//	for(int i = 0; i < MainForm->ChartOfCalculationTypes.size(); i++)
+//	{
+//		PVirtualNode ChildNodeChartOfCalculationTypes = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataChartOfCalculationTypes = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeChartOfCalculationTypes);
+//		ChildNodeDataChartOfCalculationTypes->Name = MainForm->ChartOfCalculationTypes[i];
+//		ChildNodeDataChartOfCalculationTypes->Age = 30;
+//		ChildNodeDataChartOfCalculationTypes->ImgIndex = 17;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_InformationRegisters; // "Регистры сведений";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 14;
+//	for(int i = 0; i < MainForm->InformationRegisters.size(); i++)
+//	{
+//		PVirtualNode ChildNodeIReg = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataIReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeIReg);
+//		ChildNodeDataIReg->Name = MainForm->InformationRegisters[i];
+//		ChildNodeDataIReg->Age = 30;
+//		ChildNodeDataIReg->ImgIndex = 14;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_AccumulationRegisters; // "Регистры накопления";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 13;
+//	for(int i = 0; i < MainForm->AccumulationRegisters.size(); i++)
+//	{
+//		PVirtualNode ChildNodeAReg = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataAReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeAReg);
+//		ChildNodeDataAReg->Name = MainForm->AccumulationRegisters[i];
+//		ChildNodeDataAReg->Age = 30;
+//		ChildNodeDataAReg->ImgIndex = 13;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_AccountingRegisters; // "Регистры бухгалтерии";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 117;
+//	for(int i = 0; i < MainForm->AccountingRegisters.size(); i++)
+//	{
+//		PVirtualNode ChildNodeAccReg = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataAccReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeAccReg);
+//		ChildNodeDataAccReg->Name = MainForm->AccountingRegisters[i];
+//		ChildNodeDataAccReg->Age = 30;
+//		ChildNodeDataAccReg->ImgIndex = 117;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_CalculationRegisters; //  "Регистры расчета";
+//	ChildData->Age = 18;
+//	ChildData->ImgIndex = 18;
+//	for(int i = 0; i < MainForm->CalculationRegisters.size(); i++)
+//	{
+//		PVirtualNode ChildNodeCalcReg = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataCalcReg = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCalcReg);
+//		ChildNodeDataCalcReg->Name = MainForm->CalculationRegisters[i];
+//		ChildNodeDataCalcReg->Age = 30;
+//		ChildNodeDataCalcReg->ImgIndex = 18;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_BusinessProcesses; // "Бизнес-процессы";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 58;
+//	for(int i = 0; i < MainForm->BusinessProcesses.size(); i++)
+//	{
+//		PVirtualNode ChildNodeBP = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataBP = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeBP);
+//		ChildNodeDataBP->Name = MainForm->BusinessProcesses[i];
+//		ChildNodeDataBP->Age = 30;
+//		ChildNodeDataBP->ImgIndex = 58;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_Tasks; // "Задачи";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 59;
+//	for(int i = 0; i < MainForm->Tasks.size(); i++)
+//	{
+//		PVirtualNode ChildNodeTasks = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataTasks = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeTasks);
+//		ChildNodeDataTasks->Name = MainForm->Tasks[i];
+//		ChildNodeDataTasks->Age = 30;
+//		ChildNodeDataTasks->ImgIndex = 59;
+//	}
+//
+//	ChildNode = VirtualStringTreeValue1C->AddChild(RootNode);
+//	ChildData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNode);
+//	ChildData->Name = md_ExternalDataSources; // "Внешние источники данных";
+//	ChildData->Age = 25;
+//	ChildData->ImgIndex = 27;
+//	for(int i = 0; i < MainForm->ExternalDataSources.size(); i++)
+//	{
+//		PVirtualNode ChildNodeEDS = VirtualStringTreeValue1C->AddChild(ChildNode);
+//		VirtualTreeData *ChildNodeDataEDS = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeEDS);
+//		ChildNodeDataEDS->Name = MainForm->ExternalDataSources[i];
+//		ChildNodeDataEDS->Age = 30;
+//		ChildNodeDataEDS->ImgIndex = 27;
+//	}
+//
+//	VirtualStringTreeValue1C->Expanded[RootNode] = true;
+//
+//	RootData->Name = MainForm->ConfigName;
+//	RootData->Age = 100;
+//	RootData->ImgIndex = 72;
 
 }
 
@@ -2389,55 +2300,54 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		  // Удаляем предыдущую конфигурацию (автоматически через unique_ptr)
 		  GlobalCF.reset();
 
-		  // Очищаем все TObjectList
-		  mdCatalogs->Clear();
-		  mdLanguages->Clear();
-		  mdAccumulationRegisters->Clear();
-		  mdAccountingRegisters->Clear();
-		  mdCalculationRegisters->Clear();
-		  mdBusinessProcesses->Clear();
-		  mdChartsOfCharacteristicTypes->Clear();
-		  mdCommandGroups->Clear();
-		  mdCommonAttributes->Clear();
-		  mdCommonCommands->Clear();
-		  mdCommonTemplates->Clear();
-		  mdCommonForms->Clear();
-		  mdCommonModules->Clear();
-		  mdCommonPictures->Clear();
-		  mdCommonTemplates->Clear();
-		  mdConstants->Clear();
-		  mdDataProcessors->Clear();
-		  mdDefinedTypes->Clear();
-		  mdDocumentJournals->Clear();
-		  mdDocumentNumerators->Clear();
-		  mdDocuments->Clear();
-		  mdEnums->Clear();
-		  mdEventSubscriptions->Clear();
-		  mdExchangePlans->Clear();
-		  mdChartOfAccounts->Clear();
-		  mdChartOfCalculationTypes->Clear();
-		  mdExternalDataSources->Clear();
-		  mdFilterCriteria->Clear();
-		  mdFunctionalOptions->Clear();
-		  mdFunctionalOptionsParameters->Clear();
-		  mdHTTPServices->Clear();
-		  mdInformationRegisters->Clear();
-		  mdInterfaces->Clear();
-		  mdReports->Clear();
-		  mdRoles->Clear();
-		  mdBots->Clear();
-		  mdScheduledJobs->Clear();
-		  mdSessionParameters->Clear();
-		  mdSettingsStorages->Clear();
-		  mdStyleItems->Clear();
-		  mdStyles->Clear();
-		  mdSubsystems->Clear();
-		  mdTasks->Clear();
-		  mdWebServices->Clear();
-		  mdWSReferences->Clear();
-		  mdXDTOPackages->Clear();
-		  mdIntegrationServices->Clear();
-		  mdSequences->Clear();
+		  // Очищаем все векторы метаданных
+		  mdCatalogs.clear();
+		  mdLanguages.clear();
+		  mdAccumulationRegisters.clear();
+		  mdAccountingRegisters.clear();
+		  mdCalculationRegisters.clear();
+		  mdBusinessProcesses.clear();
+		  mdChartsOfCharacteristicTypes.clear();
+		  mdCommandGroups.clear();
+		  mdCommonAttributes.clear();
+		  mdCommonCommands.clear();
+		  mdCommonTemplates.clear();
+		  mdCommonForms.clear();
+		  mdCommonModules.clear();
+		  mdCommonPictures.clear();
+		  mdConstants.clear();
+		  mdDataProcessors.clear();
+		  mdDefinedTypes.clear();
+		  mdDocumentJournals.clear();
+		  mdDocumentNumerators.clear();
+		  mdDocuments.clear();
+		  mdEnums.clear();
+		  mdEventSubscriptions.clear();
+		  mdExchangePlans.clear();
+		  mdChartOfAccounts.clear();
+		  mdChartOfCalculationTypes.clear();
+		  mdExternalDataSources.clear();
+		  mdFilterCriteria.clear();
+		  mdFunctionalOptions.clear();
+		  mdFunctionalOptionsParameters.clear();
+		  mdHTTPServices.clear();
+		  mdInformationRegisters.clear();
+		  mdInterfaces.clear();
+		  mdReports.clear();
+		  mdRoles.clear();
+		  mdBots.clear();
+		  mdScheduledJobs.clear();
+		  mdSessionParameters.clear();
+		  mdSettingsStorages.clear();
+		  mdStyleItems.clear();
+		  mdStyles.clear();
+		  mdSubsystems.clear();
+		  mdTasks.clear();
+		  mdWebServices.clear();
+		  mdWSReferences.clear();
+		  mdXDTOPackages.clear();
+		  mdIntegrationServices.clear();
+		  mdSequences.clear();
 
 		  GlobalCF = std::make_unique<v8catalog>(filename, true);
 
@@ -2780,7 +2690,7 @@ void fill_subsystem(tree* tr, std::vector<SubSys> &md_subsys)
 
 
 // Процедура заполняет метаданные по корневому гуиду
-void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
+void fill_md(tree* tr, String guid_md)
 {
 	v8file *filedata;
 	tree* tree_md;
@@ -2856,7 +2766,7 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 
 	int CountMD = (node_md->get_next())->get_value().ToInt();
 
-	md_list.clear();
+	//md_list.clear();
 
 	tree* curNode = node_md->get_next();
 	while (curNode)
@@ -2897,135 +2807,109 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 			// Создание объектов для специфических типов
 			if (guid_md == GUID_Catalogs)
 			{
-				TCatalogs* CurCatalogs = new TCatalogs(cf, curNode->get_value(), val);
-				MainForm->mdCatalogs->Add(CurCatalogs);
+				MainForm->mdCatalogs.push_back(std::make_unique<TCatalogs>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Languages)
 			{
-				TLangs* CurLang = new TLangs(cf, curNode->get_value(), val);
-                MainForm->mdLanguages->Add(CurLang);
+				MainForm->mdLanguages.push_back(std::make_unique<TLangs>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_CommonModules)
 			{
-				// TODO: Реализовать чтение общих модулей
-				TCommonModules* CurModule = new TCommonModules(cf, curNode->get_value(), val);
-                MainForm->mdCommonModules->Add(CurModule);
+				MainForm->mdCommonModules.push_back(std::make_unique<TCommonModules>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Roles)
 			{}
 			else if (guid_md == GUID_CommonTemplates)
 			{
-				TCommonTemplates* CurCommonTemplate = new TCommonTemplates(cf, curNode->get_value(), val);
-				MainForm->mdCommonTemplates->Add(CurCommonTemplate);
+				MainForm->mdCommonTemplates.push_back(std::make_unique<TCommonTemplates>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_HTTPServices)
 			{
-				THTTPServices* CurHTTPService = new THTTPServices(cf, curNode->get_value(), val);
-				MainForm->mdHTTPServices->Add(CurHTTPService);
+				MainForm->mdHTTPServices.push_back(std::make_unique<THTTPServices>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_ScheduledJobs)
 			{
-				TScheduledJobs* CurScheduledJob = new TScheduledJobs(cf, curNode->get_value(), val);
-				MainForm->mdScheduledJobs->Add(CurScheduledJob);
+				MainForm->mdScheduledJobs.push_back(std::make_unique<TScheduledJobs>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_CommonAttributes)
 			{
-				TCommonAttributes* CurCommonAtt = new TCommonAttributes(cf, curNode->get_value(), val);
-				MainForm->mdCommonAttributes->Add(CurCommonAtt);
+				MainForm->mdCommonAttributes.push_back(std::make_unique<TCommonAttributes>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_SessionParameters)
 			{
-				TSessionParameters* CurSessionParam = new TSessionParameters(cf, curNode->get_value(), val);
-				MainForm->mdSessionParameters->Add(CurSessionParam);
+				MainForm->mdSessionParameters.push_back(std::make_unique<TSessionParameters>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_FunctionalOptionsParameters)
 			{
-				TFunctionalOptionsParameters* CurFOP = new TFunctionalOptionsParameters(cf, curNode->get_value(), val);
-				MainForm->mdFunctionalOptionsParameters->Add(CurFOP);
+				MainForm->mdFunctionalOptionsParameters.push_back(std::make_unique<TFunctionalOptionsParameters>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Subsystems)
 			{}
 			else if (guid_md == GUID_Interfaces)
 			{
-				TInterfaces* CurInterface = new TInterfaces(cf, curNode->get_value(), val);
-				MainForm->mdInterfaces->Add(CurInterface);
+				MainForm->mdInterfaces.push_back(std::make_unique<TInterfaces>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Styles)
 			{}
 			else if (guid_md == GUID_FilterCriteria)
 			{
-				TFilterCriteria* CurFilter = new TFilterCriteria(cf, curNode->get_value(), val);
-				MainForm->mdFilterCriteria->Add(CurFilter);
+				MainForm->mdFilterCriteria.push_back(std::make_unique<TFilterCriteria>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_SettingsStorages)
 			{
-				TSettingsStorages* CurSettingsStorage = new TSettingsStorages(cf, curNode->get_value(), val);
-				MainForm->mdSettingsStorages->Add(CurSettingsStorage);
+				MainForm->mdSettingsStorages.push_back(std::make_unique<TSettingsStorages>(cf, curNode->get_value(), val));
 			}
-
 			else if (guid_md == GUID_StyleItems)
 			{}
 			else if (guid_md == GUID_CommonPictures)
 			{
-				TCommonPictures* CurCommonPicture = new TCommonPictures(cf, curNode->get_value(), val);
-				MainForm->mdCommonPictures->Add(CurCommonPicture);
+				MainForm->mdCommonPictures.push_back(std::make_unique<TCommonPictures>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_ExchangePlans)
 			{
-				TExchangePlans* CurExchPlan = new TExchangePlans(cf, curNode->get_value(), val);
-				MainForm->mdExchangePlans->Add(CurExchPlan);
+				MainForm->mdExchangePlans.push_back(std::make_unique<TExchangePlans>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_EventSubscriptions)
 			{
-				TEventSubscriptions* CurEventSub = new TEventSubscriptions(cf, curNode->get_value(), val);
-				MainForm->mdEventSubscriptions->Add(CurEventSub);
+				MainForm->mdEventSubscriptions.push_back(std::make_unique<TEventSubscriptions>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_WebServices)
 			{
-				TWebServices* CurWebService = new TWebServices(cf, curNode->get_value(), val);
-				MainForm->mdWebServices->Add(CurWebService);
+				MainForm->mdWebServices.push_back(std::make_unique<TWebServices>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_FunctionalOptions)
 			{
-				TFunctionalOptions* CurFO = new TFunctionalOptions(cf, curNode->get_value(), val);
-				MainForm->mdFunctionalOptions->Add(CurFO);
+				MainForm->mdFunctionalOptions.push_back(std::make_unique<TFunctionalOptions>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_DefinedTypes)
 			{
-				TDefinedTypes* CurDefinedType = new TDefinedTypes(cf, curNode->get_value(), val);
-				MainForm->mdDefinedTypes->Add(CurDefinedType);
+				MainForm->mdDefinedTypes.push_back(std::make_unique<TDefinedTypes>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_XDTOPackages)
 			{
-				TXDTOPackages* CurXDTOPackage = new TXDTOPackages(cf, curNode->get_value(), val);
-				MainForm->mdXDTOPackages->Add(CurXDTOPackage);
+				MainForm->mdXDTOPackages.push_back(std::make_unique<TXDTOPackages>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_WSReferences)
 			{}
 			else if (guid_md == GUID_Constants)
 			{
-				TConstants* CurConstant = new TConstants(cf, curNode->get_value(), val);
-				MainForm->mdConstants->Add(CurConstant);
+				MainForm->mdConstants.push_back(std::make_unique<TConstants>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Documents)
 			{
-				TDocuments* CurDocuments = new TDocuments(cf, curNode->get_value(), val);
-				MainForm->mdDocuments->Add(CurDocuments);
+				MainForm->mdDocuments.push_back(std::make_unique<TDocuments>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_CommonForms)
 			{
-				TCommonForms* CurCommonForm = new TCommonForms(cf, curNode->get_value(), val);
-				MainForm->mdCommonForms->Add(CurCommonForm);
+				MainForm->mdCommonForms.push_back(std::make_unique<TCommonForms>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_InformationRegisters)
 			{
-				TInformationRegisters* CurIReg = new TInformationRegisters(cf, curNode->get_value(), val);
-				MainForm->mdInformationRegisters->Add(CurIReg);
+				MainForm->mdInformationRegisters.push_back(std::make_unique<TInformationRegisters>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_CalculationRegisters)
 			{
-				TCalculationRegisters* CurCReg = new TCalculationRegisters(cf, curNode->get_value(), val);
-				MainForm->mdCalculationRegisters->Add(CurCReg);
+				MainForm->mdCalculationRegisters.push_back(std::make_unique<TCalculationRegisters>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_BusinessProcesses)
 			{}
@@ -3033,75 +2917,61 @@ void fill_md(tree* tr, String guid_md, std::vector<String> &md_list)
 			{}
 			else if (guid_md == GUID_AccountingRegisters)
 			{
-				TAccountingRegisters* CurAReg = new TAccountingRegisters(cf, curNode->get_value(), val);
-				MainForm->mdAccountingRegisters->Add(CurAReg);
+				MainForm->mdAccountingRegisters.push_back(std::make_unique<TAccountingRegisters>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_CommandGroups)
 			{
-				TCommandGroups* CurCommandGroup = new TCommandGroups(cf, curNode->get_value(), val);
-				MainForm->mdCommandGroups->Add(CurCommandGroup);
+				MainForm->mdCommandGroups.push_back(std::make_unique<TCommandGroups>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_CommonCommands)
 			{
-				TCommonCommands* CurCommonCommand = new TCommonCommands(cf, curNode->get_value(), val);
-				MainForm->mdCommonCommands->Add(CurCommonCommand);
+				MainForm->mdCommonCommands.push_back(std::make_unique<TCommonCommands>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Numerators)
 			{
-				TNumerators* CurNumerator = new TNumerators(cf, curNode->get_value(), val);
-				MainForm->mdDocumentNumerators->Add(CurNumerator);
+				MainForm->mdDocumentNumerators.push_back(std::make_unique<TNumerators>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_JournDocuments)
 			{
-				TJournals* CurJournal = new TJournals(cf, curNode->get_value(), val);
-				MainForm->mdDocumentJournals->Add(CurJournal);
+				MainForm->mdDocumentJournals.push_back(std::make_unique<TJournals>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Reports)
 			{
-				TReports* CurReport = new TReports(cf, curNode->get_value(), val);
-				MainForm->mdReports->Add(CurReport);
+				MainForm->mdReports.push_back(std::make_unique<TReports>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_ChartOfCharacteristicTypes)
 			{
-				TChartOfCharacteristicTypes* CCT = new TChartOfCharacteristicTypes(cf, curNode->get_value(), val);
-				MainForm->mdChartsOfCharacteristicTypes->Add(CCT);
+				MainForm->mdChartsOfCharacteristicTypes.push_back(std::make_unique<TChartOfCharacteristicTypes>(cf, curNode->get_value(), val));
 			}
-			else if (guid_md == GUID_ChartsOfAccounts)  // план счетов
+			else if (guid_md == GUID_ChartsOfAccounts)
 			{
-				TChartOfAccounts* CurCACC = new TChartOfAccounts(cf, curNode->get_value(), val);
-				MainForm->mdChartOfAccounts->Add(CurCACC);
+				MainForm->mdChartOfAccounts.push_back(std::make_unique<TChartOfAccounts>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_ChartsOfCalculationTypes)
 			{
-				TChartOfCalculationTypes* CurCCT = new TChartOfCalculationTypes(cf, curNode->get_value(), val);
-				MainForm->mdChartOfCalculationTypes->Add(CurCCT);
+				MainForm->mdChartOfCalculationTypes.push_back(std::make_unique<TChartOfCalculationTypes>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_AccumulationRegisters)
 			{
-				TAccumulationRegisters* CurAReg = new TAccumulationRegisters(cf, curNode->get_value(), val);
-				MainForm->mdAccumulationRegisters->Add(CurAReg);
+				MainForm->mdAccumulationRegisters.push_back(std::make_unique<TAccumulationRegisters>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Sequences)
 			{
-				TSequences* CurSequence = new TSequences(cf, curNode->get_value(), val);
-				MainForm->mdSequences->Add(CurSequence);
+				MainForm->mdSequences.push_back(std::make_unique<TSequences>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_DataProcessors)
 			{
-				TDataProcessors* CurDataProcessor = new TDataProcessors(cf, curNode->get_value(), val);
-				MainForm->mdDataProcessors->Add(CurDataProcessor);
+				MainForm->mdDataProcessors.push_back(std::make_unique<TDataProcessors>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Enums)
 			{
-				TEnums* CurEnums = new TEnums(cf, curNode->get_value(), val);
-				MainForm->mdEnums->Add(CurEnums);
+				MainForm->mdEnums.push_back(std::make_unique<TEnums>(cf, curNode->get_value(), val));
 			}
 			else if (guid_md == GUID_Bots)
 			{
-				TBots* CurBot = new TBots(cf, curNode->get_value(), val);
-				MainForm->mdBots->Add(CurBot);
+				MainForm->mdBots.push_back(std::make_unique<TBots>(cf, curNode->get_value(), val));
 			}
-			md_list.push_back(val);
+			//md_list.push_back(val);
 		}
 
 	}
@@ -3132,158 +3002,158 @@ void get_cf_name(tree* tr, Messager* mess)
 	node3 = tr;
 
 	// Заполняем справочники
-	fill_md(tr, GUID_Catalogs, MainForm->Catalogs);
+	fill_md(tr, GUID_Catalogs);
 	mess->AddMessage(L"Справочники обработаны", MessageState::msInfo);
 
 	// Заполняем языки
-	fill_md(tr, GUID_Languages, MainForm->Languages);
+	fill_md(tr, GUID_Languages);
 	mess->AddMessage(L"Языки обработаны", MessageState::msInfo);
 
 	// Заполняем регистры накопления
-	fill_md(tr, GUID_AccumulationRegisters, MainForm->AccumulationRegisters);
+	fill_md(tr, GUID_AccumulationRegisters);
 	mess->AddMessage(L"Регистры накопления обработаны", MessageState::msInfo);
 
 	// Заполняем регистры бухгалтерии
-	fill_md(tr, GUID_AccountingRegisters, MainForm->AccountingRegisters);
+	fill_md(tr, GUID_AccountingRegisters);
 	mess->AddMessage(L"Регистры бухгалтерии обработаны", MessageState::msInfo);
 
 	// Заполняем регистры расчета
-	fill_md(tr, GUID_CalculationRegisters, MainForm->CalculationRegisters);
+	fill_md(tr, GUID_CalculationRegisters);
 	mess->AddMessage(L"Регистры расчета обработаны", MessageState::msInfo);
 
 	// Заполняем бизнес-процессы
-	fill_md(tr, GUID_BusinessProcesses, MainForm->BusinessProcesses);
+	fill_md(tr, GUID_BusinessProcesses);
 	mess->AddMessage(L"Бизнес-процессы обработаны", MessageState::msInfo);
 
 	// ПВХ
-	fill_md(tr, GUID_ChartOfCharacteristicTypes, MainForm->ChartsOfCharacteristicTypes);
+	fill_md(tr, GUID_ChartOfCharacteristicTypes);
 	mess->AddMessage(L"Планы видов характеристик обработаны", MessageState::msInfo);
 
 
 	// группы команд
-	fill_md(tr, GUID_CommandGroups, MainForm->CommandGroups);
+	fill_md(tr, GUID_CommandGroups);
 	mess->AddMessage(L"Группы команд обработаны", MessageState::msInfo);
 
 
 	// общие реквизиты
-	fill_md(tr, GUID_CommonAttributes, MainForm->CommonAttributes);
+	fill_md(tr, GUID_CommonAttributes);
 	mess->AddMessage(L"Общие реквизиты обработаны", MessageState::msInfo);
 
 	// общие команды
-	fill_md(tr, GUID_CommonCommands, MainForm->CommonCommands);
+	fill_md(tr, GUID_CommonCommands);
 	mess->AddMessage(L"Общие команды обработаны", MessageState::msInfo);
 
 	// общие формы
-	fill_md(tr, GUID_CommonForms, MainForm->CommonForms);
+	fill_md(tr, GUID_CommonForms);
 	mess->AddMessage(L"Общие формы обработаны", MessageState::msInfo);
 
 	// общие модули
-	fill_md(tr, GUID_CommonModules, MainForm->CommonModules);
+	fill_md(tr, GUID_CommonModules);
 	mess->AddMessage(L"Общие модули обработаны", MessageState::msInfo);
 
 
 	// общие картинки
-	fill_md(tr, GUID_CommonPictures, MainForm->CommonPictures);
+	fill_md(tr, GUID_CommonPictures);
 	mess->AddMessage(L"Общие картинки обработаны", MessageState::msInfo);
 
 	// общие макеты
-	fill_md(tr, GUID_CommonTemplates, MainForm->CommonTemplates);
+	fill_md(tr, GUID_CommonTemplates);
 	mess->AddMessage(L"Общие макеты обработаны", MessageState::msInfo);
 
 	// константы
-	fill_md(tr, GUID_Constants, MainForm->Constants);
-	mess->AddMessage(L"Константы обработаны: " + IntToStr((int)MainForm->Constants.size()), MessageState::msInfo);
+	fill_md(tr, GUID_Constants);
+	mess->AddMessage(L"Константы обработаны: ", MessageState::msInfo);
 
 	// обработки
-	fill_md(tr, GUID_DataProcessors, MainForm->DataProcessors);
+	fill_md(tr, GUID_DataProcessors);
 	mess->AddMessage(L"Обработки обработаны", MessageState::msInfo);
 
 	// определяемые типы
-	fill_md(tr, GUID_DefinedTypes, MainForm->DefinedTypes);
+	fill_md(tr, GUID_DefinedTypes);
 	mess->AddMessage(L"Определяемые типы обработаны", MessageState::msInfo);
 
 	// журналы документов
-	fill_md(tr, GUID_JournDocuments, MainForm->DocumentJournals);
+	fill_md(tr, GUID_JournDocuments);
 	mess->AddMessage(L"Журналы документов обработаны", MessageState::msInfo);
 
 	// нумераторы
-	fill_md(tr, GUID_Numerators, MainForm->DocumentNumerators);
+	fill_md(tr, GUID_Numerators);
 	mess->AddMessage(L"Нумераторы обработаны", MessageState::msInfo);
 
 	// документы
-	fill_md(tr, GUID_Documents, MainForm->Documents);
+	fill_md(tr, GUID_Documents);
 	mess->AddMessage(L"Документы обработаны", MessageState::msInfo);
 
 	// перечисления
-	fill_md(tr, GUID_Enums, MainForm->Enums);
+	fill_md(tr, GUID_Enums);
 	mess->AddMessage(L"Перечисления обработаны", MessageState::msInfo);
 
 	// подписки на события
-	fill_md(tr, GUID_EventSubscriptions, MainForm->EventSubscriptions);
+	fill_md(tr, GUID_EventSubscriptions);
 	mess->AddMessage(L"Подписки на события обработаны", MessageState::msInfo);
 
 	// планы обмена
-	fill_md(tr, GUID_ExchangePlans, MainForm->ExchangePlans);
+	fill_md(tr, GUID_ExchangePlans);
 	mess->AddMessage(L"Планы обмена обработаны", MessageState::msInfo);
 
 	// планы счетов
-	fill_md(tr, GUID_ChartsOfAccounts, MainForm->ChartOfAccounts);
+	fill_md(tr, GUID_ChartsOfAccounts);
 	mess->AddMessage(L"Планы счетов обработаны", MessageState::msInfo);
 
 	// планы видов расчета
-	fill_md(tr, GUID_ChartsOfCalculationTypes, MainForm->ChartOfCalculationTypes);
+	fill_md(tr, GUID_ChartsOfCalculationTypes);
 	mess->AddMessage(L"Планы видов расчета обработаны", MessageState::msInfo);
 
 	// внешние источники данных
-	fill_md(tr, GUID_ExternalDataSources, MainForm->ExternalDataSources);
+	fill_md(tr, GUID_ExternalDataSources);
 	mess->AddMessage(L"Внешние источники данных обработаны", MessageState::msInfo);
 
 	// критерии отбора
-	fill_md(tr, GUID_FilterCriteria, MainForm->FilterCriteria);
+	fill_md(tr, GUID_FilterCriteria);
 	mess->AddMessage(L"Критерии отбора обработаны", MessageState::msInfo);
 
 	// функциональные опции
-	fill_md(tr, GUID_FunctionalOptions, MainForm->FunctionalOptions);
+	fill_md(tr, GUID_FunctionalOptions);
 	mess->AddMessage(L"Функциональные опции обработаны", MessageState::msInfo);
 
 	// параметры функциональных опций
-	fill_md(tr, GUID_FunctionalOptionsParameters, MainForm->FunctionalOptionsParameters);
+	fill_md(tr, GUID_FunctionalOptionsParameters);
 	mess->AddMessage(L"Параметры функциональных опций обработаны", MessageState::msInfo);
 
 	// http - сервисы
-	fill_md(tr, GUID_HTTPServices, MainForm->HTTPServices);
+	fill_md(tr, GUID_HTTPServices);
 	mess->AddMessage(L"http - сервисы обработаны", MessageState::msInfo);
 
 	// регистры сведений
-	fill_md(tr, GUID_InformationRegisters, MainForm->InformationRegisters);
+	fill_md(tr, GUID_InformationRegisters);
 	mess->AddMessage(L"Регистры сведений обработаны", MessageState::msInfo);
 
 	// интерфейсы
-	fill_md(tr, GUID_Interfaces, MainForm->Interfaces);
+	fill_md(tr, GUID_Interfaces);
 	mess->AddMessage(L"Интерфейсы обработаны", MessageState::msInfo);
 
 	// отчеты
-	fill_md(tr, GUID_Reports, MainForm->Reports);
+	fill_md(tr, GUID_Reports);
 	mess->AddMessage(L"Отчеты обработаны", MessageState::msInfo);
 
 	// роли
-	fill_md(tr, GUID_Roles, MainForm->Roles);
+	fill_md(tr, GUID_Roles);
 	mess->AddMessage(L"Роли обработаны", MessageState::msInfo);
 
 	// параметры сеанса
-	fill_md(tr, GUID_SessionParameters, MainForm->SessionParameters);
+	fill_md(tr, GUID_SessionParameters);
 	mess->AddMessage(L"Параметры сеанса обработаны", MessageState::msInfo);
 
 	// хранилища настроек
-	fill_md(tr, GUID_SettingsStorages, MainForm->SettingsStorages);
+	fill_md(tr, GUID_SettingsStorages);
 	mess->AddMessage(L"Хранилища настроек обработаны", MessageState::msInfo);
 
 	// элементы стиля
-	fill_md(tr, GUID_StyleItems, MainForm->StyleItems);
+	fill_md(tr, GUID_StyleItems);
 	mess->AddMessage(L"Элементы стиля обработаны", MessageState::msInfo);
 
 	// стили
-	fill_md(tr, GUID_Styles, MainForm->Styles);
+	fill_md(tr, GUID_Styles);
 	mess->AddMessage(L"Стили обработаны", MessageState::msInfo);
 
 	// подсистемы
@@ -3291,31 +3161,31 @@ void get_cf_name(tree* tr, Messager* mess)
 	mess->AddMessage(L"Подсистемы обработаны", MessageState::msInfo);
 
 	// задачи
-	fill_md(tr, GUID_Tasks, MainForm->Tasks);
+	fill_md(tr, GUID_Tasks);
 	mess->AddMessage(L"Задачи обработаны", MessageState::msInfo);
 
 	// веб-сервисы
-	fill_md(tr, GUID_WebServices, MainForm->WebServices);
+	fill_md(tr, GUID_WebServices);
 	mess->AddMessage(L"веб-сервисы обработаны", MessageState::msInfo);
 
 	// ws-ссылки
-	fill_md(tr, GUID_WSReferences, MainForm->WSReferences);
+	fill_md(tr, GUID_WSReferences);
 	mess->AddMessage(L"ws-ссылки обработаны", MessageState::msInfo);
 
 	// xdto-пакеты
-	fill_md(tr, GUID_XDTOPackages, MainForm->XDTOPackages);
+	fill_md(tr, GUID_XDTOPackages);
 	mess->AddMessage(L"xdto-пакеты обработаны", MessageState::msInfo);
 
 	// регл задания
-	fill_md(tr, GUID_ScheduledJobs, MainForm->ScheduledJobs);
+	fill_md(tr, GUID_ScheduledJobs);
 	mess->AddMessage(L"Регламентные задания обработаны", MessageState::msInfo);
 
 	// боты
-	fill_md(tr, GUID_Bots, MainForm->Bots);
+	fill_md(tr, GUID_Bots);
 	mess->AddMessage(L"Боты обработаны", MessageState::msInfo);
 
 	// последовательности
-	fill_md(tr, GUID_Sequences, MainForm->Sequences);
+	fill_md(tr, GUID_Sequences);
 	mess->AddMessage(L"Последовательности обработаны", MessageState::msInfo);
 
 	structver = (*node)[0].get_value().ToInt();
