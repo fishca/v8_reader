@@ -1267,6 +1267,13 @@ void __fastcall TMainForm::FillVirtualTree() {
 						childDataCom->text_module = L"";
 						childDataCom->MetadataObject = CurParam;
 					}
+					else if (categoryCom.name == md_Roles)
+					{
+						TRoles* CurRole = static_cast<TRoles*>(item.get());
+						childDataCom->Name = CurRole->GetRoleName();
+						childDataCom->text_module = L"";
+						childDataCom->MetadataObject = CurRole;
+					}
 					else if (categoryCom.name == md_CommonAttributes)
 					{
 						TCommonAttributes* CurCommonAtt = static_cast<TCommonAttributes*>(item.get());
@@ -1400,21 +1407,6 @@ void __fastcall TMainForm::FillVirtualTree() {
 					}
 					childDataCom->Age = 99;
 					childDataCom->ImgIndex = categoryCom.imgIndex;
-				}
-
-				// Для Roles добавляем элементы из MainForm->mdRoles
-				if (categoryCom.name == md_Roles)
-				{
-					for (size_t i = 0; i < MainForm->mdRoles.size(); i++)
-					{
-						PVirtualNode childNodeRoles = VirtualStringTreeValue1C->AddChild(parentNodeCom);
-						VirtualTreeData *childDataRoles = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeRoles);
-						childDataRoles->Name = static_cast<TRoles*>(MainForm->mdRoles[i].get())->GetRoleName();
-						childDataRoles->Age = 99;
-						childDataRoles->ImgIndex = categoryCom.imgIndex;
-						childDataRoles->text_module = L"";
-						childDataRoles->MetadataObject = MainForm->mdRoles[i].get();
-					}
 				}
 
 
@@ -2972,7 +2964,8 @@ void fill_md(tree* tr, String guid_md)
                                 }
                                 else if (guid_md == GUID_Roles)
                                 {
-                                        msreg->AddMessage(L"fill_md: Пропуск роли: " + val, MessageState::msInfo);
+						msreg->AddMessage(L"fill_md: Создание роли: " + val, MessageState::msInfo);
+						MainForm->mdRoles.push_back(std::make_unique<TRoles>(cf, curNode->get_value(), val));
                                 }
                                 else if (guid_md == GUID_CommonTemplates)
                                 {
@@ -3785,6 +3778,7 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
 
 
 
