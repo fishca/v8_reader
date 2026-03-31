@@ -9,21 +9,16 @@
 #include "APIcfBase.h"
 #include "Parse_tree.h"
 #include "MDObject.h"
+#include "BaseMetadataObject.h"
 #include "Requisite.h"
 #include "Comand.h"
 #include "Moxel.h"
 #include "Tabular.h"
 #include "Form.h"
 
-class TChartOfAccounts : public TObject
+class TChartOfAccounts : public BaseMetadataObject
 {
 public:
-	std::unique_ptr<tree> root_data;
-	v8catalog* parent;
-
-	String name;
-	String guid;
-
 	std::vector<std::unique_ptr<TRequisite>> attributes;    // список реквизитов
 	std::vector<std::unique_ptr<TAccountingFlag>> accflags; // список признаков учета
 	std::vector<std::unique_ptr<TDimensionAccountingFlag>> dimaccflags; // список признаков учета субконто
@@ -36,7 +31,16 @@ public:
 	__fastcall TChartOfAccounts(v8catalog *_parent, const String& _guid);
 	__fastcall TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name);
 
-	__fastcall ~TChartOfAccounts();
+	virtual __fastcall ~TChartOfAccounts();
+
+	// Реализация виртуальных методов BaseMetadataObject
+	virtual std::vector<std::unique_ptr<TRequisite>>& getAttributes() override { return attributes; }
+	virtual std::vector<std::unique_ptr<TComand>>& getCommands() override { return comands; }
+	virtual std::vector<std::unique_ptr<TMoxel>>& getLayouts() override { return moxels; }
+	virtual std::vector<std::unique_ptr<TTabular>>& getTabularSections() override { return tabulars; }
+	virtual std::vector<std::unique_ptr<TForm1C>>& getForms() override { return forms; }
+
+	virtual void __fastcall initializeFromTree() override;
 };
 
 #endif

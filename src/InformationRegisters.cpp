@@ -34,12 +34,14 @@ __fastcall TInformationRegisters::TInformationRegisters(v8catalog *_parent, cons
 	: MetadataObjectInformationRegister(_parent, _guid)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TInformationRegisters::TInformationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectInformationRegister(_parent, _guid, _name)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TInformationRegisters::~TInformationRegisters()

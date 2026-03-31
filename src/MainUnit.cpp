@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <System.SysUtils.hpp>
+
 #include "V8File.h"
 #include "ApicfBase.h"
 #include "Class_1CD.h"
@@ -73,6 +75,36 @@
 #pragma resource "*.dfm"
 TMainForm *MainForm;
 MessageRegistrator* msreg;
+
+static String FormatHeapStatus()
+{
+	THeapStatus hs = GetHeapStatus();
+	return L"Allocated=" + IntToStr((__int64)hs.TotalAllocated)
+		+ L", Free=" + IntToStr((__int64)hs.TotalFree)
+		+ L", Committed=" + IntToStr((__int64)hs.TotalCommitted)
+		+ L", Uncommitted=" + IntToStr((__int64)hs.TotalUncommitted);
+}
+
+static void LogHeapStatus(const String& stage,
+	const String& guid = L"",
+	const String& fileName = L"",
+	int currentIndex = -1,
+	int totalCount = -1)
+{
+	if(!msreg) return;
+
+	TStringList* ts = new TStringList;
+	ts->Add(L"Heap = " + FormatHeapStatus());
+	if(guid.Length())
+		ts->Add(L"GUID = " + guid);
+	if(fileName.Length())
+		ts->Add(L"File = " + fileName);
+	if(currentIndex >= 0)
+		ts->Add(L"Item = " + IntToStr(currentIndex));
+	if(totalCount >= 0)
+		ts->Add(L"Total = " + IntToStr(totalCount));
+	msreg->AddMessage(stage, msInfo, ts);
+}
 
 //---------------------------------------------------------------------------
 __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std::make_unique<MetaDataManager>())
@@ -1225,19 +1257,22 @@ void __fastcall TMainForm::FillVirtualTree() {
 					{
 						TCommonModules* CurModule = static_cast<TCommonModules*>(item.get());
 						childDataCom->Name = CurModule->name;
-						childDataCom->text_module = CurModule->GetText();
+						childDataCom->text_module = L"";
+						childDataCom->MetadataObject = CurModule;
 					}
 					else if (categoryCom.name == md_SessionParameters)
 					{
 						TSessionParameters* CurParam = static_cast<TSessionParameters*>(item.get());
 						childDataCom->Name = CurParam->name;
 						childDataCom->text_module = L"";
+						childDataCom->MetadataObject = CurParam;
 					}
 					else if (categoryCom.name == md_CommonAttributes)
 					{
 						TCommonAttributes* CurCommonAtt = static_cast<TCommonAttributes*>(item.get());
 						childDataCom->Name = CurCommonAtt->name;
 						childDataCom->text_module = L"";
+						childDataCom->MetadataObject = CurCommonAtt;
 					}
 					else if (categoryCom.name == md_ExchangePlans)
 					{
@@ -1361,6 +1396,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 					{
 						childDataCom->Name = L"";
 						childDataCom->text_module = L"";
+						childDataCom->MetadataObject = nullptr;
 					}
 					childDataCom->Age = 99;
 					childDataCom->ImgIndex = categoryCom.imgIndex;
@@ -1377,6 +1413,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 						childDataRoles->Age = 99;
 						childDataRoles->ImgIndex = categoryCom.imgIndex;
 						childDataRoles->text_module = L"";
+						childDataRoles->MetadataObject = MainForm->mdRoles[i].get();
 					}
 				}
 
@@ -1393,6 +1430,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 						childDataBots->Age = 99;
 						childDataBots->ImgIndex = categoryCom.imgIndex;
 						childDataBots->text_module = L"";
+						childDataBots->MetadataObject = CurBot;
 					}
 				}
 			}
@@ -2263,6 +2301,7 @@ void __fastcall TMainForm::VirtualStringTreeValue1CFreeNode(TBaseVirtualTree *Se
 	VirtualTreeData *NodeData =(VirtualTreeData*)Sender->GetNodeData(Node);
 	NodeData->Name = L"";
 	NodeData->text_module = L"";
+	NodeData->MetadataObject = nullptr;
 
 }
 //---------------------------------------------------------------------------
@@ -2290,87 +2329,103 @@ void __fastcall TMainForm::Button1Click(TObject *Sender)
 
 void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 {
-	if (dlgOpenCF->Execute())
+	if (!dlgOpenCF->Execute())
+		return;
+
+	if (!FileExists(dlgOpenCF->FileName))
+		throw(Exception("File does not exist."));
+
+	String filename = dlgOpenCF->FileName;
+	EditNameCF->Text = filename;
+	mess->AddMessage(L"ActionFileOpenExecute: начало открытия конфигурации", msInfo);
+	mess->AddMessage_(L"ActionFileOpenExecute: параметры открытия", msInfo,
+		L"file", filename,
+		L"logfile", mess->getlogfile());
+
+	try
 	{
-		if (FileExists(dlgOpenCF->FileName))
+		GlobalCF.reset();
+
+		mdCatalogs.clear();
+		mdLanguages.clear();
+		mdAccumulationRegisters.clear();
+		mdAccountingRegisters.clear();
+		mdCalculationRegisters.clear();
+		mdBusinessProcesses.clear();
+		mdChartsOfCharacteristicTypes.clear();
+		mdCommandGroups.clear();
+		mdCommonAttributes.clear();
+		mdCommonCommands.clear();
+		mdCommonTemplates.clear();
+		mdCommonForms.clear();
+		mdCommonModules.clear();
+		mdCommonPictures.clear();
+		mdConstants.clear();
+		mdDataProcessors.clear();
+		mdDefinedTypes.clear();
+		mdDocumentJournals.clear();
+		mdDocumentNumerators.clear();
+		mdDocuments.clear();
+		mdEnums.clear();
+		mdEventSubscriptions.clear();
+		mdExchangePlans.clear();
+		mdChartOfAccounts.clear();
+		mdChartOfCalculationTypes.clear();
+		mdExternalDataSources.clear();
+		mdFilterCriteria.clear();
+		mdFunctionalOptions.clear();
+		mdFunctionalOptionsParameters.clear();
+		mdHTTPServices.clear();
+		mdInformationRegisters.clear();
+		mdInterfaces.clear();
+		mdReports.clear();
+		mdRoles.clear();
+		mdBots.clear();
+		mdScheduledJobs.clear();
+		mdSessionParameters.clear();
+		mdSettingsStorages.clear();
+		mdStyleItems.clear();
+		mdStyles.clear();
+		mdSubsystems.clear();
+		mdTasks.clear();
+		mdWebServices.clear();
+		mdWSReferences.clear();
+		mdXDTOPackages.clear();
+		mdIntegrationServices.clear();
+		mdSequences.clear();
+
+		mess->AddMessage(L"ActionFileOpenExecute: создание v8catalog", msInfo);
+		GlobalCF = std::make_unique<v8catalog>(filename, true);
+
+		mess->AddMessage(L"ActionFileOpenExecute: чтение метаданных конфигурации", msInfo);
+		get_cf_name(GlobalCF.get(), mess);
+
+		mess->AddMessage(L"ActionFileOpenExecute: построение дерева интерфейса", msInfo);
+		VirtualStringTreeValue1C->BeginUpdate();
+		try
 		{
-		  String filename = dlgOpenCF->FileName;
-		  EditNameCF->Text = filename;
-
-		  // Удаляем предыдущую конфигурацию (автоматически через unique_ptr)
-		  GlobalCF.reset();
-
-		  // Очищаем все векторы метаданных
-		  mdCatalogs.clear();
-		  mdLanguages.clear();
-		  mdAccumulationRegisters.clear();
-		  mdAccountingRegisters.clear();
-		  mdCalculationRegisters.clear();
-		  mdBusinessProcesses.clear();
-		  mdChartsOfCharacteristicTypes.clear();
-		  mdCommandGroups.clear();
-		  mdCommonAttributes.clear();
-		  mdCommonCommands.clear();
-		  mdCommonTemplates.clear();
-		  mdCommonForms.clear();
-		  mdCommonModules.clear();
-		  mdCommonPictures.clear();
-		  mdConstants.clear();
-		  mdDataProcessors.clear();
-		  mdDefinedTypes.clear();
-		  mdDocumentJournals.clear();
-		  mdDocumentNumerators.clear();
-		  mdDocuments.clear();
-		  mdEnums.clear();
-		  mdEventSubscriptions.clear();
-		  mdExchangePlans.clear();
-		  mdChartOfAccounts.clear();
-		  mdChartOfCalculationTypes.clear();
-		  mdExternalDataSources.clear();
-		  mdFilterCriteria.clear();
-		  mdFunctionalOptions.clear();
-		  mdFunctionalOptionsParameters.clear();
-		  mdHTTPServices.clear();
-		  mdInformationRegisters.clear();
-		  mdInterfaces.clear();
-		  mdReports.clear();
-		  mdRoles.clear();
-		  mdBots.clear();
-		  mdScheduledJobs.clear();
-		  mdSessionParameters.clear();
-		  mdSettingsStorages.clear();
-		  mdStyleItems.clear();
-		  mdStyles.clear();
-		  mdSubsystems.clear();
-		  mdTasks.clear();
-		  mdWebServices.clear();
-		  mdWSReferences.clear();
-		  mdXDTOPackages.clear();
-		  mdIntegrationServices.clear();
-		  mdSequences.clear();
-
-		  GlobalCF = std::make_unique<v8catalog>(filename, true);
-
-		  get_cf_name(GlobalCF.get(), mess);
-
-		  VirtualStringTreeValue1C->BeginUpdate();
-		  try
-		  {
-			//TreeInit();
 			FillVirtualTree();
-		  }
-		  __finally
-		  {
-			VirtualStringTreeValue1C->EndUpdate();
-		  }
-
-		  //VirtualStringTreeValue1C.exp
-
-
-		  //delete MainForm->GlobalCF;
 		}
-		else
-		  throw(Exception("File does not exist."));
+		__finally
+		{
+			VirtualStringTreeValue1C->EndUpdate();
+		}
+
+		mess->AddMessage(L"ActionFileOpenExecute: конфигурация успешно открыта", msSuccesfull);
+	}
+	catch (const Exception &e)
+	{
+		mess->AddMessage_(L"ActionFileOpenExecute: VCL exception", msError,
+			L"file", filename,
+			L"message", e.Message);
+		throw;
+	}
+	catch (...)
+	{
+		mess->AddMessage_(L"ActionFileOpenExecute: неизвестное исключение", msError,
+			L"file", filename,
+			L"stage", L"open configuration");
+		throw;
 	}
 }
 //---------------------------------------------------------------------------
@@ -2401,6 +2456,11 @@ void __fastcall Messager::setlogfile(String _logfile)
 	logfile = System::Ioutils::TPath::GetFullPath(_logfile);
 	if(FileExists(logfile))
     	DeleteFile(logfile);
+}
+
+String __fastcall Messager::getlogfile() const
+{
+	return logfile;
 }
 
 
@@ -2435,7 +2495,9 @@ void __fastcall Messager::AddMessage(const String& message, const MessageState m
 		else
 		{
 			log = new TFileStream(logfile, fmCreate | fmShareDenyNone);
-			log->Write(TEncoding::UTF8->GetPreamble(), TEncoding::UTF8->GetPreamble().Length);
+			DynamicArray<System::Byte> preamble = TEncoding::UTF8->GetPreamble();
+			if (preamble.Length > 0)
+				log->WriteBuffer(&preamble[0], preamble.Length);
 		}
 		sw = new TStreamWriter(log, TEncoding::UTF8, 4096);
 		sw->Write(DateTimeToStr(Now(), FormatSettings));
@@ -2476,7 +2538,7 @@ void __fastcall Messager::AddMessage(const String& message, const MessageState m
 
 void get_cf_name(v8catalog* cf, Messager* mess)
 {
-	tree* tr;
+	std::unique_ptr<tree> tr;
 	tree* node;
 	v8catalog* cat;
 	v8file* filedata;
@@ -2497,29 +2559,24 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 		return;
 	}
 
-	tr = get_treeFromV8file(filedata);
+	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
 		mess->AddError(L"Ошибка разбора файла root конфигурации");
 		return;
 	}
 
-	tr = get_treeFromV8file(filedata);
-	if(!tr)
-		return;
-
-	node = tr;
+	node = tr.get();
 
 	node = &(*node)[0][0][0];
 	if(node->get_type() != nd_number)
 	{
 		mess->AddError(L"Ошибка получения версии формата конфигурации");
-		delete tr;
 		return;
 	}
 
 	ver = node->get_value().ToInt();
-	delete tr;
+	tr.reset();
 
 	if(ver < 100)
 	{
@@ -2552,25 +2609,24 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 		return;
 	}
 
-	tr = get_treeFromV8file(filedata);
+	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
 		mess->AddError(L"Ошибка разбора файла root конфигурации");
 		return;
 	}
 
-	node = tr;
+	node = tr.get();
 	node = &(*node)[0][1];
 
 	if(node->get_type() != nd_guid)
 	{
 		mess->AddError(L"Ошибка получения имени файла метаданных");
-		delete tr;
 		return;
 	}
 
 	meta = node->get_value();
-	delete tr;
+	tr.reset();
 
 	filedata = cat->GetFile(meta);
 	if(!filedata)
@@ -2582,7 +2638,7 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 		return;
 	}
 
-	tr = get_treeFromV8file(filedata);
+	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
 		s = L"Ошибка разбора файла ";
@@ -2592,8 +2648,7 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 		return;
 	}
 
-	get_cf_name(tr, mess);
-	//delete tr;
+	get_cf_name(tr.release(), mess);
 }
 
 String GetNameSubsystem(v8catalog *cf, String &guid_md)
@@ -2698,6 +2753,7 @@ void fill_md(tree* tr, String guid_md)
 	String s;
 
 	v8catalog *cf = MainForm->GlobalCF.get();
+	msreg->AddMessage(L"fill_md: Начало обработки GUID: " + guid_md, MessageState::msInfo);
 
 	//tree* node_md = find_node_by_guid(tr, guid_md); //"cf4abea6-37b2-11d4-940f-008048da11f9"
 
@@ -2754,230 +2810,398 @@ void fill_md(tree* tr, String guid_md)
 
 	if (pathIt == namePaths.end()) {
 		// GUID не найден в карте путей, пропустить
+		msreg->AddMessage(L"fill_md: GUID не найден в карте путей: " + guid_md, MessageState::msWarning);
 		return;
 	}
 
+	msreg->AddMessage(L"fill_md: Поиск узла по GUID", MessageState::msInfo);
 	tree* node_md = find_node_by_guid(tr, guid_md);
 	if (!node_md) {
+		msreg->AddMessage(L"fill_md: Узел не найден по GUID: " + guid_md, MessageState::msWarning);
 		return; // Защита от nullptr
 	}
+	msreg->AddMessage(L"fill_md: Узел найден", MessageState::msInfo);
 
 	const std::vector<int>& path = pathIt->second;
 
-	int CountMD = (node_md->get_next())->get_value().ToInt();
+	msreg->AddMessage(L"fill_md: Получение количества элементов", MessageState::msInfo);
+	tree* nextNode = node_md->get_next();
+	if (!nextNode) {
+		msreg->AddMessage(L"fill_md: Ошибка - следующий узел равен null", MessageState::msError);
+		return;
+	}
+	int CountMD = nextNode->get_value().ToInt();
+	msreg->AddMessage(L"fill_md: Количество элементов: " + String(CountMD), MessageState::msInfo);
 
 	//md_list.clear();
 
 	tree* curNode = node_md->get_next();
+	int processedCount = 0;
 	while (curNode)
 	{
 		curNode = curNode->get_next();
 		if (curNode)
 		{
-			filedata = cf->GetFile(curNode->get_value());
+			processedCount++;
+			String curNodeValue = curNode->get_value();
+			msreg->AddMessage(L"fill_md: Обработка элемента " + String(processedCount) + L" из " + String(CountMD) + L", файл: " + curNodeValue, MessageState::msInfo);
+			if ((processedCount == 1) || (processedCount % 25 == 0))
+				LogHeapStatus(L"fill_md: состояние памяти перед чтением элемента", guid_md, curNodeValue, processedCount, CountMD);
+
+			filedata = cf->GetFile(curNodeValue);
 			if(!filedata)
 			{
 				s = L"Ошибка получения файла ";
-				s += (curNode->get_value());
+				s += curNodeValue;
 				s += L" конфигурации";
-				//mess->AddError(s);
+				msreg->AddMessage(s, MessageState::msError);
+				//msreg->AddError(s);
 				//return;
 				continue; // Продолжить с следующим
 			}
+			msreg->AddMessage(L"fill_md: Файл получен успешно", MessageState::msInfo);
 
-			tree_md = get_treeFromV8file(filedata);
+			msreg->AddMessage(L"fill_md: Разбор дерева файла", MessageState::msInfo);
+			try
+			{
+				tree_md = get_treeFromV8file(filedata);
+			}
+			catch (const Exception &e)
+			{
+				msreg->AddMessage_(L"fill_md: VCL exception при разборе дерева файла", msError,
+					L"GUID", guid_md,
+					L"File", curNodeValue,
+					L"Message", e.Message);
+				LogHeapStatus(L"fill_md: память при VCL exception разбора файла", guid_md, curNodeValue, processedCount, CountMD);
+				continue;
+			}
+			catch (...)
+			{
+				msreg->AddMessage_(L"fill_md: неизвестное исключение при разборе дерева файла", msError,
+					L"GUID", guid_md,
+					L"File", curNodeValue);
+				LogHeapStatus(L"fill_md: память при неизвестном exception разбора файла", guid_md, curNodeValue, processedCount, CountMD);
+				continue;
+			}
 			if(!tree_md)
 			{
+				LogHeapStatus(L"fill_md: память во время ошибки разбора файла", guid_md, curNodeValue, processedCount, CountMD);
 				s = L"Ошибка разбора файла ";
-				s += (curNode->get_value());
+				s += curNodeValue;
 				s += L" конфигурации";
-				//mess->AddError(s);
+				msreg->AddMessage(s, MessageState::msError);
+				//msreg->AddError(s);
 				//return;
 				continue;
 			}
+			msreg->AddMessage(L"fill_md: Дерево разобрано успешно", MessageState::msInfo);
+
 			node = tree_md;
 
-			for (int idx : path)
-			{
-				node = &(*node)[idx];
+			msreg->AddMessage(L"fill_md: Навигация по пути", MessageState::msInfo);
+			try {
+				for (size_t i = 0; i < path.size(); i++)
+				{
+					int idx = path[i];
+					msreg->AddMessage(L"fill_md: Шаг " + String((int)i) + L", индекс: " + String(idx), MessageState::msInfo);
+
+					// Проверка границ - индекс должен быть в пределах количества подчиненных узлов
+					if (idx < 0 || idx >= node->get_num_subnode()) {
+						msreg->AddMessage(L"fill_md: Ошибка - индекс выходит за пределы на шаге " + String((int)i)
+							+ L", доступно узлов: " + String(node->get_num_subnode())
+							+ L", запрошен индекс: " + String(idx), MessageState::msError);
+						node = nullptr;
+						break;
+					}
+
+					node = &(*node)[idx];
+					if (!node) {
+						msreg->AddMessage(L"fill_md: Ошибка - узел стал null на шаге " + String((int)i), MessageState::msError);
+						break;
+					}
+				}
+			}
+			catch (...) {
+				msreg->AddMessage(L"fill_md: Исключение при навигации по пути для файла: " + curNodeValue, MessageState::msError);
+				LogHeapStatus(L"fill_md: память при исключении навигации", guid_md, curNodeValue, processedCount, CountMD);
+				delete tree_md;
+				continue;
+			}
+
+			if (!node) {
+				msreg->AddMessage(L"fill_md: Пропуск элемента из-за null узла: " + curNodeValue, MessageState::msError);
+				delete tree_md;
+				continue;
+			}
+
+			// Проверка типа узла перед получением значения
+			msreg->AddMessage(L"fill_md: Тип узла перед получением значения: " + String(node->get_type()), MessageState::msInfo);
+			if (node->get_type() == nd_empty || node->get_type() == nd_unknown) {
+				msreg->AddMessage(L"fill_md: Пропуск элемента - пустой или неизвестный тип узла: " + curNodeValue + L", тип: " + String(node->get_type()), MessageState::msError);
+				delete tree_md;
+				continue;
 			}
 
 			String val = node->get_value();
+			msreg->AddMessage(L"fill_md: Получено значение длиной: " + String(val.Length()), MessageState::msInfo);
+			if (val.Length() == 0) {
+				msreg->AddMessage(L"fill_md: Пропуск элемента - пустое значение: " + curNodeValue, MessageState::msError);
+				delete tree_md;
+				continue;
+			}
+			msreg->AddMessage(L"fill_md: Получено имя: " + val, MessageState::msInfo);
+			if ((processedCount == 1) || (processedCount % 25 == 0))
+				LogHeapStatus(L"fill_md: состояние памяти перед созданием объекта", guid_md, curNodeValue, processedCount, CountMD);
 
-			// Создание объектов для специфических типов
-			if (guid_md == GUID_Catalogs)
-			{
-				MainForm->mdCatalogs.push_back(std::make_unique<TCatalogs>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Languages)
-			{
-				MainForm->mdLanguages.push_back(std::make_unique<TLangs>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_CommonModules)
-			{
-				MainForm->mdCommonModules.push_back(std::make_unique<TCommonModules>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Roles)
-			{}
-			else if (guid_md == GUID_CommonTemplates)
-			{
-				MainForm->mdCommonTemplates.push_back(std::make_unique<TCommonTemplates>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_HTTPServices)
-			{
-				MainForm->mdHTTPServices.push_back(std::make_unique<THTTPServices>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_ScheduledJobs)
-			{
-				MainForm->mdScheduledJobs.push_back(std::make_unique<TScheduledJobs>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_CommonAttributes)
-			{
-				MainForm->mdCommonAttributes.push_back(std::make_unique<TCommonAttributes>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_SessionParameters)
-			{
-				MainForm->mdSessionParameters.push_back(std::make_unique<TSessionParameters>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_FunctionalOptionsParameters)
-			{
-				MainForm->mdFunctionalOptionsParameters.push_back(std::make_unique<TFunctionalOptionsParameters>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Subsystems)
-			{}
-			else if (guid_md == GUID_Interfaces)
-			{
-				MainForm->mdInterfaces.push_back(std::make_unique<TInterfaces>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Styles)
-			{}
-			else if (guid_md == GUID_FilterCriteria)
-			{
-				MainForm->mdFilterCriteria.push_back(std::make_unique<TFilterCriteria>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_SettingsStorages)
-			{
-				MainForm->mdSettingsStorages.push_back(std::make_unique<TSettingsStorages>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_StyleItems)
-			{}
-			else if (guid_md == GUID_CommonPictures)
-			{
-				MainForm->mdCommonPictures.push_back(std::make_unique<TCommonPictures>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_ExchangePlans)
-			{
-				MainForm->mdExchangePlans.push_back(std::make_unique<TExchangePlans>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_EventSubscriptions)
-			{
-				MainForm->mdEventSubscriptions.push_back(std::make_unique<TEventSubscriptions>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_WebServices)
-			{
-				MainForm->mdWebServices.push_back(std::make_unique<TWebServices>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_FunctionalOptions)
-			{
-				MainForm->mdFunctionalOptions.push_back(std::make_unique<TFunctionalOptions>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_DefinedTypes)
-			{
-				MainForm->mdDefinedTypes.push_back(std::make_unique<TDefinedTypes>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_XDTOPackages)
-			{
-				MainForm->mdXDTOPackages.push_back(std::make_unique<TXDTOPackages>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_WSReferences)
-			{}
-			else if (guid_md == GUID_Constants)
-			{
-				MainForm->mdConstants.push_back(std::make_unique<TConstants>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Documents)
-			{
-				MainForm->mdDocuments.push_back(std::make_unique<TDocuments>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_CommonForms)
-			{
-				MainForm->mdCommonForms.push_back(std::make_unique<TCommonForms>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_InformationRegisters)
-			{
-				MainForm->mdInformationRegisters.push_back(std::make_unique<TInformationRegisters>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_CalculationRegisters)
-			{
-				MainForm->mdCalculationRegisters.push_back(std::make_unique<TCalculationRegisters>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_BusinessProcesses)
-			{}
-			else if (guid_md == GUID_Tasks)
-			{}
-			else if (guid_md == GUID_AccountingRegisters)
-			{
-				MainForm->mdAccountingRegisters.push_back(std::make_unique<TAccountingRegisters>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_CommandGroups)
-			{
-				MainForm->mdCommandGroups.push_back(std::make_unique<TCommandGroups>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_CommonCommands)
-			{
-				MainForm->mdCommonCommands.push_back(std::make_unique<TCommonCommands>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Numerators)
-			{
-				MainForm->mdDocumentNumerators.push_back(std::make_unique<TNumerators>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_JournDocuments)
-			{
-				MainForm->mdDocumentJournals.push_back(std::make_unique<TJournals>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Reports)
-			{
-				MainForm->mdReports.push_back(std::make_unique<TReports>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_ChartOfCharacteristicTypes)
-			{
-				MainForm->mdChartsOfCharacteristicTypes.push_back(std::make_unique<TChartOfCharacteristicTypes>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_ChartsOfAccounts)
-			{
-				MainForm->mdChartOfAccounts.push_back(std::make_unique<TChartOfAccounts>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_ChartsOfCalculationTypes)
-			{
-				MainForm->mdChartOfCalculationTypes.push_back(std::make_unique<TChartOfCalculationTypes>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_AccumulationRegisters)
-			{
-				MainForm->mdAccumulationRegisters.push_back(std::make_unique<TAccumulationRegisters>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Sequences)
-			{
-				MainForm->mdSequences.push_back(std::make_unique<TSequences>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_DataProcessors)
-			{
-				MainForm->mdDataProcessors.push_back(std::make_unique<TDataProcessors>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Enums)
-			{
-				MainForm->mdEnums.push_back(std::make_unique<TEnums>(cf, curNode->get_value(), val));
-			}
-			else if (guid_md == GUID_Bots)
-			{
-				MainForm->mdBots.push_back(std::make_unique<TBots>(cf, curNode->get_value(), val));
-			}
-			//md_list.push_back(val);
-		}
+                        // Создание объектов для специфических типов
+                        try {
+                                if (guid_md == GUID_Catalogs)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание справочника: " + val, MessageState::msInfo);
+                                        MainForm->mdCatalogs.push_back(std::make_unique<TCatalogs>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Languages)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание языка: " + val, MessageState::msInfo);
+                                        MainForm->mdLanguages.push_back(std::make_unique<TLangs>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_CommonModules)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание общего модуля: " + val, MessageState::msInfo);
+                                        MainForm->mdCommonModules.push_back(std::make_unique<TCommonModules>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Roles)
+                                {
+                                        msreg->AddMessage(L"fill_md: Пропуск роли: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_CommonTemplates)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание общего макета: " + val, MessageState::msInfo);
+                                        MainForm->mdCommonTemplates.push_back(std::make_unique<TCommonTemplates>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_HTTPServices)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание HTTP-сервиса: " + val, MessageState::msInfo);
+                                        MainForm->mdHTTPServices.push_back(std::make_unique<THTTPServices>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_ScheduledJobs)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание регламентного задания: " + val, MessageState::msInfo);
+                                        MainForm->mdScheduledJobs.push_back(std::make_unique<TScheduledJobs>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_CommonAttributes)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание общего реквизита: " + val, MessageState::msInfo);
+                                        MainForm->mdCommonAttributes.push_back(std::make_unique<TCommonAttributes>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_SessionParameters)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание параметра сеанса: " + val, MessageState::msInfo);
+                                        MainForm->mdSessionParameters.push_back(std::make_unique<TSessionParameters>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_FunctionalOptionsParameters)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание параметра функциональной опции: " + val, MessageState::msInfo);
+                                        MainForm->mdFunctionalOptionsParameters.push_back(std::make_unique<TFunctionalOptionsParameters>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Subsystems)
+                                {
+                                        msreg->AddMessage(L"fill_md: Пропуск подсистемы: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_Interfaces)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание интерфейса: " + val, MessageState::msInfo);
+                                        MainForm->mdInterfaces.push_back(std::make_unique<TInterfaces>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Styles)
+                                {
+                                        msreg->AddMessage(L"fill_md: Пропуск стиля: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_FilterCriteria)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание критерия отбора: " + val, MessageState::msInfo);
+                                        MainForm->mdFilterCriteria.push_back(std::make_unique<TFilterCriteria>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_SettingsStorages)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание хранилища настроек: " + val, MessageState::msInfo);
+                                        MainForm->mdSettingsStorages.push_back(std::make_unique<TSettingsStorages>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_StyleItems)
+                                {
+                                        msreg->AddMessage(L"fill_md: Пропуск элемента стиля: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_CommonPictures)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание общей картинки: " + val, MessageState::msInfo);
+                                        MainForm->mdCommonPictures.push_back(std::make_unique<TCommonPictures>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_ExchangePlans)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание плана обмена: " + val, MessageState::msInfo);
+                                        MainForm->mdExchangePlans.push_back(std::make_unique<TExchangePlans>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_EventSubscriptions)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание подписки на событие: " + val, MessageState::msInfo);
+                                        MainForm->mdEventSubscriptions.push_back(std::make_unique<TEventSubscriptions>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_WebServices)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание веб-сервиса: " + val, MessageState::msInfo);
+                                        MainForm->mdWebServices.push_back(std::make_unique<TWebServices>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_FunctionalOptions)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание функциональной опции: " + val, MessageState::msInfo);
+                                        MainForm->mdFunctionalOptions.push_back(std::make_unique<TFunctionalOptions>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_DefinedTypes)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание определяемого типа: " + val, MessageState::msInfo);
+                                        MainForm->mdDefinedTypes.push_back(std::make_unique<TDefinedTypes>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_XDTOPackages)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание XDTO-пакета: " + val, MessageState::msInfo);
+                                        MainForm->mdXDTOPackages.push_back(std::make_unique<TXDTOPackages>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_WSReferences)
+                                {
+                                        msreg->AddMessage(L"fill_md: Пропуск WS-ссылки: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_Constants)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание константы: " + val, MessageState::msInfo);
+                                        MainForm->mdConstants.push_back(std::make_unique<TConstants>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Documents)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание документа: " + val, MessageState::msInfo);
+                                        MainForm->mdDocuments.push_back(std::make_unique<TDocuments>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_CommonForms)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание общей формы: " + val, MessageState::msInfo);
+                                        MainForm->mdCommonForms.push_back(std::make_unique<TCommonForms>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_InformationRegisters)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание регистра сведений: " + val, MessageState::msInfo);
+                                        MainForm->mdInformationRegisters.push_back(std::make_unique<TInformationRegisters>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_CalculationRegisters)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание регистра расчета: " + val, MessageState::msInfo);
+                                        MainForm->mdCalculationRegisters.push_back(std::make_unique<TCalculationRegisters>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_BusinessProcesses)
+                                {
+                                        msreg->AddMessage(L"fill_md: Пропуск бизнес-процесса: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_Tasks)
+                                {
+                                        msreg->AddMessage(L"fill_md: Пропуск задачи: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_AccountingRegisters)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание регистра бухгалтерии: " + val, MessageState::msInfo);
+                                        MainForm->mdAccountingRegisters.push_back(std::make_unique<TAccountingRegisters>(cf, curNode->get_value(), val));
+                                        msreg->AddMessage(L"fill_md: Регистр бухгалтерии создан успешно: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_CommandGroups)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание группы команд: " + val, MessageState::msInfo);
+                                        MainForm->mdCommandGroups.push_back(std::make_unique<TCommandGroups>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_CommonCommands)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание общей команды: " + val, MessageState::msInfo);
+                                        MainForm->mdCommonCommands.push_back(std::make_unique<TCommonCommands>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Numerators)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание нумератора: " + val, MessageState::msInfo);
+                                        MainForm->mdDocumentNumerators.push_back(std::make_unique<TNumerators>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_JournDocuments)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание журнала документов: " + val, MessageState::msInfo);
+                                        MainForm->mdDocumentJournals.push_back(std::make_unique<TJournals>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Reports)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание отчета: " + val, MessageState::msInfo);
+                                        MainForm->mdReports.push_back(std::make_unique<TReports>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_ChartOfCharacteristicTypes)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание ПВХ: " + val, MessageState::msInfo);
+                                        MainForm->mdChartsOfCharacteristicTypes.push_back(std::make_unique<TChartOfCharacteristicTypes>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_ChartsOfAccounts)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание плана счетов: " + val, MessageState::msInfo);
+                                        MainForm->mdChartOfAccounts.push_back(std::make_unique<TChartOfAccounts>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_ChartsOfCalculationTypes)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание ПВР: " + val, MessageState::msInfo);
+                                        MainForm->mdChartOfCalculationTypes.push_back(std::make_unique<TChartOfCalculationTypes>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_AccumulationRegisters)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание регистра накопления: " + val, MessageState::msInfo);
+                                        MainForm->mdAccumulationRegisters.push_back(std::make_unique<TAccumulationRegisters>(cf, curNode->get_value(), val));
+                                        msreg->AddMessage(L"fill_md: Регистр накопления создан успешно: " + val, MessageState::msInfo);
+                                }
+                                else if (guid_md == GUID_Sequences)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание последовательности: " + val, MessageState::msInfo);
+                                        MainForm->mdSequences.push_back(std::make_unique<TSequences>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_DataProcessors)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание обработки: " + val, MessageState::msInfo);
+                                        MainForm->mdDataProcessors.push_back(std::make_unique<TDataProcessors>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Enums)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание перечисления: " + val, MessageState::msInfo);
+                                        MainForm->mdEnums.push_back(std::make_unique<TEnums>(cf, curNode->get_value(), val));
+                                }
+                                else if (guid_md == GUID_Bots)
+                                {
+                                        msreg->AddMessage(L"fill_md: Создание бота: " + val, MessageState::msInfo);
+                                        MainForm->mdBots.push_back(std::make_unique<TBots>(cf, curNode->get_value(), val));
+                                }
+                                else
+                                {
+                                        msreg->AddMessage(L"fill_md: Неизвестный GUID для объекта: " + val, MessageState::msWarning);
+                                }
+                        }
+                        catch (const Exception &e) {
+                                msreg->AddMessage_(L"fill_md: VCL exception при создании объекта", msError,
+                                        L"Name", val,
+                                        L"GUID", guid_md,
+                                        L"File", curNodeValue,
+                                        L"Message", e.Message);
+                                LogHeapStatus(L"fill_md: память при VCL exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
+                        }
+                        catch (...) {
+                                msreg->AddMessage_(L"fill_md: неизвестное исключение при создании объекта", msError,
+                                        L"Name", val,
+                                        L"GUID", guid_md,
+                                        L"File", curNodeValue);
+                                LogHeapStatus(L"fill_md: память при неизвестном exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
+                        }
+						delete tree_md;
+                        //md_list.push_back(val);
+                }
 
-	}
+        }
 
 }
-
 void get_cf_name(tree* tr, Messager* mess)
 {
 	int j, k;
@@ -3001,192 +3225,458 @@ void get_cf_name(tree* tr, Messager* mess)
 
 	node3 = tr;
 
-	// Заполняем справочники
-	fill_md(tr, GUID_Catalogs);
-	mess->AddMessage(L"Справочники обработаны", MessageState::msInfo);
+        // Заполняем справочники
+        mess->AddMessage(L"Начало обработки справочников", MessageState::msInfo);
+        fill_md(tr, GUID_Catalogs);
+        mess->AddMessage(L"Справочники обработаны", MessageState::msInfo);
 
-	// Заполняем языки
-	fill_md(tr, GUID_Languages);
-	mess->AddMessage(L"Языки обработаны", MessageState::msInfo);
+        // Заполняем языки
+        mess->AddMessage(L"Начало обработки языков", MessageState::msInfo);
+        fill_md(tr, GUID_Languages);
+        mess->AddMessage(L"Языки обработаны", MessageState::msInfo);
 
-	// Заполняем регистры накопления
-	fill_md(tr, GUID_AccumulationRegisters);
-	mess->AddMessage(L"Регистры накопления обработаны", MessageState::msInfo);
+        // Заполняем регистры накопления
+        mess->AddMessage(L"Начало обработки регистров накопления", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_AccumulationRegisters);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке регистров накопления", MessageState::msError);
+        }
+        mess->AddMessage(L"Регистры накопления обработаны", MessageState::msInfo);
 
-	// Заполняем регистры бухгалтерии
-	fill_md(tr, GUID_AccountingRegisters);
-	mess->AddMessage(L"Регистры бухгалтерии обработаны", MessageState::msInfo);
+        // Заполняем регистры бухгалтерии
+        mess->AddMessage(L"Начало обработки регистров бухгалтерии", MessageState::msInfo);
+        // try {
+        //         fill_md(tr, GUID_AccountingRegisters);
+        // }
+        // catch (...) {
+        //         mess->AddMessage(L"Исключение при обработке регистров бухгалтерии", MessageState::msError);
+        // }
+        mess->AddMessage(L"Регистры бухгалтерии обработаны", MessageState::msInfo);
 
-	// Заполняем регистры расчета
-	fill_md(tr, GUID_CalculationRegisters);
-	mess->AddMessage(L"Регистры расчета обработаны", MessageState::msInfo);
+        // Заполняем регистры расчета
+        mess->AddMessage(L"Начало обработки регистров расчета", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CalculationRegisters);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке регистров расчета", MessageState::msError);
+        }
+        mess->AddMessage(L"Регистры расчета обработаны", MessageState::msInfo);
 
-	// Заполняем бизнес-процессы
-	fill_md(tr, GUID_BusinessProcesses);
-	mess->AddMessage(L"Бизнес-процессы обработаны", MessageState::msInfo);
+        // Заполняем бизнес-процессы
+        mess->AddMessage(L"Начало обработки бизнес-процессов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_BusinessProcesses);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке бизнес-процессов", MessageState::msError);
+        }
+        mess->AddMessage(L"Бизнес-процессы обработаны", MessageState::msInfo);
 
-	// ПВХ
-	fill_md(tr, GUID_ChartOfCharacteristicTypes);
-	mess->AddMessage(L"Планы видов характеристик обработаны", MessageState::msInfo);
-
-
-	// группы команд
-	fill_md(tr, GUID_CommandGroups);
-	mess->AddMessage(L"Группы команд обработаны", MessageState::msInfo);
-
-
-	// общие реквизиты
-	fill_md(tr, GUID_CommonAttributes);
-	mess->AddMessage(L"Общие реквизиты обработаны", MessageState::msInfo);
-
-	// общие команды
-	fill_md(tr, GUID_CommonCommands);
-	mess->AddMessage(L"Общие команды обработаны", MessageState::msInfo);
-
-	// общие формы
-	fill_md(tr, GUID_CommonForms);
-	mess->AddMessage(L"Общие формы обработаны", MessageState::msInfo);
-
-	// общие модули
-	fill_md(tr, GUID_CommonModules);
-	mess->AddMessage(L"Общие модули обработаны", MessageState::msInfo);
+        // ПВХ
+        mess->AddMessage(L"Начало обработки планов видов характеристик", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_ChartOfCharacteristicTypes);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке ПВХ", MessageState::msError);
+        }
+        mess->AddMessage(L"Планы видов характеристик обработаны", MessageState::msInfo);
 
 
-	// общие картинки
-	fill_md(tr, GUID_CommonPictures);
-	mess->AddMessage(L"Общие картинки обработаны", MessageState::msInfo);
+        // группы команд
+        mess->AddMessage(L"Начало обработки групп команд", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CommandGroups);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке групп команд", MessageState::msError);
+        }
+        mess->AddMessage(L"Группы команд обработаны", MessageState::msInfo);
 
-	// общие макеты
-	fill_md(tr, GUID_CommonTemplates);
-	mess->AddMessage(L"Общие макеты обработаны", MessageState::msInfo);
 
-	// константы
-	fill_md(tr, GUID_Constants);
-	mess->AddMessage(L"Константы обработаны: ", MessageState::msInfo);
+        // общие реквизиты
+        mess->AddMessage(L"Начало обработки общих реквизитов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CommonAttributes);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке общих реквизитов", MessageState::msError);
+        }
+        mess->AddMessage(L"Общие реквизиты обработаны", MessageState::msInfo);
 
-	// обработки
-	fill_md(tr, GUID_DataProcessors);
-	mess->AddMessage(L"Обработки обработаны", MessageState::msInfo);
+        // общие команды
+        mess->AddMessage(L"Начало обработки общих команд", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CommonCommands);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке общих команд", MessageState::msError);
+        }
+        mess->AddMessage(L"Общие команды обработаны", MessageState::msInfo);
 
-	// определяемые типы
-	fill_md(tr, GUID_DefinedTypes);
-	mess->AddMessage(L"Определяемые типы обработаны", MessageState::msInfo);
+        // общие формы
+        mess->AddMessage(L"Начало обработки общих форм", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CommonForms);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке общих форм", MessageState::msError);
+        }
+        mess->AddMessage(L"Общие формы обработаны", MessageState::msInfo);
 
-	// журналы документов
-	fill_md(tr, GUID_JournDocuments);
-	mess->AddMessage(L"Журналы документов обработаны", MessageState::msInfo);
+        // общие модули
+        mess->AddMessage(L"Начало обработки общих модулей", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CommonModules);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке общих модулей", MessageState::msError);
+        }
+        mess->AddMessage(L"Общие модули обработаны", MessageState::msInfo);
 
-	// нумераторы
-	fill_md(tr, GUID_Numerators);
-	mess->AddMessage(L"Нумераторы обработаны", MessageState::msInfo);
 
-	// документы
-	fill_md(tr, GUID_Documents);
-	mess->AddMessage(L"Документы обработаны", MessageState::msInfo);
+        // общие картинки
+        mess->AddMessage(L"Начало обработки общих картинок", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CommonPictures);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке общих картинок", MessageState::msError);
+        }
+        mess->AddMessage(L"Общие картинки обработаны", MessageState::msInfo);
 
-	// перечисления
-	fill_md(tr, GUID_Enums);
-	mess->AddMessage(L"Перечисления обработаны", MessageState::msInfo);
+        // общие макеты
+        mess->AddMessage(L"Начало обработки общих макетов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_CommonTemplates);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке общих макетов", MessageState::msError);
+        }
+        mess->AddMessage(L"Общие макеты обработаны", MessageState::msInfo);
 
-	// подписки на события
-	fill_md(tr, GUID_EventSubscriptions);
-	mess->AddMessage(L"Подписки на события обработаны", MessageState::msInfo);
+        // константы
+        mess->AddMessage(L"Начало обработки констант", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Constants);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке констант", MessageState::msError);
+        }
+        mess->AddMessage(L"Константы обработаны: ", MessageState::msInfo);
 
-	// планы обмена
-	fill_md(tr, GUID_ExchangePlans);
-	mess->AddMessage(L"Планы обмена обработаны", MessageState::msInfo);
+        // обработки
+        mess->AddMessage(L"Начало обработки обработок", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_DataProcessors);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке обработок", MessageState::msError);
+        }
+        mess->AddMessage(L"Обработки обработаны", MessageState::msInfo);
 
-	// планы счетов
-	fill_md(tr, GUID_ChartsOfAccounts);
-	mess->AddMessage(L"Планы счетов обработаны", MessageState::msInfo);
+        // определяемые типы
+        mess->AddMessage(L"Начало обработки определяемых типов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_DefinedTypes);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке определяемых типов", MessageState::msError);
+        }
+        mess->AddMessage(L"Определяемые типы обработаны", MessageState::msInfo);
 
-	// планы видов расчета
-	fill_md(tr, GUID_ChartsOfCalculationTypes);
-	mess->AddMessage(L"Планы видов расчета обработаны", MessageState::msInfo);
+        // журналы документов
+        mess->AddMessage(L"Начало обработки журналов документов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_JournDocuments);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке журналов документов", MessageState::msError);
+        }
+        mess->AddMessage(L"Журналы документов обработаны", MessageState::msInfo);
 
-	// внешние источники данных
-	fill_md(tr, GUID_ExternalDataSources);
-	mess->AddMessage(L"Внешние источники данных обработаны", MessageState::msInfo);
+        // нумераторы
+        mess->AddMessage(L"Начало обработки нумераторов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Numerators);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке нумераторов", MessageState::msError);
+        }
+        mess->AddMessage(L"Нумераторы обработаны", MessageState::msInfo);
 
-	// критерии отбора
-	fill_md(tr, GUID_FilterCriteria);
-	mess->AddMessage(L"Критерии отбора обработаны", MessageState::msInfo);
+        // документы
+        mess->AddMessage(L"Начало обработки документов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Documents);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке документов", MessageState::msError);
+        }
+        mess->AddMessage(L"Документы обработаны", MessageState::msInfo);
 
-	// функциональные опции
-	fill_md(tr, GUID_FunctionalOptions);
-	mess->AddMessage(L"Функциональные опции обработаны", MessageState::msInfo);
+        // перечисления
+        mess->AddMessage(L"Начало обработки перечислений", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Enums);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке перечислений", MessageState::msError);
+        }
+        mess->AddMessage(L"Перечисления обработаны", MessageState::msInfo);
 
-	// параметры функциональных опций
-	fill_md(tr, GUID_FunctionalOptionsParameters);
-	mess->AddMessage(L"Параметры функциональных опций обработаны", MessageState::msInfo);
+        // подписки на события
+        mess->AddMessage(L"Начало обработки подписок на события", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_EventSubscriptions);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке подписок на события", MessageState::msError);
+        }
+        mess->AddMessage(L"Подписки на события обработаны", MessageState::msInfo);
 
-	// http - сервисы
-	fill_md(tr, GUID_HTTPServices);
-	mess->AddMessage(L"http - сервисы обработаны", MessageState::msInfo);
+        // планы обмена
+        mess->AddMessage(L"Начало обработки планов обмена", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_ExchangePlans);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке планов обмена", MessageState::msError);
+        }
+        mess->AddMessage(L"Планы обмена обработаны", MessageState::msInfo);
 
-	// регистры сведений
-	fill_md(tr, GUID_InformationRegisters);
-	mess->AddMessage(L"Регистры сведений обработаны", MessageState::msInfo);
+        // планы счетов
+        mess->AddMessage(L"Начало обработки планов счетов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_ChartsOfAccounts);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке планов счетов", MessageState::msError);
+        }
+        mess->AddMessage(L"Планы счетов обработаны", MessageState::msInfo);
 
-	// интерфейсы
-	fill_md(tr, GUID_Interfaces);
-	mess->AddMessage(L"Интерфейсы обработаны", MessageState::msInfo);
+        // планы видов расчета
+        mess->AddMessage(L"Начало обработки планов видов расчета", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_ChartsOfCalculationTypes);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке планов видов расчета", MessageState::msError);
+        }
+        mess->AddMessage(L"Планы видов расчета обработаны", MessageState::msInfo);
 
-	// отчеты
-	fill_md(tr, GUID_Reports);
-	mess->AddMessage(L"Отчеты обработаны", MessageState::msInfo);
+        // внешние источники данных
+        mess->AddMessage(L"Начало обработки внешних источников данных", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_ExternalDataSources);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке внешних источников данных", MessageState::msError);
+        }
+        mess->AddMessage(L"Внешние источники данных обработаны", MessageState::msInfo);
 
-	// роли
-	fill_md(tr, GUID_Roles);
-	mess->AddMessage(L"Роли обработаны", MessageState::msInfo);
+        // критерии отбора
+        mess->AddMessage(L"Начало обработки критериев отбора", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_FilterCriteria);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке критериев отбора", MessageState::msError);
+        }
+        mess->AddMessage(L"Критерии отбора обработаны", MessageState::msInfo);
 
-	// параметры сеанса
-	fill_md(tr, GUID_SessionParameters);
-	mess->AddMessage(L"Параметры сеанса обработаны", MessageState::msInfo);
+        // функциональные опции
+        mess->AddMessage(L"Начало обработки функциональных опций", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_FunctionalOptions);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке функциональных опций", MessageState::msError);
+        }
+        mess->AddMessage(L"Функциональные опции обработаны", MessageState::msInfo);
 
-	// хранилища настроек
-	fill_md(tr, GUID_SettingsStorages);
-	mess->AddMessage(L"Хранилища настроек обработаны", MessageState::msInfo);
+        // параметры функциональных опций
+        mess->AddMessage(L"Начало обработки параметров функциональных опций", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_FunctionalOptionsParameters);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке параметров функциональных опций", MessageState::msError);
+        }
+        mess->AddMessage(L"Параметры функциональных опций обработаны", MessageState::msInfo);
 
-	// элементы стиля
-	fill_md(tr, GUID_StyleItems);
-	mess->AddMessage(L"Элементы стиля обработаны", MessageState::msInfo);
+        // http - сервисы
+        mess->AddMessage(L"Начало обработки HTTP-сервисов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_HTTPServices);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке HTTP-сервисов", MessageState::msError);
+        }
+        mess->AddMessage(L"http - сервисы обработаны", MessageState::msInfo);
 
-	// стили
-	fill_md(tr, GUID_Styles);
-	mess->AddMessage(L"Стили обработаны", MessageState::msInfo);
+        // регистры сведений
+        mess->AddMessage(L"Начало обработки регистров сведений", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_InformationRegisters);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке регистров сведений", MessageState::msError);
+        }
+        mess->AddMessage(L"Регистры сведений обработаны", MessageState::msInfo);
 
-	// подсистемы
-	fill_subsystem(tr, MainForm->Subsystems);
-	mess->AddMessage(L"Подсистемы обработаны", MessageState::msInfo);
+        // интерфейсы
+        mess->AddMessage(L"Начало обработки интерфейсов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Interfaces);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке интерфейсов", MessageState::msError);
+        }
+        mess->AddMessage(L"Интерфейсы обработаны", MessageState::msInfo);
 
-	// задачи
-	fill_md(tr, GUID_Tasks);
-	mess->AddMessage(L"Задачи обработаны", MessageState::msInfo);
+        // отчеты
+        mess->AddMessage(L"Начало обработки отчетов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Reports);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке отчетов", MessageState::msError);
+        }
+        mess->AddMessage(L"Отчеты обработаны", MessageState::msInfo);
 
-	// веб-сервисы
-	fill_md(tr, GUID_WebServices);
-	mess->AddMessage(L"веб-сервисы обработаны", MessageState::msInfo);
+        // роли
+        mess->AddMessage(L"Начало обработки ролей", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Roles);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке ролей", MessageState::msError);
+        }
+        mess->AddMessage(L"Роли обработаны", MessageState::msInfo);
 
-	// ws-ссылки
-	fill_md(tr, GUID_WSReferences);
-	mess->AddMessage(L"ws-ссылки обработаны", MessageState::msInfo);
+        // параметры сеанса
+        mess->AddMessage(L"Начало обработки параметров сеанса", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_SessionParameters);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке параметров сеанса", MessageState::msError);
+        }
+        mess->AddMessage(L"Параметры сеанса обработаны", MessageState::msInfo);
 
-	// xdto-пакеты
-	fill_md(tr, GUID_XDTOPackages);
-	mess->AddMessage(L"xdto-пакеты обработаны", MessageState::msInfo);
+        // хранилища настроек
+        mess->AddMessage(L"Начало обработки хранилищ настроек", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_SettingsStorages);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке хранилищ настроек", MessageState::msError);
+        }
+        mess->AddMessage(L"Хранилища настроек обработаны", MessageState::msInfo);
 
-	// регл задания
-	fill_md(tr, GUID_ScheduledJobs);
-	mess->AddMessage(L"Регламентные задания обработаны", MessageState::msInfo);
+        // элементы стиля
+        mess->AddMessage(L"Начало обработки элементов стиля", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_StyleItems);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке элементов стиля", MessageState::msError);
+        }
+        mess->AddMessage(L"Элементы стиля обработаны", MessageState::msInfo);
 
-	// боты
-	fill_md(tr, GUID_Bots);
-	mess->AddMessage(L"Боты обработаны", MessageState::msInfo);
+        // стили
+        mess->AddMessage(L"Начало обработки стилей", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Styles);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке стилей", MessageState::msError);
+        }
+        mess->AddMessage(L"Стили обработаны", MessageState::msInfo);
 
-	// последовательности
-	fill_md(tr, GUID_Sequences);
-	mess->AddMessage(L"Последовательности обработаны", MessageState::msInfo);
+        // подсистемы
+        mess->AddMessage(L"Начало обработки подсистем", MessageState::msInfo);
+        try {
+                fill_subsystem(tr, MainForm->Subsystems);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке подсистем", MessageState::msError);
+        }
+        mess->AddMessage(L"Подсистемы обработаны", MessageState::msInfo);
+
+        // задачи
+        mess->AddMessage(L"Начало обработки задач", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Tasks);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке задач", MessageState::msError);
+        }
+        mess->AddMessage(L"Задачи обработаны", MessageState::msInfo);
+
+        // веб-сервисы
+        mess->AddMessage(L"Начало обработки веб-сервисов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_WebServices);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке веб-сервисов", MessageState::msError);
+        }
+        mess->AddMessage(L"веб-сервисы обработаны", MessageState::msInfo);
+
+        // ws-ссылки
+        mess->AddMessage(L"Начало обработки WS-ссылок", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_WSReferences);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке WS-ссылок", MessageState::msError);
+        }
+        mess->AddMessage(L"ws-ссылки обработаны", MessageState::msInfo);
+
+        // xdto-пакеты
+        mess->AddMessage(L"Начало обработки XDTO-пакетов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_XDTOPackages);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке XDTO-пакетов", MessageState::msError);
+        }
+        mess->AddMessage(L"xdto-пакеты обработаны", MessageState::msInfo);
+
+        // регл задания
+        mess->AddMessage(L"Начало обработки регламентных заданий", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_ScheduledJobs);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке регламентных заданий", MessageState::msError);
+        }
+        mess->AddMessage(L"Регламентные задания обработаны", MessageState::msInfo);
+
+        // боты
+        mess->AddMessage(L"Начало обработки ботов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Bots);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке ботов", MessageState::msError);
+        }
+        mess->AddMessage(L"Боты обработаны", MessageState::msInfo);
+
+        // последовательности
+        mess->AddMessage(L"Начало обработки последовательностей", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_Sequences);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке последовательностей", MessageState::msError);
+        }
+        mess->AddMessage(L"Последовательности обработаны", MessageState::msInfo);
 
 	structver = (*node)[0].get_value().ToInt();
 
@@ -3287,10 +3777,17 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 
 	if (Data)
 	{
-		MemoObject->Text = Data->text_module;
+		TCommonModules* module = dynamic_cast<TCommonModules*>(Data->MetadataObject);
+		if (module)
+			MemoObject->Text = module->GetText();
+		else
+			MemoObject->Text = Data->text_module;
 	}
 }
 //---------------------------------------------------------------------------
+
+
+
 
 
 

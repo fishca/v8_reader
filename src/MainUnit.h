@@ -57,6 +57,7 @@ struct VirtualTreeData
 {
 	String Name;
     String text_module;
+	TObject* MetadataObject;
 	int Age;
 	int ImgIndex;
 };
@@ -238,6 +239,7 @@ private:
 public:
 	__fastcall Messager(TListView* lv, TStatusBar* sb);
 	void __fastcall setlogfile(String _logfile);
+	String __fastcall getlogfile() const;
 	virtual void __fastcall AddMessage(const String& message, const MessageState mstate, TStringList* param = NULL);
 	virtual void __fastcall Status(const String& message);
 };

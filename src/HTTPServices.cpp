@@ -15,15 +15,15 @@ __fastcall THTTPServices::THTTPServices() : BaseMetadataObject()
 __fastcall THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
-    root_data = nullptr;
     parent = _parent;
+    root_data.reset();
 }
 
 __fastcall THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
-    root_data = nullptr;
     parent = _parent;
+    root_data.reset();
 }
 
 __fastcall THTTPServices::~THTTPServices()

@@ -10,16 +10,19 @@
 __fastcall TDefinedTypes::TDefinedTypes() : BaseMetadataObject()
 {
     typeName = "";
+    root_data.reset();
 }
 
 __fastcall TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     typeName = "";
+    root_data.reset();
 }
 
 __fastcall TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     typeName = _name;
+    root_data.reset();
 }
 
 __fastcall TDefinedTypes::~TDefinedTypes()

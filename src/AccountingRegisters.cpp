@@ -42,12 +42,14 @@ __fastcall TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const 
     : MetadataObjectInformationRegister(_parent, _guid)
 {
     initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name)
     : MetadataObjectInformationRegister(_parent, _guid, _name)
 {
     initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TAccountingRegisters::~TAccountingRegisters()

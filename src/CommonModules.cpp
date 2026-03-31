@@ -9,22 +9,38 @@
 
 __fastcall TCommonModules::TCommonModules() : BaseMetadataObject()
 {
-
+	root_data.reset();
+	text = L"";
+	textLoaded = false;
 }
 
 __fastcall TCommonModules::TCommonModules(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-
+	root_data.reset();
+	text = L"";
+	textLoaded = false;
 }
 
 __fastcall TCommonModules::TCommonModules(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
+	root_data.reset();
+	text = L"";
+	textLoaded = false;
+	name = _name;
+}
+
+void __fastcall TCommonModules::LoadTextIfNeeded()
+{
+	if (textLoaded)
+		return;
+
 	TBytesStream* sb = nullptr;
 	TEncoding *enc = nullptr;
 	TBytes bytes, sb_bytes;
 	int off = 0;
+	text = L"";
 
-	if ((_parent) && (!_guid.IsEmpty()))
+	if ((parent) && (!guid.IsEmpty()))
 	{
 		v8file* data_module = parent->GetFile(guid+".0");
 		if (data_module)
@@ -76,7 +92,7 @@ __fastcall TCommonModules::TCommonModules(v8catalog* _parent, const String& _gui
 						text = "";
 					}
 					delete sb;
-                    sb = nullptr;
+					sb = nullptr;
 				}
 				else if (image_module)
 				{
@@ -109,6 +125,8 @@ __fastcall TCommonModules::TCommonModules(v8catalog* _parent, const String& _gui
 			}
 		}
 	}
+
+	textLoaded = true;
 }
 
 __fastcall TCommonModules::~TCommonModules()
@@ -118,11 +136,7 @@ __fastcall TCommonModules::~TCommonModules()
 
 String __fastcall TCommonModules::GetText()
 {
-//	TReplaceFlags flags;
-//	flags << rfReplaceAll;
-//	String Result = StringReplace(text, L"\n", L"\r\n", flags);
-//	return Result;
-
+	LoadTextIfNeeded();
 	return text;
 }
 

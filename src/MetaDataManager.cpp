@@ -34,7 +34,7 @@ v8catalog* MetaDataManager::loadFromFile(const String& filename)
 
 bool MetaDataManager::Initialize(v8catalog* cf)
 {
-	tree* tr;
+	std::unique_ptr<tree> tr;
 	tree* node;
 	v8catalog* cat;
 	v8file* filedata;
@@ -53,27 +53,22 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 		return false;
 	}
 
-	tr = get_treeFromV8file(filedata);
+	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
 		return false;
 	}
 
-	tr = get_treeFromV8file(filedata);
-	if(!tr)
-		return false;
-
-	node = tr;
+	node = tr.get();
 
 	node = &(*node)[0][0][0];
 	if(node->get_type() != nd_number)
 	{
-		delete tr;
 		return false;
 	}
 
 	ver = node->get_value().ToInt();
-	delete tr;
+	tr.reset();
 
 	if(ver < 100)
 	{
@@ -103,23 +98,22 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 		return false;
 	}
 
-	tr = get_treeFromV8file(filedata);
+	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
 		return false;
 	}
 
-	node = tr;
+	node = tr.get();
 	node = &(*node)[0][1];
 
 	if(node->get_type() != nd_guid)
 	{
-		delete tr;
 		return false;
 	}
 
 	meta = node->get_value();
-	delete tr;
+	tr.reset();
 
 	filedata = cat->GetFile(meta);
 	if(!filedata)
@@ -127,7 +121,7 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 		return false;
 	}
 
-	tr = get_treeFromV8file(filedata);
+	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
 		return false;

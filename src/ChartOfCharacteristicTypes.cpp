@@ -14,11 +14,13 @@ __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes():BaseMetada
 __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid) : BaseMetadataObject(_parent, _guid)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid, const String &_name) : BaseMetadataObject(_parent, _guid, _name)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TChartOfCharacteristicTypes::~TChartOfCharacteristicTypes()

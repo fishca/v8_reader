@@ -9,25 +9,32 @@
 
 
 __fastcall TChartOfAccounts::TChartOfAccounts()
+	: BaseMetadataObject()
 {
-	guid   = "";
-	name   = "";
-	parent = NULL;
+	root_data.reset();
 }
 
 __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid)
+	: BaseMetadataObject(_parent, _guid)
 {
-	guid      = _guid;
-	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
+	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name)
+	: BaseMetadataObject(_parent, _guid, _name)
 {
-	name      = _name;
-	guid      = _guid;
-	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
+	initializeFromTree();
+	root_data.reset();
+}
+
+__fastcall TChartOfAccounts::~TChartOfAccounts()
+{
+}
+
+void __fastcall TChartOfAccounts::initializeFromTree()
+{
+	if (!root_data) return;
 
 	// Получаем имена реквизитов
 	attributes.clear();
@@ -138,10 +145,5 @@ __fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& 
 			moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
 		}
 	}
-}
-
-__fastcall TChartOfAccounts::~TChartOfAccounts()
-{
-
 }
 

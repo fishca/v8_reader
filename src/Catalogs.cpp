@@ -32,12 +32,14 @@ __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid)
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TCatalogs::~TCatalogs()

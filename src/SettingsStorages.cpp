@@ -10,16 +10,19 @@
 __fastcall TSettingsStorages::TSettingsStorages() : BaseMetadataObject()
 {
     storageName = "";
+    root_data.reset();
 }
 
 __fastcall TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     storageName = "";
+    root_data.reset();
 }
 
 __fastcall TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     storageName = _name;
+    root_data.reset();
 }
 
 __fastcall TSettingsStorages::~TSettingsStorages()

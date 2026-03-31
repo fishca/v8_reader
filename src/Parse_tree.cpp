@@ -305,6 +305,8 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 							if(msreg) msreg->AddError(L"Ошибка формата потока. Лишняя закрывающая скобка }.",
 								L"Позиция", i,
 								L"Путь", path);
+							delete reader;
+							delete __curvalue__;
 							delete ret;
 							return NULL;
 						}
@@ -349,6 +351,8 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 							L"Символ", sym,
 							L"Код символа", tohex(sym),
 							L"Путь", path);
+						delete reader;
+						delete __curvalue__;
 						delete ret;
 						return NULL;
 				}
@@ -389,6 +393,8 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 								if(msreg) msreg->AddError(L"Ошибка формата потока. Лишняя закрывающая скобка }.",
 									L"Позиция", i,
 									L"Путь", path);
+								delete reader;
+								delete __curvalue__;
 								delete ret;
 								return NULL;
 							}
@@ -399,6 +405,8 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 								L"Символ", sym,
 								L"Код символа", tohex(sym),
 								L"Путь", path);
+							delete reader;
+							delete __curvalue__;
 							delete ret;
 							return NULL;
 					}
@@ -429,6 +437,8 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 							if(msreg) msreg->AddError(L"Ошибка формата потока. Лишняя закрывающая скобка }.",
 								L"Позиция", i,
 								L"Путь", path);
+							delete reader;
+							delete __curvalue__;
 							delete ret;
 							return NULL;
 						}
@@ -444,6 +454,8 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 				if(msreg) msreg->AddError(L"Ошибка формата потока. Неизвестный режим разбора.",
 					L"Режим разбора", tohex(state),
 					L"Путь", path);
+				delete reader;
+				delete __curvalue__;
 				delete ret;
 				return NULL;
 
@@ -466,6 +478,8 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 		if(msreg) msreg->AddError(L"Ошибка формата потока. Незавершенное значение",
 			L"Режим разбора", tohex(state),
 			L"Путь", path);
+		delete reader;
+		delete __curvalue__;
 		delete ret;
 		return NULL;
 	}
@@ -474,9 +488,14 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path)
 	{
 		if(msreg) msreg->AddError(L"Ошибка формата потока. Не хватает закрывающих скобок } в конце текста разбора.",
 			L"Путь", path);
+		delete reader;
+		delete __curvalue__;
 		delete ret;
 		return NULL;
 	}
+
+	delete reader;
+	delete __curvalue__;
 
 	return ret;
 
@@ -539,6 +558,7 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 							if(msreg) msreg->AddError(L"Ошибка формата потока. Лишняя закрывающая скобка }.",
 								L"Позиция", i,
 								L"Путь", path);
+							delete __curvalue__;
 							delete ret;
 							return NULL;
 						}
@@ -583,6 +603,7 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 							L"Символ", sym,
 							L"Код символа", tohex(sym),
 							L"Путь", path);
+						delete __curvalue__;
 						delete ret;
 						return NULL;
 				}
@@ -623,6 +644,7 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 								if(msreg) msreg->AddError(L"Ошибка формата потока. Лишняя закрывающая скобка }.",
 									L"Позиция", i,
 									L"Путь", path);
+								delete __curvalue__;
 								delete ret;
 								return NULL;
 							}
@@ -633,6 +655,7 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 								L"Символ", sym,
 								L"Код символа", tohex(sym),
 								L"Путь", path);
+							delete __curvalue__;
 							delete ret;
 							return NULL;
 					}
@@ -663,6 +686,7 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 							if(msreg) msreg->AddError(L"Ошибка формата потока. Лишняя закрывающая скобка }.",
 								L"Позиция", i,
 								L"Путь", path);
+							delete __curvalue__;
 							delete ret;
 							return NULL;
 						}
@@ -678,6 +702,7 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 				if(msreg) msreg->AddError(L"Ошибка формата потока. Неизвестный режим разбора.",
 					L"Режим разбора", tohex(state),
 					L"Путь", path);
+				delete __curvalue__;
 				delete ret;
 				return NULL;
 
@@ -700,6 +725,7 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 		if(msreg) msreg->AddError(L"Ошибка формата потока. Незавершенное значение",
 			L"Режим разбора", tohex(state),
 			L"Путь", path);
+		delete __curvalue__;
 		delete ret;
 		return NULL;
 	}
@@ -708,9 +734,12 @@ tree* __fastcall parse_1Ctext(const String& text, const String& path)
 	{
 		if(msreg) msreg->AddError(L"Ошибка формата потока. Не хватает закрывающих скобок } в конце текста разбора.",
 			L"Путь", path);
+		delete __curvalue__;
 		delete ret;
 		return NULL;
 	}
+
+	delete __curvalue__;
 
 	return ret;
 
@@ -983,4 +1012,3 @@ tree* find_node_by_guid(tree* root, const String& target_guid)
 
     return NULL;
 }
-

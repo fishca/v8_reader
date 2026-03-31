@@ -10,16 +10,19 @@
 __fastcall TBots::TBots() : BaseMetadataObject()
 {
     botName = "";
+    root_data.reset();
 }
 
 __fastcall TBots::TBots(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     botName = "";
+    root_data.reset();
 }
 
 __fastcall TBots::TBots(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     botName = _name;
+    root_data.reset();
 }
 
 __fastcall TBots::~TBots()
