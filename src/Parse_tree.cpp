@@ -9,6 +9,136 @@
 
 #pragma package(smart_init)
 
+namespace
+{
+    inline bool is_ascii_digit(wchar_t ch)
+    {
+        return ch >= L'0' && ch <= L'9';
+    }
+
+    inline bool is_hex_digit(wchar_t ch)
+    {
+        return (ch >= L'0' && ch <= L'9')
+            || (ch >= L'a' && ch <= L'f')
+            || (ch >= L'A' && ch <= L'F');
+    }
+
+    inline bool is_base64_digit(wchar_t ch)
+    {
+        return (ch >= L'a' && ch <= L'z')
+            || (ch >= L'A' && ch <= L'Z')
+            || (ch >= L'0' && ch <= L'9')
+            || ch == L'+'
+            || ch == L'='
+            || ch == L'/'
+            || ch == L'\r'
+            || ch == L'\n';
+    }
+
+    bool is_number_fast(const String& value)
+    {
+        const int len = value.Length();
+        if(len == 0) return false;
+
+        int i = 1;
+        if(value[i] == L'-')
+        {
+            ++i;
+            if(i > len) return false;
+        }
+
+        for(; i <= len; ++i)
+        {
+            if(!is_ascii_digit(value[i])) return false;
+        }
+        return true;
+    }
+
+    bool is_number_exp_fast(const String& value)
+    {
+        const int len = value.Length();
+        if(len == 0) return false;
+
+        int i = 1;
+        if(value[i] == L'-')
+        {
+            ++i;
+            if(i > len) return false;
+        }
+
+        bool has_digits = false;
+        while(i <= len && is_ascii_digit(value[i]))
+        {
+            has_digits = true;
+            ++i;
+        }
+        if(!has_digits) return false;
+
+        if(i <= len && value[i] == L'.')
+        {
+            ++i;
+            while(i <= len && is_ascii_digit(value[i])) ++i;
+        }
+
+        if(i <= len && (value[i] == L'e' || value[i] == L'E'))
+        {
+            ++i;
+            if(i <= len && value[i] == L'-') ++i;
+            if(i > len || !is_ascii_digit(value[i])) return false;
+            while(i <= len && is_ascii_digit(value[i])) ++i;
+        }
+
+        return i > len;
+    }
+
+    bool is_guid_fast(const String& value)
+    {
+        static const int expected_len = 36;
+        if(value.Length() != expected_len) return false;
+
+        for(int i = 1; i <= expected_len; ++i)
+        {
+            if(i == 9 || i == 14 || i == 19 || i == 24)
+            {
+                if(value[i] != L'-') return false;
+            }
+            else if(!is_hex_digit(value[i]))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool is_link_fast(const String& value)
+    {
+        const int len = value.Length();
+        if(len < 34) return false;
+
+        int i = 1;
+        if(!is_ascii_digit(value[i])) return false;
+        while(i <= len && is_ascii_digit(value[i])) ++i;
+        if(i > len || value[i] != L':') return false;
+        ++i;
+
+        if(len - i + 1 != 32) return false;
+        for(; i <= len; ++i)
+        {
+            if(!is_hex_digit(value[i])) return false;
+        }
+        return true;
+    }
+
+    bool is_base64_fast(const String& value, int start_index)
+    {
+        for(int i = start_index; i <= value.Length(); ++i)
+        {
+            if(!is_base64_digit(value[i])) return false;
+        }
+        return true;
+    }
+}
+
 //const boost::wregex exp_number(L"^-?[0-9]+\\.?[0-9]*$");
 //const boost::wregex exp_number_exp(L"^-?[0-9]+\\.?[0-9]*e-?[0-9]+$");
 const boost::wregex exp_number(L"^-?\\d+$");
@@ -235,13 +365,13 @@ String __fastcall tree::path()
 node_type classification_value(const String& value)
 {
 	if(value.Length() == 0) return nd_empty;
-	if(regex_match(value.c_str(), exp_number)) return nd_number;
-	if(regex_match(value.c_str(), exp_number_exp)) return nd_number_exp;
-	if(regex_match(value.c_str(), exp_guid)) return nd_guid;
-	if(regex_match(value.c_str(), exp_binary)) return nd_binary;
-	if(regex_match(value.c_str(), exp_link)) return nd_link;
-	if(regex_match(value.c_str(), exp_binary2)) return nd_binary2;
-	if(regex_match(value.c_str(), exp_binary_d)) return nd_binary_d;
+	if(is_number_fast(value)) return nd_number;
+	if(is_number_exp_fast(value)) return nd_number_exp;
+	if(is_guid_fast(value)) return nd_guid;
+	if(value.Length() >= 8 && value.SubString(1, 8) == L"#base64:" && is_base64_fast(value, 9)) return nd_binary;
+	if(is_link_fast(value)) return nd_link;
+	if(is_base64_fast(value, 1)) return nd_binary2;
+	if(value.Length() >= 6 && value.SubString(1, 6) == L"#data:" && is_base64_fast(value, 7)) return nd_binary_d;
 	return nd_unknown;
 }
 

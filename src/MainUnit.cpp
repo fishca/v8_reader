@@ -76,6 +76,54 @@
 TMainForm *MainForm;
 MessageRegistrator* msreg;
 
+static bool IsVerboseUiLoggingEnabled()
+{
+	String envValue = GetEnvironmentVariable(L"V8READER_VERBOSE_LOG");
+	envValue = Trim(envValue).LowerCase();
+	if (envValue == L"1" || envValue == L"true" || envValue == L"yes" || envValue == L"on")
+		return true;
+
+	for (int i = 1; i <= ParamCount(); i++)
+	{
+		String arg = Trim(ParamStr(i)).LowerCase();
+		if (arg == L"--verbose-log" || arg == L"/verbose-log" || arg == L"--diagnostic-log")
+			return true;
+	}
+
+	return false;
+}
+
+static bool IsFileLoggingEnabled()
+{
+	String envValue = GetEnvironmentVariable(L"V8READER_FILE_LOG");
+	envValue = Trim(envValue).LowerCase();
+	if (envValue == L"1" || envValue == L"true" || envValue == L"yes" || envValue == L"on")
+		return true;
+
+	for (int i = 1; i <= ParamCount(); i++)
+	{
+		String arg = Trim(ParamStr(i)).LowerCase();
+		if (arg == L"--logfile" || arg == L"/logfile" || arg == L"--enable-file-log")
+			return true;
+	}
+
+	return false;
+}
+
+static void AddConditionalInfoMessage(Messager* mess, const String& message)
+{
+	if (mess && IsVerboseUiLoggingEnabled())
+		mess->AddMessage(message, msInfo);
+}
+
+static void AddConditionalInfoMessageParams(Messager* mess, const String& description,
+	const String& parname1, const String& par1,
+	const String& parname2, const String& par2)
+{
+	if (mess && IsVerboseUiLoggingEnabled())
+		mess->AddMessage_(description, msInfo, parname1, par1, parname2, par2);
+}
+
 static String FormatHeapStatus()
 {
 	THeapStatus hs = GetHeapStatus();
@@ -112,9 +160,13 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std
 	VirtualStringTreeValue1C->NodeDataSize = sizeof(VirtualTreeData);
 	mess = new Messager(ListViewMessager, StatusBar1);
 	msreg = mess;
-	String appDir = ExtractFilePath(ParamStr(0));
-	String logfile = TPath::Combine(appDir, "v8reader.log");
-	mess->setlogfile(logfile);
+	if (IsFileLoggingEnabled())
+	{
+		String appDir = ExtractFilePath(ParamStr(0));
+		String logfile = TPath::Combine(appDir, "v8reader.log");
+		mess->setlogfile(logfile);
+		AddConditionalInfoMessage(mess, L"Файловое логирование включено");
+	}
 
 }
 //---------------------------------------------------------------------------
@@ -2321,6 +2373,10 @@ void __fastcall TMainForm::Button1Click(TObject *Sender)
 
 void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 {
+	ULONGLONG loadStartTick = 0;
+	ULONGLONG loadEndTick = 0;
+	ULONGLONG loadDurationMs = 0;
+
 	if (!dlgOpenCF->Execute())
 		return;
 
@@ -2329,8 +2385,9 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 
 	String filename = dlgOpenCF->FileName;
 	EditNameCF->Text = filename;
-	mess->AddMessage(L"ActionFileOpenExecute: начало открытия конфигурации", msInfo);
-	mess->AddMessage_(L"ActionFileOpenExecute: параметры открытия", msInfo,
+	loadStartTick = GetTickCount64();
+	AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: начало открытия конфигурации");
+	AddConditionalInfoMessageParams(mess, L"ActionFileOpenExecute: параметры открытия",
 		L"file", filename,
 		L"logfile", mess->getlogfile());
 
@@ -2386,13 +2443,13 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		mdIntegrationServices.clear();
 		mdSequences.clear();
 
-		mess->AddMessage(L"ActionFileOpenExecute: создание v8catalog", msInfo);
+		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: создание v8catalog");
 		GlobalCF = std::make_unique<v8catalog>(filename, true);
 
-		mess->AddMessage(L"ActionFileOpenExecute: чтение метаданных конфигурации", msInfo);
+		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: чтение метаданных конфигурации");
 		get_cf_name(GlobalCF.get(), mess);
 
-		mess->AddMessage(L"ActionFileOpenExecute: построение дерева интерфейса", msInfo);
+		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: построение дерева интерфейса");
 		VirtualStringTreeValue1C->BeginUpdate();
 		try
 		{
@@ -2403,7 +2460,17 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 			VirtualStringTreeValue1C->EndUpdate();
 		}
 
-		mess->AddMessage(L"ActionFileOpenExecute: конфигурация успешно открыта", msSuccesfull);
+		loadEndTick = GetTickCount64();
+		loadDurationMs = loadEndTick - loadStartTick;
+		String loadDurationMsStr = IntToStr((__int64)loadDurationMs);
+		String loadDurationSecStr = FormatFloat(L"0.000", (double)loadDurationMs / 1000.0);
+		mess->AddMessage(L"Время загрузки конфигурации: " + loadDurationMsStr + L" мс (" + loadDurationSecStr + L" сек)", msInfo);
+		AddConditionalInfoMessageParams(mess, L"Детали загрузки конфигурации",
+			L"file", filename,
+			L"duration_ms", loadDurationMsStr,
+			L"duration_sec", loadDurationSecStr);
+		if (IsVerboseUiLoggingEnabled())
+			mess->AddMessage(L"ActionFileOpenExecute: конфигурация успешно открыта", msSuccesfull);
 	}
 	catch (const Exception &e)
 	{
@@ -3778,6 +3845,10 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
+
+
+
 
 
 
