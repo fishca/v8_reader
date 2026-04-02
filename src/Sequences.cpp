@@ -19,7 +19,7 @@ __fastcall TSequences::TSequences(v8catalog *_parent, const String& _guid)
 {
 	guid      = _guid;
 	parent    = _parent;
-	root_data = get_treeFromV8file(parent->GetFile(_guid));
+	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 }
 
 __fastcall TSequences::TSequences(v8catalog *_parent, const String& _guid, const String& _name)
@@ -27,7 +27,7 @@ __fastcall TSequences::TSequences(v8catalog *_parent, const String& _guid, const
     name      = _name;
 	guid      = _guid;
 	parent    = _parent;
-	root_data = get_treeFromV8file(parent->GetFile(_guid));
+	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 
 }
 

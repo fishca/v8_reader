@@ -54,6 +54,7 @@ object MainForm: TMainForm
     Top = 629
     Width = 801
     Height = 19
+    SimplePanel = True
     Panels = <
       item
         Width = 300
@@ -237,9 +238,9 @@ object MainForm: TMainForm
   end
   object ListViewMessager: TListView
     Left = 0
-    Top = 535
+    Top = 553
     Width = 801
-    Height = 94
+    Height = 76
     Align = alBottom
     Columns = <
       item
@@ -248,6 +249,15 @@ object MainForm: TMainForm
     ShowColumnHeaders = False
     TabOrder = 5
     ViewStyle = vsReport
+  end
+  object LoadProgressBar: TProgressBar
+    Left = 0
+    Top = 535
+    Width = 801
+    Height = 18
+    Align = alBottom
+    TabOrder = 6
+    Visible = False
   end
   object dlgOpenCF: TOpenDialog
     Left = 736

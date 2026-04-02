@@ -33,14 +33,14 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
 
     // Реквизиты
     attributes.clear();
-    tree* node_att = root_data;
+    tree* node_att = root_data.get();
     node_att = &(*node_att)[0][paths.attIdx][1];
     int CountAtt = node_att->get_value().ToInt();
     int Delta = CountAtt - 2;
     for (int i = 0; i < CountAtt; i++)
     {
         try {
-            tree* node_att_att = root_data;
+            tree* node_att_att = root_data.get();
             tree* itemNode = &(*node_att_att)[0][paths.attIdx][i + CountAtt - Delta];
             for (size_t p = 0; p < paths.attItemPath.size(); p++)
                 itemNode = &(*itemNode)[paths.attItemPath[p]];
@@ -54,13 +54,13 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
     tabulars.clear();
     if (paths.hasTabulars)
     {
-        tree* node_att_t = root_data;
+        tree* node_att_t = root_data.get();
         node_att_t = &(*node_att_t)[0][paths.tabIdx][1];
         int CountAttTab = node_att_t->get_value().ToInt();
         int DeltaTab = CountAttTab - 2;
         for (int i = 0; i < CountAttTab; i++)
         {
-            tree* node_att_tab = root_data;
+            tree* node_att_tab = root_data.get();
             tree* itemNode = &(*node_att_tab)[0][paths.tabIdx][i + CountAttTab - DeltaTab];
             for (size_t p = 0; p < paths.tabItemPath.size(); p++)
                 itemNode = &(*itemNode)[paths.tabItemPath[p]];
@@ -71,7 +71,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
 
     // Формы
     forms.clear();
-    tree* node = root_data;
+    tree* node = root_data.get();
     node = &(*node)[0][paths.formsIdx][0];
     int CountChild = (node->get_next())->get_value().ToInt();
     tree* curNodeChild = node->get_next();
@@ -88,13 +88,13 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
 
     // Команды
     comands.clear();
-    tree* node_att_c = root_data;
+    tree* node_att_c = root_data.get();
     node_att_c = &(*node_att_c)[0][paths.cmdIdx][1];
     int CountCom = node_att_c->get_value().ToInt();
     int DeltaCom = CountCom - 2;
     for (int i = 0; i < CountCom; i++)
     {
-        tree* node_com = root_data;
+        tree* node_com = root_data.get();
         tree* itemNode = &(*node_com)[0][paths.cmdIdx][i + CountCom - DeltaCom];
         for (size_t p = 0; p < paths.cmdItemPath.size(); p++)
             itemNode = &(*itemNode)[paths.cmdItemPath[p]];
@@ -104,7 +104,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
 
     // Макеты
     moxels.clear();
-    tree* node_mox = root_data;
+    tree* node_mox = root_data.get();
     node_mox = &(*node_mox)[0][paths.moxIdx][0];
     int CountMox = (node_mox->get_next())->get_value().ToInt();
     tree* curNodeChildMox = node_mox->get_next();

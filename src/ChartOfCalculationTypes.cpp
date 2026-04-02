@@ -33,12 +33,14 @@ __fastcall TChartOfCalculationTypes::TChartOfCalculationTypes(v8catalog *_parent
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TChartOfCalculationTypes::TChartOfCalculationTypes(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 __fastcall TChartOfCalculationTypes::~TChartOfCalculationTypes()

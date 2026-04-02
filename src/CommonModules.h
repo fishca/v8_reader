@@ -9,11 +9,13 @@ class TCommonModules : public BaseMetadataObject
 {
 private:
 	String text;
+	bool textLoaded;
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> comands;
     std::vector<std::unique_ptr<TMoxel>> moxels;
     std::vector<std::unique_ptr<TTabular>> tabulars;
     std::vector<std::unique_ptr<TForm1C>> forms;
+	void __fastcall LoadTextIfNeeded();
 
 public:
 	__fastcall TCommonModules();

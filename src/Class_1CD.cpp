@@ -195,28 +195,47 @@ extern TMultiReadExclusiveWriteSynchronizer* tr_syn;
 //---------------------------------------------------------------------------
 tree* __fastcall get_treeFromV8file(v8file* f)
 {
-	TBytesStream* sb;
 	TEncoding *enc;
-	TBytes bytes;
+	TBytes sourceBytes;
+	TBytes unicodeBytes;
 	int off = 0;
 	tree* rt;
+	int fileSize;
 
-	sb = new TBytesStream(bytes);
-	f->SaveToStream(sb);
+	fileSize = f->GetFileLength();
+	if(fileSize <= 0)
+	{
+		error("Пустой файл контейнера",
+			"Файл", f->GetFullName());
+		return NULL;
+	}
+
+	sourceBytes.Length = fileSize;
+	if(f->Read(sourceBytes, 0, fileSize) != fileSize)
+	{
+		error("Ошибка чтения файла контейнера",
+			"Файл", f->GetFullName());
+		return NULL;
+	}
 
 	enc = NULL;
-	off = TEncoding::GetBufferEncoding(sb->Bytes, enc);
+	off = TEncoding::GetBufferEncoding(sourceBytes, enc);
 	if(off == 0)
 	{
 		error("Ошибка определения кодировки файла контейнера",
 			"Файл", f->GetFullName());
-		delete sb;
 		return NULL;
 	}
-	bytes = TEncoding::Convert(enc, TEncoding::Unicode, sb->Bytes, off, sb->Size-off);
 
-	rt = parse_1Ctext(String((wchar_t*)&bytes[0], bytes.Length / 2), f->GetFullName());
-	delete sb;
+	unicodeBytes = TEncoding::Convert(enc, TEncoding::Unicode, sourceBytes, off, fileSize - off);
+	if(unicodeBytes.Length == 0)
+	{
+		error("Ошибка конвертации файла контейнера в Unicode",
+			"Файл", f->GetFullName());
+		return NULL;
+	}
+
+	rt = parse_1Ctext(String((wchar_t*)&unicodeBytes[0], unicodeBytes.Length / 2), f->GetFullName());
 	return rt;
 }
 
@@ -11958,5 +11977,6 @@ String __fastcall T_1CD::pagemaprec_presentation(pagemaprec& pmr)
 }
 
 //---------------------------------------------------------------------------
+
 
 

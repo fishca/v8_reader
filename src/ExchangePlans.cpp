@@ -10,16 +10,19 @@
 __fastcall TExchangePlans::TExchangePlans() : BaseMetadataObject()
 {
     exchangePlanName = "";
+    root_data.reset();
 }
 
 __fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     exchangePlanName = "";
+    root_data.reset();
 }
 
 __fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     exchangePlanName = _name;
+    root_data.reset();
 }
 
 __fastcall TExchangePlans::~TExchangePlans()

@@ -18,7 +18,7 @@ __fastcall BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const Stri
 {
     guid = _guid;
     parent = _parent;
-    root_data = get_treeFromV8file(parent->GetFile(_guid));
+    root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
     name = ""; // Имя будет инициализировано в производных классах
 }
 
@@ -27,17 +27,12 @@ __fastcall BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const Stri
     name = _name;
     guid = _guid;
     parent = _parent;
-    root_data = get_treeFromV8file(parent->GetFile(_guid));
+    root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 }
 
 __fastcall BaseMetadataObject::~BaseMetadataObject()
 {
-	// Освобождение ресурсов, если необходимо
-	if (root_data)
-	{
-		delete root_data;
-		//root_data = nullptr;
-	}
+	// unique_ptr автоматически освобождает память
 }
 
 String __fastcall BaseMetadataObject::GetName()

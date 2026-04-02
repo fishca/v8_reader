@@ -5,6 +5,7 @@
 //---------------------------------------------------------------------------
 
 #include <vector>
+#include <memory>
 #include "Class_1CD.h"
 #include "APIcfBase.h"
 #include "Parse_tree.h"
@@ -23,7 +24,7 @@ public:
     // Общие поля
     String name;
     String guid;
-    tree* root_data;
+    std::unique_ptr<tree> root_data;
     v8catalog* parent;
 
     // Конструкторы

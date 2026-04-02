@@ -44,6 +44,7 @@ __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, cons
 	: MetadataObjectInformationRegister(_parent, _guid)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 //---------------------------------------------------------------------------
@@ -51,6 +52,7 @@ __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, cons
 	: MetadataObjectInformationRegister(_parent, _guid, _name)
 {
 	initializeFromTree();
+	root_data.reset();
 }
 
 //---------------------------------------------------------------------------

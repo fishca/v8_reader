@@ -10,16 +10,19 @@
 __fastcall TRoles::TRoles() : BaseMetadataObject()
 {
     roleName = "";
+    root_data.reset();
 }
 
 __fastcall TRoles::TRoles(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     roleName = "";
+    root_data.reset();
 }
 
 __fastcall TRoles::TRoles(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     roleName = _name;
+    root_data.reset();
 }
 
 __fastcall TRoles::~TRoles()
