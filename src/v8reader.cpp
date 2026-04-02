@@ -12,8 +12,31 @@
 USEFORM("MainUnit.cpp", MainForm);
 //---------------------------------------------------------------------------
 
+static bool IsCrashLoggingEnabled()
+{
+	String envValue = Trim(GetEnvironmentVariable(L"V8READER_CRASH_LOG")).LowerCase();
+	if (envValue == L"0" || envValue == L"false" || envValue == L"no" || envValue == L"off")
+		return false;
+	if (envValue == L"1" || envValue == L"true" || envValue == L"yes" || envValue == L"on")
+		return true;
+
+	for (int i = 1; i <= ParamCount(); i++)
+	{
+		String arg = Trim(ParamStr(i)).LowerCase();
+		if (arg == L"--no-crash-log" || arg == L"/no-crash-log")
+			return false;
+		if (arg == L"--crash-log" || arg == L"/crash-log")
+			return true;
+	}
+
+	return false;
+}
+
 static void WriteCrashLog(const String& message)
 {
+	if (!IsCrashLoggingEnabled())
+		return;
+
 	try
 	{
 		String appDir = ExtractFilePath(ParamStr(0));

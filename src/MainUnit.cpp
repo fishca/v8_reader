@@ -93,6 +93,26 @@ static bool IsVerboseUiLoggingEnabled()
 	return false;
 }
 
+static bool IsMessOutputEnabled()
+{
+	String envValue = Trim(GetEnvironmentVariable(L"V8READER_MESS_OUTPUT")).LowerCase();
+	if (envValue == L"0" || envValue == L"false" || envValue == L"no" || envValue == L"off")
+		return false;
+	if (envValue == L"1" || envValue == L"true" || envValue == L"yes" || envValue == L"on")
+		return true;
+
+	for (int i = 1; i <= ParamCount(); i++)
+	{
+		String arg = Trim(ParamStr(i)).LowerCase();
+		if (arg == L"--no-mess-output" || arg == L"/no-mess-output" || arg == L"--quiet")
+			return false;
+		if (arg == L"--mess-output" || arg == L"/mess-output")
+			return true;
+	}
+
+	return false;
+}
+
 static bool IsFileLoggingEnabled()
 {
 	String envValue = GetEnvironmentVariable(L"V8READER_FILE_LOG");
@@ -112,7 +132,7 @@ static bool IsFileLoggingEnabled()
 
 static void AddConditionalInfoMessage(Messager* mess, const String& message)
 {
-	if (mess && IsVerboseUiLoggingEnabled())
+	if (mess && mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
 		mess->AddMessage(message, msInfo);
 }
 
@@ -120,8 +140,17 @@ static void AddConditionalInfoMessageParams(Messager* mess, const String& descri
 	const String& parname1, const String& par1,
 	const String& parname2, const String& par2)
 {
-	if (mess && IsVerboseUiLoggingEnabled())
+	if (mess && mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
 		mess->AddMessage_(description, msInfo, parname1, par1, parname2, par2);
+}
+
+static void AddConditionalInfoMessageParams(Messager* mess, const String& description,
+	const String& parname1, const String& par1,
+	const String& parname2, const String& par2,
+	const String& parname3, const String& par3)
+{
+	if (mess && mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
+		mess->AddMessage_(description, msInfo, parname1, par1, parname2, par2, parname3, par3);
 }
 
 static String FormatHeapStatus()
@@ -139,7 +168,8 @@ static void LogHeapStatus(const String& stage,
 	int currentIndex = -1,
 	int totalCount = -1)
 {
-	if(!msreg) return;
+	Messager* activeMessager = dynamic_cast<Messager*>(msreg);
+	if(!msreg || (activeMessager && !activeMessager->getUiMessagesEnabled())) return;
 
 	TStringList* ts = new TStringList;
 	ts->Add(L"Heap = " + FormatHeapStatus());
@@ -159,8 +189,12 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std
 {
 	VirtualStringTreeValue1C->NodeDataSize = sizeof(VirtualTreeData);
 	mess = new Messager(ListViewMessager, StatusBar1);
+	LoadProgressBar->Position = 0;
+	LoadProgressBar->Visible = false;
+	mess->setUiMessagesEnabled(IsMessOutputEnabled());
+	mess->setFileLoggingEnabled(IsFileLoggingEnabled());
 	msreg = mess;
-	if (IsFileLoggingEnabled())
+	if (mess->getFileLoggingEnabled())
 	{
 		String appDir = ExtractFilePath(ParamStr(0));
 		String logfile = TPath::Combine(appDir, "v8reader.log");
@@ -168,6 +202,49 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std
 		AddConditionalInfoMessage(mess, L"Файловое логирование включено");
 	}
 
+}
+//---------------------------------------------------------------------------
+void __fastcall TMainForm::ResetLoadProgress(int maxValue, const String& statusText)
+{
+	if (maxValue < 1)
+		maxValue = 1;
+
+	LoadProgressBar->Min = 0;
+	LoadProgressBar->Max = maxValue;
+	LoadProgressBar->Position = 0;
+	LoadProgressBar->Visible = true;
+	LoadProgressBar->BringToFront();
+
+	if (!statusText.IsEmpty())
+		mess->Status(statusText);
+
+	LoadProgressBar->Update();
+	Application->ProcessMessages();
+}
+
+void __fastcall TMainForm::AdvanceLoadProgress(const String& statusText)
+{
+	if (!LoadProgressBar->Visible)
+		LoadProgressBar->Visible = true;
+
+	if (LoadProgressBar->Position < LoadProgressBar->Max)
+		LoadProgressBar->Position = LoadProgressBar->Position + 1;
+
+	if (!statusText.IsEmpty())
+		mess->Status(statusText);
+
+	LoadProgressBar->Update();
+	Application->ProcessMessages();
+}
+
+void __fastcall TMainForm::CompleteLoadProgress(const String& statusText)
+{
+	LoadProgressBar->Position = LoadProgressBar->Max;
+	if (!statusText.IsEmpty())
+		mess->Status(statusText);
+	LoadProgressBar->Update();
+	Application->ProcessMessages();
+	LoadProgressBar->Visible = false;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::btnOpenEditNameClick(TObject *Sender)
@@ -2386,13 +2463,15 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 	String filename = dlgOpenCF->FileName;
 	EditNameCF->Text = filename;
 	loadStartTick = GetTickCount64();
+	ResetLoadProgress(38, L"Подготовка к загрузке конфигурации...");
 	AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: начало открытия конфигурации");
 	AddConditionalInfoMessageParams(mess, L"ActionFileOpenExecute: параметры открытия",
 		L"file", filename,
-		L"logfile", mess->getlogfile());
+		L"logfile", mess->getFileLoggingEnabled() ? mess->getlogfile() : L"disabled");
 
 	try
 	{
+		AdvanceLoadProgress(L"Очистка предыдущих данных...");
 		GlobalCF.reset();
 
 		mdCatalogs.clear();
@@ -2444,12 +2523,15 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		mdSequences.clear();
 
 		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: создание v8catalog");
+		AdvanceLoadProgress(L"Открытие файла конфигурации...");
 		GlobalCF = std::make_unique<v8catalog>(filename, true);
 
 		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: чтение метаданных конфигурации");
+		AdvanceLoadProgress(L"Чтение метаданных конфигурации...");
 		get_cf_name(GlobalCF.get(), mess);
 
 		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: построение дерева интерфейса");
+		AdvanceLoadProgress(L"Построение дерева метаданных...");
 		VirtualStringTreeValue1C->BeginUpdate();
 		try
 		{
@@ -2464,26 +2546,31 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		loadDurationMs = loadEndTick - loadStartTick;
 		String loadDurationMsStr = IntToStr((__int64)loadDurationMs);
 		String loadDurationSecStr = FormatFloat(L"0.000", (double)loadDurationMs / 1000.0);
-		mess->AddMessage(L"Время загрузки конфигурации: " + loadDurationMsStr + L" мс (" + loadDurationSecStr + L" сек)", msInfo);
+		CompleteLoadProgress(L"Загрузка завершена");
+		mess->Status(L"Время загрузки конфигурации: " + loadDurationMsStr + L" мс (" + loadDurationSecStr + L" сек)");
 		AddConditionalInfoMessageParams(mess, L"Детали загрузки конфигурации",
 			L"file", filename,
 			L"duration_ms", loadDurationMsStr,
 			L"duration_sec", loadDurationSecStr);
-		if (IsVerboseUiLoggingEnabled())
+		if (mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
 			mess->AddMessage(L"ActionFileOpenExecute: конфигурация успешно открыта", msSuccesfull);
 	}
 	catch (const Exception &e)
 	{
-		mess->AddMessage_(L"ActionFileOpenExecute: VCL exception", msError,
-			L"file", filename,
-			L"message", e.Message);
+		LoadProgressBar->Visible = false;
+		if (mess->getUiMessagesEnabled())
+			mess->AddMessage_(L"ActionFileOpenExecute: VCL exception", msError,
+				L"file", filename,
+				L"message", e.Message);
 		throw;
 	}
 	catch (...)
 	{
-		mess->AddMessage_(L"ActionFileOpenExecute: неизвестное исключение", msError,
-			L"file", filename,
-			L"stage", L"open configuration");
+		LoadProgressBar->Visible = false;
+		if (mess->getUiMessagesEnabled())
+			mess->AddMessage_(L"ActionFileOpenExecute: неизвестное исключение", msError,
+				L"file", filename,
+				L"stage", L"open configuration");
 		throw;
 	}
 }
@@ -2502,6 +2589,8 @@ __fastcall Messager::Messager(TListView* lv, TStatusBar* sb)
 {
 	ListView = lv;
 	StatusBar = sb;
+	uiMessagesEnabled = true;
+	fileLoggingEnabled = false;
 	FormatSettings.DateSeparator = L'.';
 	FormatSettings.TimeSeparator = L':';
 	//FormatSettings.LongDateFormat = L"dd.mm.yyyy";
@@ -2509,9 +2598,36 @@ __fastcall Messager::Messager(TListView* lv, TStatusBar* sb)
 	FormatSettings.LongTimeFormat = L"hh:mm:ss:zzz";
 }
 
+void __fastcall Messager::setUiMessagesEnabled(bool enabled)
+{
+	uiMessagesEnabled = enabled;
+}
+
+bool __fastcall Messager::getUiMessagesEnabled() const
+{
+	return uiMessagesEnabled;
+}
+
+void __fastcall Messager::setFileLoggingEnabled(bool enabled)
+{
+	fileLoggingEnabled = enabled;
+	if (!fileLoggingEnabled)
+		logfile = L"";
+}
+
+bool __fastcall Messager::getFileLoggingEnabled() const
+{
+	return fileLoggingEnabled;
+}
+
 //---------------------------------------------------------------------------
 void __fastcall Messager::setlogfile(String _logfile)
 {
+	if(!fileLoggingEnabled)
+	{
+		logfile = L"";
+		return;
+	}
 	logfile = System::Ioutils::TPath::GetFullPath(_logfile);
 	if(FileExists(logfile))
     	DeleteFile(logfile);
@@ -2526,7 +2642,7 @@ String __fastcall Messager::getlogfile() const
 //---------------------------------------------------------------------------
 void __fastcall Messager::Status(const String& message)
 {
-	StatusBar->Panels->Items[0]->Text = message;
+	StatusBar->SimpleText = message;
 	StatusBar->Update();
 }
 
@@ -2537,14 +2653,17 @@ void __fastcall Messager::AddMessage(const String& message, const MessageState m
 	TStreamWriter* sw;
 	String s;
 
-	ListView->AddItem(message, param);
-	TListItem* item = ListView->Items->Item[ListView->Items->Count - 1];
-	item->StateIndex = mstate;
-	ListView->Selected = item;
-	ListView->Scroll(0, 0xfffffff);
-	ListView->Update();
+	if (uiMessagesEnabled)
+	{
+		ListView->AddItem(message, param);
+		TListItem* item = ListView->Items->Item[ListView->Items->Count - 1];
+		item->StateIndex = mstate;
+		ListView->Selected = item;
+		ListView->Scroll(0, 0xfffffff);
+		ListView->Update();
+	}
 
-	if(logfile.Length())
+	if(fileLoggingEnabled && logfile.Length())
 	{
 		if(FileExists(logfile))
 		{
@@ -2607,21 +2726,21 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 
 	if(!cf)
 	{
-		mess->AddError(L"Ошибка открытия файла");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка открытия файла");
 		return;
 	}
 
 	filedata = cf->GetFile(L"version");
 	if(!filedata)
 	{
-		mess->AddError(L"Ошибка получения файла root конфигурации");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения файла root конфигурации");
 		return;
 	}
 
 	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
-		mess->AddError(L"Ошибка разбора файла root конфигурации");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка разбора файла root конфигурации");
 		return;
 	}
 
@@ -2630,7 +2749,7 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 	node = &(*node)[0][0][0];
 	if(node->get_type() != nd_number)
 	{
-		mess->AddError(L"Ошибка получения версии формата конфигурации");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения версии формата конфигурации");
 		return;
 	}
 
@@ -2643,14 +2762,14 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 		filedata = cf->GetFile(L"metadata");
 		if(!filedata)
 		{
-			mess->AddError(L"Ошибка получения файла metadata конфигурации");
+			if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения файла metadata конфигурации");
 			return;
 		}
 
 		cat = filedata->GetCatalog();
 		if(!cat)
 		{
-			mess->AddError(L"Ошибка открытия файла metadata конфигурации");
+			if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка открытия файла metadata конфигурации");
 			return;
 		}
 
@@ -2664,14 +2783,14 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 	filedata = cat->GetFile(L"root");
 	if(!filedata)
 	{
-		mess->AddError(L"Ошибка получения файла root конфигурации");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения файла root конфигурации");
 		return;
 	}
 
 	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
-		mess->AddError(L"Ошибка разбора файла root конфигурации");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка разбора файла root конфигурации");
 		return;
 	}
 
@@ -2680,7 +2799,7 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 
 	if(node->get_type() != nd_guid)
 	{
-		mess->AddError(L"Ошибка получения имени файла метаданных");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения имени файла метаданных");
 		return;
 	}
 
@@ -2693,7 +2812,7 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 		s = L"Ошибка получения файла ";
 		s += meta;
 		s += L" конфигурации";
-		mess->AddError(s);
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(s);
 		return;
 	}
 
@@ -2703,7 +2822,7 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 		s = L"Ошибка разбора файла ";
 		s += meta;
 		s += L" конфигурации";
-		mess->AddError(s);
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(s);
 		return;
 	}
 
@@ -3285,17 +3404,22 @@ void get_cf_name(tree* tr, Messager* mess)
 
 	node3 = tr;
 
+	if (MainForm)
+		MainForm->AdvanceLoadProgress(L"Обработка справочников...");
+
         // Заполняем справочники
-        mess->AddMessage(L"Начало обработки справочников", MessageState::msInfo);
+		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage(L"Начало обработки справочников", MessageState::msInfo);
         fill_md(tr, GUID_Catalogs);
-        mess->AddMessage(L"Справочники обработаны", MessageState::msInfo);
+		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage(L"Справочники обработаны", MessageState::msInfo);
 
         // Заполняем языки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка языков...");
         mess->AddMessage(L"Начало обработки языков", MessageState::msInfo);
         fill_md(tr, GUID_Languages);
         mess->AddMessage(L"Языки обработаны", MessageState::msInfo);
 
         // Заполняем регистры накопления
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров накопления...");
         mess->AddMessage(L"Начало обработки регистров накопления", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_AccumulationRegisters);
@@ -3306,6 +3430,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Регистры накопления обработаны", MessageState::msInfo);
 
         // Заполняем регистры бухгалтерии
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров бухгалтерии...");
         mess->AddMessage(L"Начало обработки регистров бухгалтерии", MessageState::msInfo);
         // try {
         //         fill_md(tr, GUID_AccountingRegisters);
@@ -3316,6 +3441,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Регистры бухгалтерии обработаны", MessageState::msInfo);
 
         // Заполняем регистры расчета
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров расчета...");
         mess->AddMessage(L"Начало обработки регистров расчета", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CalculationRegisters);
@@ -3326,6 +3452,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Регистры расчета обработаны", MessageState::msInfo);
 
         // Заполняем бизнес-процессы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка бизнес-процессов...");
         mess->AddMessage(L"Начало обработки бизнес-процессов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_BusinessProcesses);
@@ -3336,6 +3463,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Бизнес-процессы обработаны", MessageState::msInfo);
 
         // ПВХ
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов видов характеристик...");
         mess->AddMessage(L"Начало обработки планов видов характеристик", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ChartOfCharacteristicTypes);
@@ -3347,6 +3475,7 @@ void get_cf_name(tree* tr, Messager* mess)
 
 
         // группы команд
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка групп команд...");
         mess->AddMessage(L"Начало обработки групп команд", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommandGroups);
@@ -3358,6 +3487,7 @@ void get_cf_name(tree* tr, Messager* mess)
 
 
         // общие реквизиты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих реквизитов...");
         mess->AddMessage(L"Начало обработки общих реквизитов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonAttributes);
@@ -3368,6 +3498,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Общие реквизиты обработаны", MessageState::msInfo);
 
         // общие команды
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих команд...");
         mess->AddMessage(L"Начало обработки общих команд", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonCommands);
@@ -3378,6 +3509,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Общие команды обработаны", MessageState::msInfo);
 
         // общие формы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих форм...");
         mess->AddMessage(L"Начало обработки общих форм", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonForms);
@@ -3388,6 +3520,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Общие формы обработаны", MessageState::msInfo);
 
         // общие модули
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих модулей...");
         mess->AddMessage(L"Начало обработки общих модулей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonModules);
@@ -3399,6 +3532,7 @@ void get_cf_name(tree* tr, Messager* mess)
 
 
         // общие картинки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих картинок...");
         mess->AddMessage(L"Начало обработки общих картинок", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonPictures);
@@ -3409,6 +3543,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Общие картинки обработаны", MessageState::msInfo);
 
         // общие макеты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих макетов...");
         mess->AddMessage(L"Начало обработки общих макетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonTemplates);
@@ -3419,6 +3554,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Общие макеты обработаны", MessageState::msInfo);
 
         // константы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка констант...");
         mess->AddMessage(L"Начало обработки констант", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Constants);
@@ -3429,6 +3565,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Константы обработаны: ", MessageState::msInfo);
 
         // обработки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка обработок...");
         mess->AddMessage(L"Начало обработки обработок", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_DataProcessors);
@@ -3439,6 +3576,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Обработки обработаны", MessageState::msInfo);
 
         // определяемые типы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка определяемых типов...");
         mess->AddMessage(L"Начало обработки определяемых типов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_DefinedTypes);
@@ -3449,6 +3587,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Определяемые типы обработаны", MessageState::msInfo);
 
         // журналы документов
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка журналов документов...");
         mess->AddMessage(L"Начало обработки журналов документов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_JournDocuments);
@@ -3459,6 +3598,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Журналы документов обработаны", MessageState::msInfo);
 
         // нумераторы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка нумераторов...");
         mess->AddMessage(L"Начало обработки нумераторов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Numerators);
@@ -3469,6 +3609,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Нумераторы обработаны", MessageState::msInfo);
 
         // документы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка документов...");
         mess->AddMessage(L"Начало обработки документов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Documents);
@@ -3479,6 +3620,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Документы обработаны", MessageState::msInfo);
 
         // перечисления
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка перечислений...");
         mess->AddMessage(L"Начало обработки перечислений", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Enums);
@@ -3489,6 +3631,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Перечисления обработаны", MessageState::msInfo);
 
         // подписки на события
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка подписок на события...");
         mess->AddMessage(L"Начало обработки подписок на события", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_EventSubscriptions);
@@ -3499,6 +3642,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Подписки на события обработаны", MessageState::msInfo);
 
         // планы обмена
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов обмена...");
         mess->AddMessage(L"Начало обработки планов обмена", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ExchangePlans);
@@ -3509,6 +3653,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Планы обмена обработаны", MessageState::msInfo);
 
         // планы счетов
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов счетов...");
         mess->AddMessage(L"Начало обработки планов счетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ChartsOfAccounts);
@@ -3519,6 +3664,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Планы счетов обработаны", MessageState::msInfo);
 
         // планы видов расчета
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов видов расчета...");
         mess->AddMessage(L"Начало обработки планов видов расчета", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ChartsOfCalculationTypes);
@@ -3529,6 +3675,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Планы видов расчета обработаны", MessageState::msInfo);
 
         // внешние источники данных
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка внешних источников данных...");
         mess->AddMessage(L"Начало обработки внешних источников данных", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ExternalDataSources);
@@ -3539,6 +3686,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Внешние источники данных обработаны", MessageState::msInfo);
 
         // критерии отбора
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка критериев отбора...");
         mess->AddMessage(L"Начало обработки критериев отбора", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_FilterCriteria);
@@ -3549,6 +3697,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Критерии отбора обработаны", MessageState::msInfo);
 
         // функциональные опции
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка функциональных опций...");
         mess->AddMessage(L"Начало обработки функциональных опций", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_FunctionalOptions);
@@ -3559,6 +3708,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Функциональные опции обработаны", MessageState::msInfo);
 
         // параметры функциональных опций
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка параметров функциональных опций...");
         mess->AddMessage(L"Начало обработки параметров функциональных опций", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_FunctionalOptionsParameters);
@@ -3569,6 +3719,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Параметры функциональных опций обработаны", MessageState::msInfo);
 
         // http - сервисы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка HTTP-сервисов...");
         mess->AddMessage(L"Начало обработки HTTP-сервисов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_HTTPServices);
@@ -3579,6 +3730,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"http - сервисы обработаны", MessageState::msInfo);
 
         // регистры сведений
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров сведений...");
         mess->AddMessage(L"Начало обработки регистров сведений", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_InformationRegisters);
@@ -3589,6 +3741,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Регистры сведений обработаны", MessageState::msInfo);
 
         // интерфейсы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка интерфейсов...");
         mess->AddMessage(L"Начало обработки интерфейсов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Interfaces);
@@ -3599,6 +3752,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Интерфейсы обработаны", MessageState::msInfo);
 
         // отчеты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка отчетов...");
         mess->AddMessage(L"Начало обработки отчетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Reports);
@@ -3609,6 +3763,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Отчеты обработаны", MessageState::msInfo);
 
         // роли
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка ролей...");
         mess->AddMessage(L"Начало обработки ролей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Roles);
@@ -3619,6 +3774,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Роли обработаны", MessageState::msInfo);
 
         // параметры сеанса
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка параметров сеанса...");
         mess->AddMessage(L"Начало обработки параметров сеанса", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_SessionParameters);
@@ -3629,6 +3785,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Параметры сеанса обработаны", MessageState::msInfo);
 
         // хранилища настроек
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка хранилищ настроек...");
         mess->AddMessage(L"Начало обработки хранилищ настроек", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_SettingsStorages);
@@ -3639,6 +3796,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Хранилища настроек обработаны", MessageState::msInfo);
 
         // элементы стиля
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка элементов стиля...");
         mess->AddMessage(L"Начало обработки элементов стиля", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_StyleItems);
@@ -3649,6 +3807,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Элементы стиля обработаны", MessageState::msInfo);
 
         // стили
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка стилей...");
         mess->AddMessage(L"Начало обработки стилей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Styles);
@@ -3659,6 +3818,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Стили обработаны", MessageState::msInfo);
 
         // подсистемы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка подсистем...");
         mess->AddMessage(L"Начало обработки подсистем", MessageState::msInfo);
         try {
                 fill_subsystem(tr, MainForm->Subsystems);
@@ -3669,6 +3829,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Подсистемы обработаны", MessageState::msInfo);
 
         // задачи
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка задач...");
         mess->AddMessage(L"Начало обработки задач", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Tasks);
@@ -3679,6 +3840,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Задачи обработаны", MessageState::msInfo);
 
         // веб-сервисы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка веб-сервисов...");
         mess->AddMessage(L"Начало обработки веб-сервисов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_WebServices);
@@ -3689,6 +3851,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"веб-сервисы обработаны", MessageState::msInfo);
 
         // ws-ссылки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка WS-ссылок...");
         mess->AddMessage(L"Начало обработки WS-ссылок", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_WSReferences);
@@ -3699,6 +3862,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"ws-ссылки обработаны", MessageState::msInfo);
 
         // xdto-пакеты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка XDTO-пакетов...");
         mess->AddMessage(L"Начало обработки XDTO-пакетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_XDTOPackages);
@@ -3709,6 +3873,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"xdto-пакеты обработаны", MessageState::msInfo);
 
         // регл задания
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регламентных заданий...");
         mess->AddMessage(L"Начало обработки регламентных заданий", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ScheduledJobs);
@@ -3719,6 +3884,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Регламентные задания обработаны", MessageState::msInfo);
 
         // боты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка ботов...");
         mess->AddMessage(L"Начало обработки ботов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Bots);
@@ -3729,6 +3895,7 @@ void get_cf_name(tree* tr, Messager* mess)
         mess->AddMessage(L"Боты обработаны", MessageState::msInfo);
 
         // последовательности
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка последовательностей...");
         mess->AddMessage(L"Начало обработки последовательностей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Sequences);
@@ -3817,7 +3984,7 @@ void get_cf_name(tree* tr, Messager* mess)
 	//mess->AddMessage(cf_synonym + " (" + cf_version + ")", msEmpty);
 	MainForm->ConfigName = cf_synonym + " (" + cf_version + ")";
 	//ConfigName = cf_synonym + " (" + cf_version + ")";
-	mess->AddMessage("Прочитана конфигурация: " + cf_synonym + " (" + cf_version + ")", msInfo);
+		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage("Прочитана конфигурация: " + cf_synonym + " (" + cf_version + ")", msInfo);
 
 }
 
@@ -3845,6 +4012,13 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 
 

@@ -93,6 +93,7 @@ __published:	// IDE-managed Components
 	TSynMemo *MemoObject;
 	TSynMemo *MemoManager;
 	TPanel *Panel1;
+	TProgressBar *LoadProgressBar;
 	TSynCppSyn *SynCppSyn1;
 	void __fastcall btnOpenEditNameClick(TObject *Sender);
 	void __fastcall btnGOClick(TObject *Sender);
@@ -115,6 +116,9 @@ private:	// User declarations
     std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
+	void __fastcall ResetLoadProgress(int maxValue, const String& statusText = L"");
+	void __fastcall AdvanceLoadProgress(const String& statusText);
+	void __fastcall CompleteLoadProgress(const String& statusText);
 	void __fastcall TreeInit();
 	void __fastcall	FillVirtualTree();
 	void __fastcall FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
@@ -236,8 +240,14 @@ private:
 	TStatusBar* StatusBar;
 	String logfile;
 	TFormatSettings FormatSettings;
+	bool uiMessagesEnabled;
+	bool fileLoggingEnabled;
 public:
 	__fastcall Messager(TListView* lv, TStatusBar* sb);
+	void __fastcall setUiMessagesEnabled(bool enabled);
+	bool __fastcall getUiMessagesEnabled() const;
+	void __fastcall setFileLoggingEnabled(bool enabled);
+	bool __fastcall getFileLoggingEnabled() const;
 	void __fastcall setlogfile(String _logfile);
 	String __fastcall getlogfile() const;
 	virtual void __fastcall AddMessage(const String& message, const MessageState mstate, TStringList* param = NULL);
