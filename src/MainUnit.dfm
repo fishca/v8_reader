@@ -54,11 +54,11 @@ object MainForm: TMainForm
     Top = 629
     Width = 801
     Height = 19
-    SimplePanel = True
     Panels = <
       item
         Width = 300
       end>
+    SimplePanel = True
   end
   object LeftPanel: TPanel
     Left = 0

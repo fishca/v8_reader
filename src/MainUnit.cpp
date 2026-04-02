@@ -59,9 +59,8 @@
 #include "HTTPServices.h"
 #include "Langs.h"
 
-
-
 //---------------------------------------------------------------------------
+
 #pragma package(smart_init)
 #pragma link "VirtualTrees"
 #pragma link "SynEdit"
