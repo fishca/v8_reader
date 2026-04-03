@@ -3432,12 +3432,12 @@ void get_cf_name(tree* tr, Messager* mess)
         // Заполняем регистры бухгалтерии
         if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров бухгалтерии...");
         mess->AddMessage(L"Начало обработки регистров бухгалтерии", MessageState::msInfo);
-        // try {
-        //         fill_md(tr, GUID_AccountingRegisters);
-        // }
-        // catch (...) {
-        //         mess->AddMessage(L"Исключение при обработке регистров бухгалтерии", MessageState::msError);
-        // }
+        try {
+                fill_md(tr, GUID_AccountingRegisters);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке регистров бухгалтерии", MessageState::msError);
+        }
         mess->AddMessage(L"Регистры бухгалтерии обработаны", MessageState::msInfo);
 
         // Заполняем регистры расчета
@@ -4012,6 +4012,7 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
 
 
 
