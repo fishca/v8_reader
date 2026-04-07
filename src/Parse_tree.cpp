@@ -1142,3 +1142,48 @@ tree* find_node_by_guid(tree* root, const String& target_guid)
 
     return NULL;
 }
+
+namespace
+{
+	tree* find_metadata_node_by_guid_impl(tree* root, const String& target_guid, tree*& fallback, int& bestCount)
+	{
+		if (!root)
+			return NULL;
+
+		if (root->get_value() == target_guid)
+		{
+			if (!fallback)
+				fallback = root;
+
+			tree* next = root->get_next();
+			if (next && next->get_type() == nd_number)
+			{
+				int currentCount = next->get_value().ToIntDef(0);
+				if (currentCount > bestCount)
+				{
+					bestCount = currentCount;
+					fallback = root;
+				}
+			}
+		}
+
+		for (int i = 0; i < root->get_num_subnode(); i++)
+		{
+			tree* result = find_metadata_node_by_guid_impl(root->get_subnode(i), target_guid, fallback, bestCount);
+			if (result)
+				return result;
+		}
+
+		return NULL;
+	}
+}
+
+tree* find_metadata_node_by_guid(tree* root, const String& target_guid)
+{
+	tree* fallback = NULL;
+	int bestCount = -1;
+	tree* result = find_metadata_node_by_guid_impl(root, target_guid, fallback, bestCount);
+	if (result)
+		return result;
+	return fallback;
+}

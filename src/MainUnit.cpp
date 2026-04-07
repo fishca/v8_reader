@@ -598,35 +598,35 @@ void __fastcall TMainForm::fillAccountingRegisterTree(PVirtualNode childNode, Vi
 		ChildNodeDataCurAtt->ImgIndex = 83;
 	}
 
-	// // Признаки учета
-	// PVirtualNode ChildNodeAccFlags = VirtualStringTreeValue1C->AddChild(childNode);
-	// VirtualTreeData *ChildNodeDataAccFlags = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeAccFlags);
-	// ChildNodeDataAccFlags->Name = "Признаки учета";
-	// ChildNodeDataAccFlags->Age = 30;
-	// ChildNodeDataAccFlags->ImgIndex = 118;
-	// for (int j = 0; j < accountingFlags.size(); j++)
-	// {
-	// 	PVirtualNode ChildNodeCurAccFlag = VirtualStringTreeValue1C->AddChild(ChildNodeAccFlags);
-	// 	VirtualTreeData *ChildNodeDataCurAccFlag = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCurAccFlag);
-	// 	ChildNodeDataCurAccFlag->Name = (accountingFlags[j])->name;
-	// 	ChildNodeDataCurAccFlag->Age = 30;
-	// 	ChildNodeDataCurAccFlag->ImgIndex = 118;
-	// }
+	 // Признаки учета
+	 PVirtualNode ChildNodeAccFlags = VirtualStringTreeValue1C->AddChild(childNode);
+	 VirtualTreeData *ChildNodeDataAccFlags = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeAccFlags);
+	 ChildNodeDataAccFlags->Name = "Признаки учета";
+	 ChildNodeDataAccFlags->Age = 30;
+	 ChildNodeDataAccFlags->ImgIndex = 118;
+	 for (int j = 0; j < accountingFlags.size(); j++)
+	 {
+	 	PVirtualNode ChildNodeCurAccFlag = VirtualStringTreeValue1C->AddChild(ChildNodeAccFlags);
+	 	VirtualTreeData *ChildNodeDataCurAccFlag = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCurAccFlag);
+	 	ChildNodeDataCurAccFlag->Name = (accountingFlags[j])->name;
+	 	ChildNodeDataCurAccFlag->Age = 30;
+	 	ChildNodeDataCurAccFlag->ImgIndex = 118;
+	 }
 
-	// // Признаки учета субконто
-	// PVirtualNode ChildNodeDimAccFlags = VirtualStringTreeValue1C->AddChild(childNode);
-	// VirtualTreeData *ChildNodeDataDimAccFlags = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDimAccFlags);
-	// ChildNodeDataDimAccFlags->Name = "Признаки учета субконто";
-	// ChildNodeDataDimAccFlags->Age = 30;
-	// ChildNodeDataDimAccFlags->ImgIndex = 119;
-	// for (int j = 0; j < dimensionAccountingFlags.size(); j++)
-	// {
-	// 	PVirtualNode ChildNodeCurDimAccFlag = VirtualStringTreeValue1C->AddChild(ChildNodeDimAccFlags);
-	// 	VirtualTreeData *ChildNodeDataCurDimAccFlag = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCurDimAccFlag);
-	// 	ChildNodeDataCurDimAccFlag->Name = (dimensionAccountingFlags[j])->name;
-	// 	ChildNodeDataCurDimAccFlag->Age = 30;
-	// 	ChildNodeDataCurDimAccFlag->ImgIndex = 119;
-	// }
+	 // Признаки учета субконто
+	 PVirtualNode ChildNodeDimAccFlags = VirtualStringTreeValue1C->AddChild(childNode);
+	 VirtualTreeData *ChildNodeDataDimAccFlags = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeDimAccFlags);
+	 ChildNodeDataDimAccFlags->Name = "Признаки учета субконто";
+	 ChildNodeDataDimAccFlags->Age = 30;
+	 ChildNodeDataDimAccFlags->ImgIndex = 119;
+	 for (int j = 0; j < dimensionAccountingFlags.size(); j++)
+	 {
+	 	PVirtualNode ChildNodeCurDimAccFlag = VirtualStringTreeValue1C->AddChild(ChildNodeDimAccFlags);
+	 	VirtualTreeData *ChildNodeDataCurDimAccFlag = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(ChildNodeCurDimAccFlag);
+	 	ChildNodeDataCurDimAccFlag->Name = (dimensionAccountingFlags[j])->name;
+	 	ChildNodeDataCurDimAccFlag->Age = 30;
+	 	ChildNodeDataCurDimAccFlag->ImgIndex = 119;
+	 }
 
 	// Формы
 	PVirtualNode ChildNodeForm = VirtualStringTreeValue1C->AddChild(childNode);
@@ -1175,7 +1175,7 @@ void __fastcall TMainForm::fillEnumTree(PVirtualNode childNode, VirtualTreeData 
 
 void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
 {
-    static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Documents, md_Reports, md_DataProcessors, md_ChartsOfCharacteristicTypes, md_ChartOfCalculationTypes};
+    static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Documents, md_Reports, md_DataProcessors, md_ChartsOfCharacteristicTypes, md_ChartOfCalculationTypes, md_BusinessProcesses, md_Tasks};
     static const std::unordered_set<String> journalTypes = {md_DocumentJournals};
     static const std::unordered_set<String> chartAccTypes = {md_ChartOfAccounts};
     static const std::unordered_set<String> informationRegisterTypes = {md_InformationRegisters, md_AccumulationRegisters, md_AccountingRegisters, md_CalculationRegisters};
@@ -1215,6 +1215,16 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
 			else if (md_name == md_ChartOfCalculationTypes)
 			{
 				TChartOfCalculationTypes* CurCat = dynamic_cast<TChartOfCalculationTypes*>(mdData[i].get());
+				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+			}
+			else if (md_name == md_BusinessProcesses)
+			{
+				TBusinessProceses* CurCat = dynamic_cast<TBusinessProceses*>(mdData[i].get());
+				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+			}
+			else if (md_name == md_Tasks)
+			{
+				TTasks* CurCat = dynamic_cast<TTasks*>(mdData[i].get());
 				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
 			}
 		}
@@ -1599,6 +1609,10 @@ void __fastcall TMainForm::FillVirtualTree() {
 		else if(category.name == md_BusinessProcesses)
 		{
 			FillTreeMD(parentNode, MainForm->mdBusinessProcesses, md_BusinessProcesses, category.imgIndex);
+		}
+		else if(category.name == md_Tasks)
+		{
+			FillTreeMD(parentNode, MainForm->mdTasks, md_Tasks, category.imgIndex);
 		}
 		else if (category.name == md_DocumentJournals)
 		{
@@ -2896,7 +2910,7 @@ void fill_subsystem(tree* tr, std::vector<SubSys> &md_subsys)
 
 	v8catalog *cf = MainForm->GlobalCF.get();
 
-	tree* node_md = find_node_by_guid(tr, guid_md);
+	tree* node_md = find_metadata_node_by_guid(tr, guid_md);
 
 	int CountMD = (node_md->get_next())->get_value().ToInt();
 
@@ -2993,7 +3007,7 @@ void fill_md(tree* tr, String guid_md)
 	}
 
 	msreg->AddMessage(L"fill_md: Поиск узла по GUID", MessageState::msInfo);
-	tree* node_md = find_node_by_guid(tr, guid_md);
+	tree* node_md = find_metadata_node_by_guid(tr, guid_md);
 	if (!node_md) {
 		msreg->AddMessage(L"fill_md: Узел не найден по GUID: " + guid_md, MessageState::msWarning);
 		return; // Защита от nullptr
@@ -3276,11 +3290,13 @@ void fill_md(tree* tr, String guid_md)
                                 }
                                 else if (guid_md == GUID_BusinessProcesses)
                                 {
-                                        msreg->AddMessage(L"fill_md: Пропуск бизнес-процесса: " + val, MessageState::msInfo);
+						msreg->AddMessage(L"fill_md: Создание бизнес-процесса: " + val, MessageState::msInfo);
+						MainForm->mdBusinessProcesses.push_back(std::make_unique<TBusinessProceses>(cf, curNode->get_value(), val));
                                 }
                                 else if (guid_md == GUID_Tasks)
                                 {
-                                        msreg->AddMessage(L"fill_md: Пропуск задачи: " + val, MessageState::msInfo);
+						msreg->AddMessage(L"fill_md: Создание задачи: " + val, MessageState::msInfo);
+						MainForm->mdTasks.push_back(std::make_unique<TTasks>(cf, curNode->get_value(), val));
                                 }
                                 else if (guid_md == GUID_AccountingRegisters)
                                 {
@@ -4012,6 +4028,10 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
+
+
+
 
 
 

@@ -58,6 +58,7 @@ tree* __fastcall parse_1Cstream(TStream* str, const String& path);
 bool __fastcall test_parse_1Ctext(TStream* str, const String& path);
 String outtext(tree* t);
 tree* find_node_by_guid(tree* root, const String& target_guid);
+tree* find_metadata_node_by_guid(tree* root, const String& target_guid);
 
 #endif
 
