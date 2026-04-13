@@ -95,12 +95,28 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         int DeltaTab = CountAttTab - 2;
         for (int i = 0; i < CountAttTab; i++)
         {
-            tree* itemNode = GetNodeByPath(root_data.get(), {0, paths.tabIdx, i + CountAttTab - DeltaTab});
-            itemNode = GetNodeByPath(itemNode, paths.tabItemPath);
-            if (!itemNode)
+            tree* tabularNode = GetNodeByPath(root_data.get(), {0, paths.tabIdx, i + CountAttTab - DeltaTab});
+            tree* itemNode = GetNodeByPath(tabularNode, paths.tabItemPath);
+            if (!itemNode || !tabularNode)
                 continue;
             String NameAttTab = itemNode->get_value();
-            tabulars.push_back(std::make_unique<TTabular>(NameAttTab, ""));
+            String GuidAttTab;
+            tree* guidNode = GetNodeByPath(tabularNode, {0, 1, 5, 1, 1});
+            if (guidNode)
+                GuidAttTab = Trim(guidNode->get_value());
+
+            auto tabular = std::make_unique<TTabular>(NameAttTab, GuidAttTab);
+
+            std::unique_ptr<tree> tabularRootData;
+            if (parent && !GuidAttTab.IsEmpty())
+            {
+                v8file* tabularFile = parent->GetFile(GuidAttTab);
+                if (tabularFile)
+                    tabularRootData.reset(get_treeFromV8file(tabularFile));
+            }
+
+            tabular->initializeFromTree(tabularRootData ? tabularRootData.get() : tabularNode);
+            tabulars.push_back(std::move(tabular));
         }
     }
 
