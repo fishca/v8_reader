@@ -59,6 +59,7 @@
 #include "WebServices.h"
 #include "HTTPServices.h"
 #include "Langs.h"
+#include "Subsystem.h"
 
 //---------------------------------------------------------------------------
 
@@ -136,18 +137,13 @@ static void AddConditionalInfoMessage(Messager* mess, const String& message)
 		mess->AddMessage(message, msInfo);
 }
 
-static void AddConditionalInfoMessageParams(Messager* mess, const String& description,
-	const String& parname1, const String& par1,
-	const String& parname2, const String& par2)
+static void AddConditionalInfoMessageParams(Messager* mess, const String& description, const String& parname1, const String& par1, const String& parname2, const String& par2)
 {
 	if (mess && mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
 		mess->AddMessage_(description, msInfo, parname1, par1, parname2, par2);
 }
 
-static void AddConditionalInfoMessageParams(Messager* mess, const String& description,
-	const String& parname1, const String& par1,
-	const String& parname2, const String& par2,
-	const String& parname3, const String& par3)
+static void AddConditionalInfoMessageParams(Messager* mess, const String& description, const String& parname1, const String& par1, const String& parname2, const String& par2, const String& parname3, const String& par3)
 {
 	if (mess && mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
 		mess->AddMessage_(description, msInfo, parname1, par1, parname2, par2, parname3, par3);
@@ -208,32 +204,186 @@ static void initNode(VirtualTreeData* data, const String& name, int imageIndex, 
 	data->ImgIndex = imageIndex;
 }
 
-static PVirtualNode addChildNode(TVirtualStringTree* tree,
-	PVirtualNode parent,
-	const String& name,
-	int imageIndex,
-	int age = DefaultTreeNodeAge)
+static PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const String& name, int imageIndex, int age = DefaultTreeNodeAge)
 {
 	PVirtualNode childNode = tree->AddChild(parent);
 	VirtualTreeData* childData = static_cast<VirtualTreeData*>(tree->GetNodeData(childNode));
 	initNode(childData, name, imageIndex, age);
+
 	return childNode;
 }
 
 template <typename Collection, typename NameGetter>
-static void addSection(TVirtualStringTree* tree,
-	PVirtualNode parent,
-	const String& sectionName,
-	int sectionImageIndex,
-	int itemImageIndex,
-	const Collection& items,
-	NameGetter getName,
-	int age = DefaultTreeNodeAge)
+static void addSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sectionName, int sectionImageIndex, int itemImageIndex, const Collection& items, NameGetter getName,  int age = DefaultTreeNodeAge)
 {
 	PVirtualNode sectionNode = addChildNode(tree, parent, sectionName, sectionImageIndex, age);
 
 	for (const auto& item : items)
 		addChildNode(tree, sectionNode, getName(item), itemImageIndex, age);
+}
+
+static void fillStandardMetadataSections(TVirtualStringTree* tree, PVirtualNode childNode, BaseMetadataObject* metadataObject)
+{
+	if (!metadataObject)
+		return;
+
+	addSection(tree, childNode, L"Реквизиты",       TreeImage::Attributes,      TreeImage::Attributes,      metadataObject->getAttributes(),      [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Табличные части", TreeImage::TabularSections, TreeImage::TabularSections, metadataObject->getTabularSections(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Формы",           TreeImage::Forms,           TreeImage::Forms,           metadataObject->getForms(),           [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Команды",         TreeImage::Commands,        TreeImage::Commands,        metadataObject->getCommands(),        [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Макеты",          TreeImage::Layouts,         TreeImage::Layouts,         metadataObject->getLayouts(),         [](const auto& item) { return item->name; });
+}
+
+static void fillInformationRegisterSections(TVirtualStringTree* tree, PVirtualNode childNode, MetadataObjectInformationRegister* metadataObject)
+{
+	if (!metadataObject)
+		return;
+
+	addSection(tree, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources, 	metadataObject->getResources(),  [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Формы",     TreeImage::Forms,      TreeImage::Forms,      metadataObject->getForms(),      [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Команды",   TreeImage::Commands,   TreeImage::Commands,   metadataObject->getCommands(),   [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Макеты",    TreeImage::Layouts,    TreeImage::Layouts,    metadataObject->getLayouts(),    [](const auto& item) { return item->name; });
+}
+
+void GetListChildrenSubsystem(v8catalog *cf, String &guid_md, std::vector<String>& child);
+String GetSubsystemInnerGuid(v8catalog *cf, String &guid_md);
+String GetNameSubsystem(v8catalog *cf, String &guid_md);
+
+static String normalizeGuid(const String& guid)
+{
+	return Trim(guid).LowerCase();
+}
+
+static TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& guid)
+{
+	String targetGuid = normalizeGuid(guid);
+	if (targetGuid.IsEmpty())
+		return nullptr;
+
+	for (const auto& item : subsystems)
+	{
+		TSubsystem* subsystem = dynamic_cast<TSubsystem*>(item.get());
+		if (!subsystem)
+			continue;
+
+		String subsystemFileGuid = normalizeGuid(subsystem->guid);
+		if (subsystemFileGuid == targetGuid)
+			return subsystem;
+
+		String originalGuid = subsystem->guid;
+		String subsystemInnerGuid = normalizeGuid(GetSubsystemInnerGuid(cf, originalGuid));
+		if (subsystemInnerGuid == targetGuid)
+			return subsystem;
+	}
+
+	return nullptr;
+}
+
+static String getSubsystemDisplayNameByGuid(v8catalog* cf, const String& guid)
+{
+	String guidCopy = guid;
+	String name = GetNameSubsystem(cf, guidCopy);
+	if (!name.IsEmpty())
+		return name;
+
+	TSubsystem* subsystem = findSubsystemByAnyGuid(cf, MainForm->mdSubsystems, guid);
+	if (subsystem)
+		return subsystem->name;
+
+	return guid;
+}
+
+static void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& parentGuid, int imgIndex);
+
+static void addSubsystemChildrenToTree(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, TSubsystem* parentSubsystem, int imgIndex)
+{
+	if (!tree || !cf || !parentSubsystem)
+		return;
+
+	addSubsystemChildrenToTreeByGuid(tree, parentNode, cf, subsystems, parentSubsystem->guid, imgIndex);
+}
+
+static void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& parentGuid, int imgIndex)
+{
+	if (!tree || !cf)
+		return;
+
+	tree->Expanded[parentNode] = true;
+
+	String subsystemGuid = parentGuid;
+	std::vector<String> childrenGuids;
+	GetListChildrenSubsystem(cf, subsystemGuid, childrenGuids);
+	if (childrenGuids.empty())
+	{
+		String subsystemInnerGuid = GetSubsystemInnerGuid(cf, subsystemGuid);
+		if (!subsystemInnerGuid.IsEmpty())
+			GetListChildrenSubsystem(cf, subsystemInnerGuid, childrenGuids);
+	}
+
+	for (const auto& childGuid : childrenGuids)
+	{
+		TSubsystem* childSubsystem = findSubsystemByAnyGuid(cf, subsystems, childGuid);
+
+		PVirtualNode childNode = tree->AddChild(parentNode);
+		VirtualTreeData *childData = static_cast<VirtualTreeData*>(tree->GetNodeData(childNode));
+		childData->Name = childSubsystem ? childSubsystem->name : getSubsystemDisplayNameByGuid(cf, childGuid);
+		childData->Age = 99;
+		childData->ImgIndex = imgIndex;
+		childData->text_module = L"";
+		childData->MetadataObject = childSubsystem;
+		tree->Expanded[childNode] = true;
+
+		String nextGuid = childSubsystem ? childSubsystem->guid : childGuid;
+		addSubsystemChildrenToTreeByGuid(tree, childNode, cf, subsystems, nextGuid, imgIndex);
+	}
+}
+
+static std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const MetadataVector<TObject>& subsystems)
+{
+	std::unordered_set<String> childSubsystemGuids;
+	if (!cf)
+		return childSubsystemGuids;
+
+	for (const auto& item : subsystems)
+	{
+		TSubsystem* subsystem = dynamic_cast<TSubsystem*>(item.get());
+		if (!subsystem)
+			continue;
+
+		String subsystemGuid = subsystem->guid;
+		std::vector<String> childrenGuids;
+		GetListChildrenSubsystem(cf, subsystemGuid, childrenGuids);
+		if (childrenGuids.empty())
+		{
+			String subsystemInnerGuid = GetSubsystemInnerGuid(cf, subsystemGuid);
+			if (!subsystemInnerGuid.IsEmpty())
+				GetListChildrenSubsystem(cf, subsystemInnerGuid, childrenGuids);
+		}
+
+		for (const auto& childGuid : childrenGuids)
+		{
+			TSubsystem* childSubsystem = findSubsystemByAnyGuid(cf, subsystems, childGuid);
+			if (childSubsystem)
+			{
+				String childFileGuid = normalizeGuid(childSubsystem->guid);
+				if (!childFileGuid.IsEmpty())
+					childSubsystemGuids.insert(childFileGuid);
+
+				String originalChildGuid = childSubsystem->guid;
+				String childInnerGuid = normalizeGuid(GetSubsystemInnerGuid(cf, originalChildGuid));
+				if (!childInnerGuid.IsEmpty())
+					childSubsystemGuids.insert(childInnerGuid);
+			}
+			else
+			{
+				childSubsystemGuids.insert(normalizeGuid(childGuid));
+			}
+		}
+	}
+
+	return childSubsystemGuids;
 }
 
 //---------------------------------------------------------------------------
@@ -255,6 +405,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std
 	}
 
 }
+
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::ResetLoadProgress(int maxValue, const String& statusText)
 {
@@ -298,6 +449,7 @@ void __fastcall TMainForm::CompleteLoadProgress(const String& statusText)
 	Application->ProcessMessages();
 	LoadProgressBar->Visible = false;
 }
+
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::btnOpenEditNameClick(TObject *Sender)
 {
@@ -309,18 +461,16 @@ void __fastcall TMainForm::btnOpenEditNameClick(TObject *Sender)
 		  throw(Exception("File does not exist."));
 	}
 }
-//---------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------
 void __fastcall TMainForm::btnGOClick(TObject *Sender)
 {
 	std::vector<std::string> filter;
 	//v8unpack::Parse(AnsiString(EditNameCF->Text).c_str(), AnsiString(editFolderName->Text).c_str(), filter);
 }
+
 //---------------------------------------------------------------------------
-
-
-void __fastcall TMainForm::VirtualStringTreeValue1CInitNode(TBaseVirtualTree *Sender,
-		  PVirtualNode ParentNode, PVirtualNode Node, TVirtualNodeInitStates &InitialStates)
+void __fastcall TMainForm::VirtualStringTreeValue1CInitNode(TBaseVirtualTree *Sender, PVirtualNode ParentNode, PVirtualNode Node, TVirtualNodeInitStates &InitialStates)
 {
 	if(!ParentNode)
 	{
@@ -328,11 +478,9 @@ void __fastcall TMainForm::VirtualStringTreeValue1CInitNode(TBaseVirtualTree *Se
 		initNode(d, L"Типы 1С", TreeImage::Root, 0);
 	}
 }
-//---------------------------------------------------------------------------
 
-void __fastcall TMainForm::VirtualStringTreeValue1CGetText(TBaseVirtualTree *Sender,
-	  PVirtualNode Node, TColumnIndex Column, TVSTTextType TextType,
-	  UnicodeString &CellText)
+//---------------------------------------------------------------------------
+void __fastcall TMainForm::VirtualStringTreeValue1CGetText(TBaseVirtualTree *Sender, PVirtualNode Node, TColumnIndex Column, TVSTTextType TextType, UnicodeString &CellText)
 {
 	VirtualTreeData *NodeData = (VirtualTreeData*)Sender->GetNodeData(Node);
 	CellText = NodeData->Name;
@@ -374,170 +522,94 @@ void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtu
 	}
 }
 
-void __fastcall TMainForm::fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TTabular>>& tabulars,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels)
+void __fastcall TMainForm::fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject)
 {
-	initNode(childData, name, imgIndex);
+	if (!metadataObject)
+		return;
 
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes,
-		attributes, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Табличные части", TreeImage::TabularSections, TreeImage::TabularSections,
-		tabulars, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-		forms, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-		comands, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-		moxels, [](const auto& item) { return item->name; });
+	initNode(childData, metadataObject->name, imgIndex);
+
+	fillStandardMetadataSections(VirtualStringTreeValue1C, childNode, metadataObject);
 }
 
-void __fastcall TMainForm::fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels)
+void __fastcall TMainForm::fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
 {
-	initNode(childData, name, imgIndex);
-	addSection(VirtualStringTreeValue1C, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions,
-		dimensions, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Ресурсы", TreeImage::Resources, TreeImage::Resources,
-		resources, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes,
-		attributes, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-		forms, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-		comands, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-		moxels, [](const auto& item) { return item->name; });
+	if (!metadataObject)
+		return;
+
+	initNode(childData, metadataObject->name, imgIndex);
+
+	fillInformationRegisterSections(VirtualStringTreeValue1C, childNode, metadataObject);
 }
 
-void __fastcall TMainForm::fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TAccountingFlag>>& accountingFlags,
-						const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimensionAccountingFlags,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels)
+void __fastcall TMainForm::fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TAccountingRegisters* metadataObject)
 {
-	initNode(childData, name, imgIndex);
-	addSection(VirtualStringTreeValue1C, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions,
-		dimensions, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Ресурсы", TreeImage::Resources, TreeImage::Resources,
-		resources, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes,
-		attributes, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета", TreeImage::AccountingFlags, TreeImage::AccountingFlags,
-		accountingFlags, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags, TreeImage::SubcontoFlags,
-		dimensionAccountingFlags, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-		forms, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-		comands, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-		moxels, [](const auto& item) { return item->name; });
+	if (!metadataObject)
+		return;
+
+	initNode(childData, metadataObject->name, imgIndex);
+
+	addSection(VirtualStringTreeValue1C, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources, 	metadataObject->getResources(),  [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
+
+	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета",          TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->getAccountingFlags(),          [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags,   TreeImage::SubcontoFlags,   metadataObject->getDimensionAccountingFlags(), [](const auto& item) { return item->name; });
+
+	addSection(VirtualStringTreeValue1C, childNode, L"Формы",   TreeImage::Forms,    TreeImage::Forms,    metadataObject->getForms(),    [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",  TreeImage::Layouts,  TreeImage::Layouts,  metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
 }
 
-void __fastcall TMainForm::fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels)
+void __fastcall TMainForm::fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
 {
-	initNode(childData, name, imgIndex);
-	addSection(VirtualStringTreeValue1C, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions,
-		dimensions, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Ресурсы", TreeImage::Resources, TreeImage::Resources,
-		resources, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes,
-		attributes, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-		forms, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-		comands, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-		moxels, [](const auto& item) { return item->name; });
+	if (!metadataObject)
+		return;
+
+	initNode(childData, metadataObject->name, imgIndex);
+
+	fillInformationRegisterSections(VirtualStringTreeValue1C, childNode, metadataObject);
 }
 
-void __fastcall TMainForm::fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-						const std::vector<std::unique_ptr<TRequisite>>& resources,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels)
+void __fastcall TMainForm::fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
 {
-	initNode(childData, name, imgIndex);
-	addSection(VirtualStringTreeValue1C, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions,
-		dimensions, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Ресурсы", TreeImage::Resources, TreeImage::Resources,
-		resources, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes,
-		attributes, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-		forms, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-		comands, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-		moxels, [](const auto& item) { return item->name; });
+	if (!metadataObject)
+		return;
+
+	initNode(childData, metadataObject->name, imgIndex);
+
+	fillInformationRegisterSections(VirtualStringTreeValue1C, childNode, metadataObject);
 }
 
-void __fastcall TMainForm::fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TAccountingFlag>>& accflags,
-						const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimaccflags,
-						const std::vector<std::unique_ptr<TTabular>>& tabulars,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels)
+void __fastcall TMainForm::fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TChartOfAccounts* metadataObject)
 {
-	initNode(childData, name, imgIndex);
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes,
-		attributes, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета", TreeImage::AccountingFlags, TreeImage::AccountingFlags,
-		accflags, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags, TreeImage::SubcontoFlags,
-		dimaccflags, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Табличные части", TreeImage::TabularSections, TreeImage::TabularSections,
-		tabulars, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-		forms, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-		comands, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-		moxels, [](const auto& item) { return item->name; });
+	if (!metadataObject)
+		return;
+
+	initNode(childData, metadataObject->name, imgIndex);
+
+	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты",               TreeImage::Attributes,      TreeImage::Attributes,      metadataObject->getAttributes(),      [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета",          TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->accflags,             [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags,   TreeImage::SubcontoFlags,   metadataObject->dimaccflags,          [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Табличные части",         TreeImage::TabularSections, TreeImage::TabularSections, metadataObject->getTabularSections(), [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Формы",                   TreeImage::Forms,           TreeImage::Forms,           metadataObject->getForms(),           [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Команды",                 TreeImage::Commands,        TreeImage::Commands,        metadataObject->getCommands(),        [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",                  TreeImage::Layouts,         TreeImage::Layouts,         metadataObject->getLayouts(),         [](const auto& item) { return item->name; });
 }
 
 
-void __fastcall TMainForm::fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-						const std::vector<std::unique_ptr<TRequisite>>& attributes,
-						const std::vector<std::unique_ptr<TTabular>>& tabulars,
-						const std::vector<std::unique_ptr<TForm1C>>& forms,
-						const std::vector<std::unique_ptr<TComand>>& comands,
-						const std::vector<std::unique_ptr<TMoxel>>& moxels)
+void __fastcall TMainForm::fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject)
 {
-	initNode(childData, name, imgIndex);
-	addSection(VirtualStringTreeValue1C, childNode, L"Графы", TreeImage::JournalColumns, TreeImage::JournalColumns,
-		attributes, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Табличные части", TreeImage::TabularSections, TreeImage::TabularSections,
-		tabulars, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-		forms, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-		comands, [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-		moxels, [](const auto& item) { return item->name; });
+	if (!metadataObject)
+		return;
+
+	initNode(childData, metadataObject->name, imgIndex);
+
+	addSection(VirtualStringTreeValue1C, childNode, L"Графы",           TreeImage::JournalColumns,  TreeImage::JournalColumns,  metadataObject->getAttributes(),      [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Табличные части", TreeImage::TabularSections, TreeImage::TabularSections, metadataObject->getTabularSections(), [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Формы",           TreeImage::Forms,           TreeImage::Forms,           metadataObject->getForms(),           [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Команды",         TreeImage::Commands,        TreeImage::Commands,        metadataObject->getCommands(),        [](const auto& item) { return item->name; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",          TreeImage::Layouts,         TreeImage::Layouts,         metadataObject->getLayouts(),         [](const auto& item) { return item->name; });
 }
 
 
@@ -546,14 +618,10 @@ void __fastcall TMainForm::fillEnumTree(PVirtualNode childNode, VirtualTreeData 
 {
     initNode(childData, CurCat->name, imgIndex);
 
-    addSection(VirtualStringTreeValue1C, childNode, L"Значения", TreeImage::Attributes, TreeImage::Attributes,
-		CurCat->attributes, [](const auto& item) { return item; });
-    addSection(VirtualStringTreeValue1C, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms,
-        CurCat->forms, [](const auto& item) { return item; });
-    addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
-        CurCat->comands, [](const auto& item) { return item; });
-    addSection(VirtualStringTreeValue1C, childNode, L"Макеты", TreeImage::Layouts, TreeImage::Layouts,
-        CurCat->moxels, [](const auto& item) { return item; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Значения", TreeImage::Attributes, TreeImage::Attributes, CurCat->attributes, [](const auto& item) { return item; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Формы",    TreeImage::Forms,      TreeImage::Forms,      CurCat->forms,      [](const auto& item) { return item; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Команды",  TreeImage::Commands,   TreeImage::Commands,   CurCat->comands,    [](const auto& item) { return item; });
+	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",   TreeImage::Layouts,    TreeImage::Layouts,    CurCat->moxels,     [](const auto& item) { return item; });
 }
 
 void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
@@ -570,53 +638,16 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
 
         if (catalogTypes.count(md_name))
         {
-            if (md_name == md_Catalogs)
-            {
-                TCatalogs* CurCat = dynamic_cast<TCatalogs*>(mdData[i].get());
-                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-            }
-            else if (md_name == md_Documents)
-			{
-                TDocuments* CurCat = dynamic_cast<TDocuments*>(mdData[i].get());
-                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-            }
-			else if (md_name == md_Reports)
-            {
-                TReports* CurCat = dynamic_cast<TReports*>(mdData[i].get());
-                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-			}
-			else if (md_name == md_DataProcessors)
-			{
-				TDataProcessors* CurCat = dynamic_cast<TDataProcessors*>(mdData[i].get());
-				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-			}
-            else if (md_name == md_ChartsOfCharacteristicTypes)
-            {
-                TChartOfCharacteristicTypes* CurCat = dynamic_cast<TChartOfCharacteristicTypes*>(mdData[i].get());
-                if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-            }
-			else if (md_name == md_ChartOfCalculationTypes)
-			{
-				TChartOfCalculationTypes* CurCat = dynamic_cast<TChartOfCalculationTypes*>(mdData[i].get());
-				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-			}
-			else if (md_name == md_BusinessProcesses)
-			{
-				TBusinessProceses* CurCat = dynamic_cast<TBusinessProceses*>(mdData[i].get());
-				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-			}
-			else if (md_name == md_Tasks)
-			{
-				TTasks* CurCat = dynamic_cast<TTasks*>(mdData[i].get());
-				if (CurCat) fillCatalogsTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
-			}
+			BaseMetadataObject* metadataObject = dynamic_cast<BaseMetadataObject*>(mdData[i].get());
+			if (metadataObject)
+				fillCatalogsTree(childNode, childData, imgIndex, metadataObject);
 		}
         else if (journalTypes.count(md_name))
         {
             if (md_name == md_DocumentJournals)
             {
                 TJournals* CurCat = dynamic_cast<TJournals*>(mdData[i].get());
-                if (CurCat) fillJournalTree(childNode, childData, imgIndex, CurCat->name, CurCat->getAttributes(), CurCat->getTabularSections(), CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                if (CurCat) fillJournalTree(childNode, childData, imgIndex, CurCat);
             }
 		}
         else if (chartAccTypes.count(md_name))
@@ -624,7 +655,7 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
             if (md_name == md_ChartOfAccounts)
             {
                 TChartOfAccounts* CurCat = dynamic_cast<TChartOfAccounts*>(mdData[i].get());
-                if (CurCat) fillChartAccTree(childNode, childData, imgIndex, CurCat->name, CurCat->attributes, CurCat->accflags, CurCat->dimaccflags, CurCat->tabulars, CurCat->forms, CurCat->comands, CurCat->moxels);
+                if (CurCat) fillChartAccTree(childNode, childData, imgIndex, CurCat);
             }
         }
         else if (informationRegisterTypes.count(md_name))
@@ -632,31 +663,22 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
             if (md_name == md_InformationRegisters)
             {
                 TInformationRegisters* CurCat = dynamic_cast<TInformationRegisters*>(mdData[i].get());
-                if (CurCat) fillInformationRegisterTree(childNode, childData, imgIndex, CurCat->name,
-                    CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
-					CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                if (CurCat) fillInformationRegisterTree(childNode, childData, imgIndex, CurCat);
             }
             else if (md_name == md_AccumulationRegisters)
             {
                 TAccumulationRegisters* CurCat = dynamic_cast<TAccumulationRegisters*>(mdData[i].get());
-                if (CurCat) fillAccumulationRegisterTree(childNode, childData, imgIndex, CurCat->name,
-                    CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
-                    CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                if (CurCat) fillAccumulationRegisterTree(childNode, childData, imgIndex, CurCat);
             }
             else if (md_name == md_AccountingRegisters)
             {
                 TAccountingRegisters* CurCat = dynamic_cast<TAccountingRegisters*>(mdData[i].get());
-                if (CurCat) fillAccountingRegisterTree(childNode, childData, imgIndex, CurCat->name,
-                    CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
-                    CurCat->getAccountingFlags(), CurCat->getDimensionAccountingFlags(),
-                    CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                if (CurCat) fillAccountingRegisterTree(childNode, childData, imgIndex, CurCat);
             }
             else if (md_name == md_CalculationRegisters)
             {
                 TCalculationRegisters* CurCat = dynamic_cast<TCalculationRegisters*>(mdData[i].get());
-                if (CurCat) fillCalculationRegisterTree(childNode, childData, imgIndex, CurCat->name,
-                    CurCat->getAttributes(), CurCat->getDimensions(), CurCat->getResources(),
-                    CurCat->getForms(), CurCat->getCommands(), CurCat->getLayouts());
+                if (CurCat) fillCalculationRegisterTree(childNode, childData, imgIndex, CurCat);
             }
         }
         else if (md_name == md_Enums)
@@ -711,6 +733,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 	};
 
 	std::vector<CategoryData> md_categoriesCommon = {
+		{&MainForm->mdSubsystems,                  md_Subsystems,                      74,  25},
 		{&MainForm->mdCommonModules,               md_CommonModules,                   87,  25},
 		{&MainForm->mdSessionParameters,           md_SessionParameters,               90,  25},
 		{&MainForm->mdRoles,                       md_Roles,                           81,  25},
@@ -761,6 +784,8 @@ void __fastcall TMainForm::FillVirtualTree() {
 
 		if (category.name == "Общие")
 		{
+			std::unordered_set<String> nestedSubsystemGuids = collectChildSubsystemGuids(MainForm->GlobalCF.get(), MainForm->mdSubsystems);
+
 			for (const auto& categoryCom : md_categoriesCommon)
 			{
 				PVirtualNode parentNodeCom = VirtualStringTreeValue1C->AddChild(parentNode);
@@ -769,9 +794,24 @@ void __fastcall TMainForm::FillVirtualTree() {
 				parentNodeDataCom->Name = categoryCom.name;
 				parentNodeDataCom->Age = categoryCom.age;
 				parentNodeDataCom->ImgIndex = categoryCom.imgIndex;
+				if (categoryCom.name == md_Subsystems)
+					VirtualStringTreeValue1C->Expanded[parentNodeCom] = true;
 
 				for (const auto& item : *categoryCom.data)
 				{
+					if (categoryCom.name == md_Subsystems)
+					{
+						TSubsystem* CurSubsystem = static_cast<TSubsystem*>(item.get());
+						if (CurSubsystem)
+						{
+							String subsystemFileGuid = normalizeGuid(CurSubsystem->guid);
+							String originalGuid = CurSubsystem->guid;
+							String subsystemInnerGuid = normalizeGuid(GetSubsystemInnerGuid(MainForm->GlobalCF.get(), originalGuid));
+							if (nestedSubsystemGuids.count(subsystemFileGuid) || nestedSubsystemGuids.count(subsystemInnerGuid))
+							continue;
+						}
+					}
+
 					PVirtualNode childNodeCom = VirtualStringTreeValue1C->AddChild(parentNodeCom);
 					VirtualTreeData *childDataCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeCom);
 
@@ -920,6 +960,18 @@ void __fastcall TMainForm::FillVirtualTree() {
 						childDataCom->Age = 99;
 						childDataCom->ImgIndex = categoryCom.imgIndex;
 						childDataCom->text_module = L"";
+						childDataCom->MetadataObject = CurLang;
+					}
+					else if (categoryCom.name == md_Subsystems)
+					{
+						TSubsystem* CurSubsystem = static_cast<TSubsystem*>(item.get());
+						childDataCom->Name = CurSubsystem->name;
+						childDataCom->Age = 99;
+						childDataCom->ImgIndex = categoryCom.imgIndex;
+						childDataCom->text_module = L"";
+						childDataCom->MetadataObject = CurSubsystem;
+						VirtualStringTreeValue1C->Expanded[childNodeCom] = true;
+						addSubsystemChildrenToTree(VirtualStringTreeValue1C, childNodeCom, MainForm->GlobalCF.get(), MainForm->mdSubsystems, CurSubsystem, categoryCom.imgIndex);
 					}
 					else
 					{
@@ -1222,6 +1274,7 @@ void __fastcall TMainForm::ActionOpenCFExecute(TObject *Sender)
 {
 	TMainForm::ActionFileOpenExecute(Sender);
 }
+
 //---------------------------------------------------------------------------
 //                           Messager
 //---------------------------------------------------------------------------
@@ -1483,11 +1536,33 @@ String GetNameSubsystem(v8catalog *cf, String &guid_md)
 	}
 	tree* node = tree_md;
 
-	node = &(*node)[0][1][1][2]; // guid подсистемы
+	node = &(*node)[0][1][1][2]; // имя подсистемы
+	Result = node->get_value();
 
-	Result = node->get_value(); // имя подсистемы
+	delete tree_md;
+	return Result;
+}
 
+String GetSubsystemInnerGuid(v8catalog *cf, String &guid_md)
+{
+	String Result = "";
+	v8file *filedata = cf->GetFile(guid_md);
+	if(!filedata)
+	{
+		return Result;
+	}
+	tree* tree_md = get_treeFromV8file(filedata);
+	if(!tree_md)
+	{
+		return Result;
+	}
+	tree* node = tree_md;
 
+	node = &(*node)[0][1][1][1]; // внутренний guid подсистемы
+	Result = node->get_value();
+
+	delete tree_md;
+	return Result;
 }
 
 void GetListChildrenSubsystem(v8catalog *cf, String &guid_md, std::vector<String>& child)
@@ -1617,11 +1692,31 @@ void fill_md(tree* tr, String guid_md)
 		{GUID_Sequences,                  {0,1,7,1,2}},
 		{GUID_DataProcessors,             {0,1,3,1,2}},
 		{GUID_Enums,                      {0,1,5,1,2}},
-        {GUID_DefinedTypes,               {0,1,3,2}},
+		{GUID_DefinedTypes,               {0,1,3,2}},
 		{GUID_Bots,                       {0,1,1,2}}
 	};
 
 	auto pathIt = namePaths.find(guid_md);
+
+	auto tryGetNodeByPath = [](tree* startNode, const std::vector<int>& candidatePath) -> tree*
+	{
+		tree* currentNode = startNode;
+		if (!currentNode)
+			return nullptr;
+
+		for (size_t i = 0; i < candidatePath.size(); i++)
+		{
+			int idx = candidatePath[i];
+			if (idx < 0 || idx >= currentNode->get_num_subnode())
+				return nullptr;
+
+			currentNode = currentNode->get_subnode(idx);
+			if (!currentNode)
+				return nullptr;
+		}
+
+		return currentNode;
+	};
 
 	if (pathIt == namePaths.end()) {
 		// GUID не найден в карте путей, пропустить
@@ -1711,29 +1806,22 @@ void fill_md(tree* tr, String guid_md)
 			}
 			msreg->AddMessage(L"fill_md: Дерево разобрано успешно", MessageState::msInfo);
 
-			node = tree_md;
-
+			node = nullptr;
 			msreg->AddMessage(L"fill_md: Навигация по пути", MessageState::msInfo);
 			try {
-				for (size_t i = 0; i < path.size(); i++)
+				std::vector<std::vector<int>> candidatePaths = {path};
+
+				if (guid_md == GUID_BusinessProcesses || guid_md == GUID_Tasks)
 				{
-					int idx = path[i];
-					msreg->AddMessage(L"fill_md: Шаг " + String((int)i) + L", индекс: " + String(idx), MessageState::msInfo);
+					candidatePaths.push_back({0,1,1});
+					candidatePaths.push_back({0,1,2});
+				}
 
-					// Проверка границ - индекс должен быть в пределах количества подчиненных узлов
-					if (idx < 0 || idx >= node->get_num_subnode()) {
-						msreg->AddMessage(L"fill_md: Ошибка - индекс выходит за пределы на шаге " + String((int)i)
-							+ L", доступно узлов: " + String(node->get_num_subnode())
-							+ L", запрошен индекс: " + String(idx), MessageState::msError);
-						node = nullptr;
-						break;
-					}
-
-					node = &(*node)[idx];
-					if (!node) {
-						msreg->AddMessage(L"fill_md: Ошибка - узел стал null на шаге " + String((int)i), MessageState::msError);
-						break;
-					}
+				for (size_t candidateIndex = 0; candidateIndex < candidatePaths.size() && !node; candidateIndex++)
+				{
+					const std::vector<int>& candidatePath = candidatePaths[candidateIndex];
+					msreg->AddMessage(L"fill_md: Попытка пути #" + String((int)candidateIndex + 1), MessageState::msInfo);
+					node = tryGetNodeByPath(tree_md, candidatePath);
 				}
 			}
 			catch (...) {
@@ -1765,261 +1853,265 @@ void fill_md(tree* tr, String guid_md)
 				continue;
 			}
 			msreg->AddMessage(L"fill_md: Получено имя: " + val, MessageState::msInfo);
+
 			if ((processedCount == 1) || (processedCount % 25 == 0))
 				LogHeapStatus(L"fill_md: состояние памяти перед созданием объекта", guid_md, curNodeValue, processedCount, CountMD);
 
-                        // Создание объектов для специфических типов
-                        try {
-                                if (guid_md == GUID_Catalogs)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание справочника: " + val, MessageState::msInfo);
-                                        MainForm->mdCatalogs.push_back(std::make_unique<TCatalogs>(cf, curNode->get_value(), val));
-								}
-                                else if (guid_md == GUID_Languages)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание языка: " + val, MessageState::msInfo);
-                                        MainForm->mdLanguages.push_back(std::make_unique<TLangs>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_CommonModules)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание общего модуля: " + val, MessageState::msInfo);
-                                        MainForm->mdCommonModules.push_back(std::make_unique<TCommonModules>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Roles)
-                                {
-						msreg->AddMessage(L"fill_md: Создание роли: " + val, MessageState::msInfo);
-						MainForm->mdRoles.push_back(std::make_unique<TRoles>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_CommonTemplates)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание общего макета: " + val, MessageState::msInfo);
-                                        MainForm->mdCommonTemplates.push_back(std::make_unique<TCommonTemplates>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_HTTPServices)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание HTTP-сервиса: " + val, MessageState::msInfo);
-                                        MainForm->mdHTTPServices.push_back(std::make_unique<THTTPServices>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_ScheduledJobs)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание регламентного задания: " + val, MessageState::msInfo);
-										MainForm->mdScheduledJobs.push_back(std::make_unique<TScheduledJobs>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_CommonAttributes)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание общего реквизита: " + val, MessageState::msInfo);
-                                        MainForm->mdCommonAttributes.push_back(std::make_unique<TCommonAttributes>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_SessionParameters)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание параметра сеанса: " + val, MessageState::msInfo);
-                                        MainForm->mdSessionParameters.push_back(std::make_unique<TSessionParameters>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_FunctionalOptionsParameters)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание параметра функциональной опции: " + val, MessageState::msInfo);
-                                        MainForm->mdFunctionalOptionsParameters.push_back(std::make_unique<TFunctionalOptionsParameters>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Subsystems)
-                                {
-                                        msreg->AddMessage(L"fill_md: Пропуск подсистемы: " + val, MessageState::msInfo);
-                                }
-                                else if (guid_md == GUID_Interfaces)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание интерфейса: " + val, MessageState::msInfo);
-                                        MainForm->mdInterfaces.push_back(std::make_unique<TInterfaces>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Styles)
-                                {
-                                        msreg->AddMessage(L"fill_md: Пропуск стиля: " + val, MessageState::msInfo);
-								}
-                                else if (guid_md == GUID_FilterCriteria)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание критерия отбора: " + val, MessageState::msInfo);
-                                        MainForm->mdFilterCriteria.push_back(std::make_unique<TFilterCriteria>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_SettingsStorages)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание хранилища настроек: " + val, MessageState::msInfo);
-                                        MainForm->mdSettingsStorages.push_back(std::make_unique<TSettingsStorages>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_StyleItems)
-                                {
-                                        msreg->AddMessage(L"fill_md: Пропуск элемента стиля: " + val, MessageState::msInfo);
-                                }
-                                else if (guid_md == GUID_CommonPictures)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание общей картинки: " + val, MessageState::msInfo);
-                                        MainForm->mdCommonPictures.push_back(std::make_unique<TCommonPictures>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_ExchangePlans)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание плана обмена: " + val, MessageState::msInfo);
-                                        MainForm->mdExchangePlans.push_back(std::make_unique<TExchangePlans>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_EventSubscriptions)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание подписки на событие: " + val, MessageState::msInfo);
-                                        MainForm->mdEventSubscriptions.push_back(std::make_unique<TEventSubscriptions>(cf, curNode->get_value(), val));
-								}
-                                else if (guid_md == GUID_WebServices)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание веб-сервиса: " + val, MessageState::msInfo);
-                                        MainForm->mdWebServices.push_back(std::make_unique<TWebServices>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_FunctionalOptions)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание функциональной опции: " + val, MessageState::msInfo);
-                                        MainForm->mdFunctionalOptions.push_back(std::make_unique<TFunctionalOptions>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_DefinedTypes)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание определяемого типа: " + val, MessageState::msInfo);
-                                        MainForm->mdDefinedTypes.push_back(std::make_unique<TDefinedTypes>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_XDTOPackages)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание XDTO-пакета: " + val, MessageState::msInfo);
-                                        MainForm->mdXDTOPackages.push_back(std::make_unique<TXDTOPackages>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_WSReferences)
-                                {
-                                        msreg->AddMessage(L"fill_md: Пропуск WS-ссылки: " + val, MessageState::msInfo);
-                                }
-                                else if (guid_md == GUID_Constants)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание константы: " + val, MessageState::msInfo);
-                                        MainForm->mdConstants.push_back(std::make_unique<TConstants>(cf, curNode->get_value(), val));
-								}
-                                else if (guid_md == GUID_Documents)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание документа: " + val, MessageState::msInfo);
-                                        MainForm->mdDocuments.push_back(std::make_unique<TDocuments>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_CommonForms)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание общей формы: " + val, MessageState::msInfo);
-                                        MainForm->mdCommonForms.push_back(std::make_unique<TCommonForms>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_InformationRegisters)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание регистра сведений: " + val, MessageState::msInfo);
-                                        MainForm->mdInformationRegisters.push_back(std::make_unique<TInformationRegisters>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_CalculationRegisters)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание регистра расчета: " + val, MessageState::msInfo);
-                                        MainForm->mdCalculationRegisters.push_back(std::make_unique<TCalculationRegisters>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_BusinessProcesses)
-                                {
-						msreg->AddMessage(L"fill_md: Создание бизнес-процесса: " + val, MessageState::msInfo);
-						MainForm->mdBusinessProcesses.push_back(std::make_unique<TBusinessProceses>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Tasks)
-                                {
-						msreg->AddMessage(L"fill_md: Создание задачи: " + val, MessageState::msInfo);
-						MainForm->mdTasks.push_back(std::make_unique<TTasks>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_AccountingRegisters)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание регистра бухгалтерии: " + val, MessageState::msInfo);
-                                        MainForm->mdAccountingRegisters.push_back(std::make_unique<TAccountingRegisters>(cf, curNode->get_value(), val));
-                                        msreg->AddMessage(L"fill_md: Регистр бухгалтерии создан успешно: " + val, MessageState::msInfo);
-                                }
-                                else if (guid_md == GUID_CommandGroups)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание группы команд: " + val, MessageState::msInfo);
-                                        MainForm->mdCommandGroups.push_back(std::make_unique<TCommandGroups>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_CommonCommands)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание общей команды: " + val, MessageState::msInfo);
-                                        MainForm->mdCommonCommands.push_back(std::make_unique<TCommonCommands>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Numerators)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание нумератора: " + val, MessageState::msInfo);
-                                        MainForm->mdDocumentNumerators.push_back(std::make_unique<TNumerators>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_JournDocuments)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание журнала документов: " + val, MessageState::msInfo);
-                                        MainForm->mdDocumentJournals.push_back(std::make_unique<TJournals>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Reports)
-								{
-                                        msreg->AddMessage(L"fill_md: Создание отчета: " + val, MessageState::msInfo);
-                                        MainForm->mdReports.push_back(std::make_unique<TReports>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_ChartOfCharacteristicTypes)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание ПВХ: " + val, MessageState::msInfo);
-                                        MainForm->mdChartsOfCharacteristicTypes.push_back(std::make_unique<TChartOfCharacteristicTypes>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_ChartsOfAccounts)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание плана счетов: " + val, MessageState::msInfo);
-                                        MainForm->mdChartOfAccounts.push_back(std::make_unique<TChartOfAccounts>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_ChartsOfCalculationTypes)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание ПВР: " + val, MessageState::msInfo);
-                                        MainForm->mdChartOfCalculationTypes.push_back(std::make_unique<TChartOfCalculationTypes>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_AccumulationRegisters)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание регистра накопления: " + val, MessageState::msInfo);
-                                        MainForm->mdAccumulationRegisters.push_back(std::make_unique<TAccumulationRegisters>(cf, curNode->get_value(), val));
-                                        msreg->AddMessage(L"fill_md: Регистр накопления создан успешно: " + val, MessageState::msInfo);
-                                }
-                                else if (guid_md == GUID_Sequences)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание последовательности: " + val, MessageState::msInfo);
-                                        MainForm->mdSequences.push_back(std::make_unique<TSequences>(cf, curNode->get_value(), val));
-								}
-                                else if (guid_md == GUID_DataProcessors)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание обработки: " + val, MessageState::msInfo);
-                                        MainForm->mdDataProcessors.push_back(std::make_unique<TDataProcessors>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Enums)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание перечисления: " + val, MessageState::msInfo);
-                                        MainForm->mdEnums.push_back(std::make_unique<TEnums>(cf, curNode->get_value(), val));
-                                }
-                                else if (guid_md == GUID_Bots)
-                                {
-                                        msreg->AddMessage(L"fill_md: Создание бота: " + val, MessageState::msInfo);
-                                        MainForm->mdBots.push_back(std::make_unique<TBots>(cf, curNode->get_value(), val));
-                                }
-                                else
-                                {
-                                        msreg->AddMessage(L"fill_md: Неизвестный GUID для объекта: " + val, MessageState::msWarning);
-                                }
-                        }
-                        catch (const Exception &e) {
-                                msreg->AddMessage_(L"fill_md: VCL exception при создании объекта", msError,
-                                        L"Name", val,
-                                        L"GUID", guid_md,
-                                        L"File", curNodeValue,
-                                        L"Message", e.Message);
-                                LogHeapStatus(L"fill_md: память при VCL exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
-                        }
-						catch (...) {
-                                msreg->AddMessage_(L"fill_md: неизвестное исключение при создании объекта", msError,
-                                        L"Name", val,
-                                        L"GUID", guid_md,
-                                        L"File", curNodeValue);
-                                LogHeapStatus(L"fill_md: память при неизвестном exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
-                        }
-						delete tree_md;
-                        //md_list.push_back(val);
-                }
+			// Создание объектов для специфических типов
+			try {
+				if (guid_md == GUID_Catalogs)
+				{
+					msreg->AddMessage(L"fill_md: Создание справочника: " + val, MessageState::msInfo);
+					MainForm->mdCatalogs.push_back(std::make_unique<TCatalogs>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Languages)
+				{
+					msreg->AddMessage(L"fill_md: Создание языка: " + val, MessageState::msInfo);
+					MainForm->mdLanguages.push_back(std::make_unique<TLangs>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_CommonModules)
+				{
+					msreg->AddMessage(L"fill_md: Создание общего модуля: " + val, MessageState::msInfo);
+					MainForm->mdCommonModules.push_back(std::make_unique<TCommonModules>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Roles)
+				{
+					msreg->AddMessage(L"fill_md: Создание роли: " + val, MessageState::msInfo);
+					MainForm->mdRoles.push_back(std::make_unique<TRoles>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_CommonTemplates)
+				{
+					msreg->AddMessage(L"fill_md: Создание общего макета: " + val, MessageState::msInfo);
+					MainForm->mdCommonTemplates.push_back(std::make_unique<TCommonTemplates>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_HTTPServices)
+				{
+					msreg->AddMessage(L"fill_md: Создание HTTP-сервиса: " + val, MessageState::msInfo);
+					MainForm->mdHTTPServices.push_back(std::make_unique<THTTPServices>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_ScheduledJobs)
+				{
+					msreg->AddMessage(L"fill_md: Создание регламентного задания: " + val, MessageState::msInfo);
+					MainForm->mdScheduledJobs.push_back(std::make_unique<TScheduledJobs>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_CommonAttributes)
+				{
+					msreg->AddMessage(L"fill_md: Создание общего реквизита: " + val, MessageState::msInfo);
+					MainForm->mdCommonAttributes.push_back(std::make_unique<TCommonAttributes>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_SessionParameters)
+				{
+					msreg->AddMessage(L"fill_md: Создание параметра сеанса: " + val, MessageState::msInfo);
+					MainForm->mdSessionParameters.push_back(std::make_unique<TSessionParameters>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_FunctionalOptionsParameters)
+				{
+					msreg->AddMessage(L"fill_md: Создание параметра функциональной опции: " + val, MessageState::msInfo);
+					MainForm->mdFunctionalOptionsParameters.push_back(std::make_unique<TFunctionalOptionsParameters>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Subsystems)
+				{
+					//msreg->AddMessage(L"fill_md: Пропуск подсистемы: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание подсистемы: " + val, MessageState::msInfo);
+					MainForm->mdSubsystems.push_back(std::make_unique<TSubsystem>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Interfaces)
+				{
+					msreg->AddMessage(L"fill_md: Создание интерфейса: " + val, MessageState::msInfo);
+					MainForm->mdInterfaces.push_back(std::make_unique<TInterfaces>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Styles)
+				{
+					msreg->AddMessage(L"fill_md: Пропуск стиля: " + val, MessageState::msInfo);
+				}
+				else if (guid_md == GUID_FilterCriteria)
+				{
+					msreg->AddMessage(L"fill_md: Создание критерия отбора: " + val, MessageState::msInfo);
+					MainForm->mdFilterCriteria.push_back(std::make_unique<TFilterCriteria>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_SettingsStorages)
+				{
+					msreg->AddMessage(L"fill_md: Создание хранилища настроек: " + val, MessageState::msInfo);
+					MainForm->mdSettingsStorages.push_back(std::make_unique<TSettingsStorages>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_StyleItems)
+				{
+					msreg->AddMessage(L"fill_md: Пропуск элемента стиля: " + val, MessageState::msInfo);
+				}
+				else if (guid_md == GUID_CommonPictures)
+				{
+					msreg->AddMessage(L"fill_md: Создание общей картинки: " + val, MessageState::msInfo);
+					MainForm->mdCommonPictures.push_back(std::make_unique<TCommonPictures>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_ExchangePlans)
+				{
+					msreg->AddMessage(L"fill_md: Создание плана обмена: " + val, MessageState::msInfo);
+					MainForm->mdExchangePlans.push_back(std::make_unique<TExchangePlans>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_EventSubscriptions)
+				{
+					msreg->AddMessage(L"fill_md: Создание подписки на событие: " + val, MessageState::msInfo);
+					MainForm->mdEventSubscriptions.push_back(std::make_unique<TEventSubscriptions>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_WebServices)
+				{
+					msreg->AddMessage(L"fill_md: Создание веб-сервиса: " + val, MessageState::msInfo);
+					MainForm->mdWebServices.push_back(std::make_unique<TWebServices>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_FunctionalOptions)
+				{
+					msreg->AddMessage(L"fill_md: Создание функциональной опции: " + val, MessageState::msInfo);
+					MainForm->mdFunctionalOptions.push_back(std::make_unique<TFunctionalOptions>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_DefinedTypes)
+				{
+					msreg->AddMessage(L"fill_md: Создание определяемого типа: " + val, MessageState::msInfo);
+					MainForm->mdDefinedTypes.push_back(std::make_unique<TDefinedTypes>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_XDTOPackages)
+				{
+					msreg->AddMessage(L"fill_md: Создание XDTO-пакета: " + val, MessageState::msInfo);
+					MainForm->mdXDTOPackages.push_back(std::make_unique<TXDTOPackages>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_WSReferences)
+				{
+					msreg->AddMessage(L"fill_md: Пропуск WS-ссылки: " + val, MessageState::msInfo);
+				}
+				else if (guid_md == GUID_Constants)
+				{
+					msreg->AddMessage(L"fill_md: Создание константы: " + val, MessageState::msInfo);
+					MainForm->mdConstants.push_back(std::make_unique<TConstants>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Documents)
+				{
+					msreg->AddMessage(L"fill_md: Создание документа: " + val, MessageState::msInfo);
+					MainForm->mdDocuments.push_back(std::make_unique<TDocuments>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_CommonForms)
+				{
+					msreg->AddMessage(L"fill_md: Создание общей формы: " + val, MessageState::msInfo);
+					MainForm->mdCommonForms.push_back(std::make_unique<TCommonForms>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_InformationRegisters)
+				{
+					msreg->AddMessage(L"fill_md: Создание регистра сведений: " + val, MessageState::msInfo);
+					MainForm->mdInformationRegisters.push_back(std::make_unique<TInformationRegisters>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_CalculationRegisters)
+				{
+					msreg->AddMessage(L"fill_md: Создание регистра расчета: " + val, MessageState::msInfo);
+					MainForm->mdCalculationRegisters.push_back(std::make_unique<TCalculationRegisters>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_BusinessProcesses)
+				{
+					msreg->AddMessage(L"fill_md: Создание бизнес-процесса: " + val, MessageState::msInfo);
+					MainForm->mdBusinessProcesses.push_back(std::make_unique<TBusinessProceses>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Tasks)
+				{
+					msreg->AddMessage(L"fill_md: Создание задачи: " + val, MessageState::msInfo);
+					MainForm->mdTasks.push_back(std::make_unique<TTasks>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_AccountingRegisters)
+				{
+					msreg->AddMessage(L"fill_md: Создание регистра бухгалтерии: " + val, MessageState::msInfo);
+					MainForm->mdAccountingRegisters.push_back(std::make_unique<TAccountingRegisters>(cf, curNode->get_value(), val));
+					msreg->AddMessage(L"fill_md: Регистр бухгалтерии создан успешно: " + val, MessageState::msInfo);
+				}
+				else if (guid_md == GUID_CommandGroups)
+				{
+					msreg->AddMessage(L"fill_md: Создание группы команд: " + val, MessageState::msInfo);
+					MainForm->mdCommandGroups.push_back(std::make_unique<TCommandGroups>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_CommonCommands)
+				{
+					msreg->AddMessage(L"fill_md: Создание общей команды: " + val, MessageState::msInfo);
+					MainForm->mdCommonCommands.push_back(std::make_unique<TCommonCommands>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Numerators)
+				{
+					msreg->AddMessage(L"fill_md: Создание нумератора: " + val, MessageState::msInfo);
+					MainForm->mdDocumentNumerators.push_back(std::make_unique<TNumerators>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_JournDocuments)
+				{
+					msreg->AddMessage(L"fill_md: Создание журнала документов: " + val, MessageState::msInfo);
+					MainForm->mdDocumentJournals.push_back(std::make_unique<TJournals>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Reports)
+				{
+					msreg->AddMessage(L"fill_md: Создание отчета: " + val, MessageState::msInfo);
+					MainForm->mdReports.push_back(std::make_unique<TReports>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_ChartOfCharacteristicTypes)
+				{
+					msreg->AddMessage(L"fill_md: Создание ПВХ: " + val, MessageState::msInfo);
+					MainForm->mdChartsOfCharacteristicTypes.push_back(std::make_unique<TChartOfCharacteristicTypes>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_ChartsOfAccounts)
+				{
+					msreg->AddMessage(L"fill_md: Создание плана счетов: " + val, MessageState::msInfo);
+					MainForm->mdChartOfAccounts.push_back(std::make_unique<TChartOfAccounts>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_ChartsOfCalculationTypes)
+				{
+					msreg->AddMessage(L"fill_md: Создание ПВР: " + val, MessageState::msInfo);
+					MainForm->mdChartOfCalculationTypes.push_back(std::make_unique<TChartOfCalculationTypes>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_AccumulationRegisters)
+				{
+					msreg->AddMessage(L"fill_md: Создание регистра накопления: " + val, MessageState::msInfo);
+					MainForm->mdAccumulationRegisters.push_back(std::make_unique<TAccumulationRegisters>(cf, curNode->get_value(), val));
+					msreg->AddMessage(L"fill_md: Регистр накопления создан успешно: " + val, MessageState::msInfo);
+				}
+				else if (guid_md == GUID_Sequences)
+				{
+					msreg->AddMessage(L"fill_md: Создание последовательности: " + val, MessageState::msInfo);
+					MainForm->mdSequences.push_back(std::make_unique<TSequences>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_DataProcessors)
+				{
+					msreg->AddMessage(L"fill_md: Создание обработки: " + val, MessageState::msInfo);
+					MainForm->mdDataProcessors.push_back(std::make_unique<TDataProcessors>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Enums)
+				{
+					msreg->AddMessage(L"fill_md: Создание перечисления: " + val, MessageState::msInfo);
+					MainForm->mdEnums.push_back(std::make_unique<TEnums>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_Bots)
+				{
+					msreg->AddMessage(L"fill_md: Создание бота: " + val, MessageState::msInfo);
+					MainForm->mdBots.push_back(std::make_unique<TBots>(cf, curNode->get_value(), val));
+				}
+				else
+				{
+					msreg->AddMessage(L"fill_md: Неизвестный GUID для объекта: " + val, MessageState::msWarning);
+				}
+			}
+			catch (const Exception &e) {
+				msreg->AddMessage_(L"fill_md: VCL exception при создании объекта", msError,
+						L"Name", val,
+						L"GUID", guid_md,
+						L"File", curNodeValue,
+						L"Message", e.Message);
+				LogHeapStatus(L"fill_md: память при VCL exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
+			}
+			catch (...) {
+				msreg->AddMessage_(L"fill_md: неизвестное исключение при создании объекта", msError,
+						L"Name", val,
+						L"GUID", guid_md,
+						L"File", curNodeValue);
+				LogHeapStatus(L"fill_md: память при неизвестном exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
+			}
+			delete tree_md;
+			//md_list.push_back(val);
+		 }
 
-        }
+	 }
 
 }
+
 void get_cf_name(tree* tr, Messager* mess)
 {
 	int j, k;
@@ -2460,7 +2552,7 @@ void get_cf_name(tree* tr, Messager* mess)
         if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка подсистем...");
         mess->AddMessage(L"Начало обработки подсистем", MessageState::msInfo);
         try {
-                fill_subsystem(tr, MainForm->Subsystems);
+                fill_md(tr, GUID_Subsystems);
         }
         catch (...) {
                 mess->AddMessage(L"Исключение при обработке подсистем", MessageState::msError);
@@ -2627,6 +2719,29 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
