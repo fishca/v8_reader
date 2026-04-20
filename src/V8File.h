@@ -27,15 +27,10 @@ at http://mozilla.org/MPL/2.0/.
 #include <boost/filesystem.hpp>
 #include <algorithm>
 
+#include "v8_constants.h"
+
 namespace v8unpack
 {
-
-const size_t V8_DEFAULT_PAGE_SIZE = 512;
-const uint32_t V8_FF_SIGNATURE = 0x7fffffff;
-
-// Для конфигурации старше 8.3.16, без режима совместимости
-const uint64_t V8_FF64_SIGNATURE = 0xffffffffffffffff;
-const size_t V8_OFFSET_8316 = 0x1359;  // волшебное смещение, откуда такая цифра неизвестно...
 
 const int V8UNPACK_OK = 0;
 const int V8UNPACK_ERROR = -50;

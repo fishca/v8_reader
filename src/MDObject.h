@@ -45,9 +45,9 @@ class TMDObjectManager : public TObject
 {
 private:
 	TObjectList *md_list;
-	virtual __fastcall TMDObject* CreateMetaData() = 0;
+	virtual TMDObject* __fastcall CreateMetaData() = 0;
 public:
-	__fastcall TMDObject* newMetaData();
+	TMDObject* __fastcall newMetaData();
 	__fastcall TMDObjectManager();
 };
 
