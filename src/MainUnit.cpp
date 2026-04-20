@@ -15,6 +15,7 @@
 
 #include "V8File.h"
 #include "ApicfBase.h"
+#include "MetadataTreeBuilder.h"
 #include "Class_1CD.h"
 #include "CommonModules.h"
 #include "MainUnit.h"
@@ -180,228 +181,7 @@ static void LogHeapStatus(const String& stage,
 	msreg->AddMessage(stage, msInfo, ts);
 }
 
-namespace TreeImage
-{
-	constexpr int Root = 72;
-	constexpr int Attributes = 83;
-	constexpr int TabularSections = 82;
-	constexpr int Forms = 86;
-	constexpr int Commands = 98;
-	constexpr int Layouts = 79;
-	constexpr int Dimensions = 10;
-	constexpr int Resources = 11;
-	constexpr int AccountingFlags = 118;
-	constexpr int SubcontoFlags = 119;
-	constexpr int JournalColumns = 6;
-}
 
-constexpr int DefaultTreeNodeAge = 30;
-
-static void initNode(VirtualTreeData* data, const String& name, int imageIndex, int age = DefaultTreeNodeAge)
-{
-	data->Name = name;
-	data->Age = age;
-	data->ImgIndex = imageIndex;
-}
-
-static PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const String& name, int imageIndex, int age = DefaultTreeNodeAge)
-{
-	PVirtualNode childNode = tree->AddChild(parent);
-	VirtualTreeData* childData = static_cast<VirtualTreeData*>(tree->GetNodeData(childNode));
-	initNode(childData, name, imageIndex, age);
-
-	return childNode;
-}
-
-template <typename Collection, typename NameGetter>
-static void addSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sectionName, int sectionImageIndex, int itemImageIndex, const Collection& items, NameGetter getName,  int age = DefaultTreeNodeAge)
-{
-	PVirtualNode sectionNode = addChildNode(tree, parent, sectionName, sectionImageIndex, age);
-
-	for (const auto& item : items)
-		addChildNode(tree, sectionNode, getName(item), itemImageIndex, age);
-}
-
-static void addTabularSections(TVirtualStringTree* tree, PVirtualNode parent, const std::vector<std::unique_ptr<TTabular>>& items, int age = DefaultTreeNodeAge)
-{
-	PVirtualNode sectionNode = addChildNode(tree, parent, L"Табличные части", TreeImage::TabularSections, age);
-	tree->Expanded[sectionNode] = true;
-
-	for (const auto& item : items)
-	{
-		PVirtualNode tabularNode = addChildNode(tree, sectionNode, item->name, TreeImage::TabularSections, age);
-		if (!item->attributes.empty())
-		{
-			for (const auto& attribute : item->attributes)
-				addChildNode(tree, tabularNode, attribute->name, TreeImage::Attributes, age);
-			tree->Expanded[tabularNode] = true;
-		}
-	}
-}
-
-static void fillStandardMetadataSections(TVirtualStringTree* tree, PVirtualNode childNode, BaseMetadataObject* metadataObject)
-{
-	if (!metadataObject)
-		return;
-
-	addSection(tree, childNode, L"Реквизиты",       TreeImage::Attributes,      TreeImage::Attributes,      metadataObject->getAttributes(),      [](const auto& item) { return item->name; });
-	addTabularSections(tree, childNode, metadataObject->getTabularSections());
-	addSection(tree, childNode, L"Формы",           TreeImage::Forms,           TreeImage::Forms,           metadataObject->getForms(),           [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Команды",         TreeImage::Commands,        TreeImage::Commands,        metadataObject->getCommands(),        [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Макеты",          TreeImage::Layouts,         TreeImage::Layouts,         metadataObject->getLayouts(),         [](const auto& item) { return item->name; });
-}
-
-static void fillInformationRegisterSections(TVirtualStringTree* tree, PVirtualNode childNode, MetadataObjectInformationRegister* metadataObject)
-{
-	if (!metadataObject)
-		return;
-
-	addSection(tree, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources, 	metadataObject->getResources(),  [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Формы",     TreeImage::Forms,      TreeImage::Forms,      metadataObject->getForms(),      [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Команды",   TreeImage::Commands,   TreeImage::Commands,   metadataObject->getCommands(),   [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Макеты",    TreeImage::Layouts,    TreeImage::Layouts,    metadataObject->getLayouts(),    [](const auto& item) { return item->name; });
-}
-
-void GetListChildrenSubsystem(v8catalog *cf, String &guid_md, std::vector<String>& child);
-String GetSubsystemInnerGuid(v8catalog *cf, String &guid_md);
-String GetNameSubsystem(v8catalog *cf, String &guid_md);
-
-static String normalizeGuid(const String& guid)
-{
-	return Trim(guid).LowerCase();
-}
-
-static TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& guid)
-{
-	String targetGuid = normalizeGuid(guid);
-	if (targetGuid.IsEmpty())
-		return nullptr;
-
-	for (const auto& item : subsystems)
-	{
-		TSubsystem* subsystem = dynamic_cast<TSubsystem*>(item.get());
-		if (!subsystem)
-			continue;
-
-		String subsystemFileGuid = normalizeGuid(subsystem->guid);
-		if (subsystemFileGuid == targetGuid)
-			return subsystem;
-
-		String originalGuid = subsystem->guid;
-		String subsystemInnerGuid = normalizeGuid(GetSubsystemInnerGuid(cf, originalGuid));
-		if (subsystemInnerGuid == targetGuid)
-			return subsystem;
-	}
-
-	return nullptr;
-}
-
-static String getSubsystemDisplayNameByGuid(v8catalog* cf, const String& guid)
-{
-	String guidCopy = guid;
-	String name = GetNameSubsystem(cf, guidCopy);
-	if (!name.IsEmpty())
-		return name;
-
-	TSubsystem* subsystem = findSubsystemByAnyGuid(cf, MainForm->mdSubsystems, guid);
-	if (subsystem)
-		return subsystem->name;
-
-	return guid;
-}
-
-static void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& parentGuid, int imgIndex);
-
-static void addSubsystemChildrenToTree(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, TSubsystem* parentSubsystem, int imgIndex)
-{
-	if (!tree || !cf || !parentSubsystem)
-		return;
-
-	addSubsystemChildrenToTreeByGuid(tree, parentNode, cf, subsystems, parentSubsystem->guid, imgIndex);
-}
-
-static void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& parentGuid, int imgIndex)
-{
-	if (!tree || !cf)
-		return;
-
-	tree->Expanded[parentNode] = true;
-
-	String subsystemGuid = parentGuid;
-	std::vector<String> childrenGuids;
-	GetListChildrenSubsystem(cf, subsystemGuid, childrenGuids);
-	if (childrenGuids.empty())
-	{
-		String subsystemInnerGuid = GetSubsystemInnerGuid(cf, subsystemGuid);
-		if (!subsystemInnerGuid.IsEmpty())
-			GetListChildrenSubsystem(cf, subsystemInnerGuid, childrenGuids);
-	}
-
-	for (const auto& childGuid : childrenGuids)
-	{
-		TSubsystem* childSubsystem = findSubsystemByAnyGuid(cf, subsystems, childGuid);
-
-		PVirtualNode childNode = tree->AddChild(parentNode);
-		VirtualTreeData *childData = static_cast<VirtualTreeData*>(tree->GetNodeData(childNode));
-		childData->Name = childSubsystem ? childSubsystem->name : getSubsystemDisplayNameByGuid(cf, childGuid);
-		childData->Age = 99;
-		childData->ImgIndex = imgIndex;
-		childData->text_module = L"";
-		childData->MetadataObject = childSubsystem;
-		tree->Expanded[childNode] = true;
-
-		String nextGuid = childSubsystem ? childSubsystem->guid : childGuid;
-		addSubsystemChildrenToTreeByGuid(tree, childNode, cf, subsystems, nextGuid, imgIndex);
-	}
-}
-
-static std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const MetadataVector<TObject>& subsystems)
-{
-	std::unordered_set<String> childSubsystemGuids;
-	if (!cf)
-		return childSubsystemGuids;
-
-	for (const auto& item : subsystems)
-	{
-		TSubsystem* subsystem = dynamic_cast<TSubsystem*>(item.get());
-		if (!subsystem)
-			continue;
-
-		String subsystemGuid = subsystem->guid;
-		std::vector<String> childrenGuids;
-		GetListChildrenSubsystem(cf, subsystemGuid, childrenGuids);
-		if (childrenGuids.empty())
-		{
-			String subsystemInnerGuid = GetSubsystemInnerGuid(cf, subsystemGuid);
-			if (!subsystemInnerGuid.IsEmpty())
-				GetListChildrenSubsystem(cf, subsystemInnerGuid, childrenGuids);
-		}
-
-		for (const auto& childGuid : childrenGuids)
-		{
-			TSubsystem* childSubsystem = findSubsystemByAnyGuid(cf, subsystems, childGuid);
-			if (childSubsystem)
-			{
-				String childFileGuid = normalizeGuid(childSubsystem->guid);
-				if (!childFileGuid.IsEmpty())
-					childSubsystemGuids.insert(childFileGuid);
-
-				String originalChildGuid = childSubsystem->guid;
-				String childInnerGuid = normalizeGuid(GetSubsystemInnerGuid(cf, originalChildGuid));
-				if (!childInnerGuid.IsEmpty())
-					childSubsystemGuids.insert(childInnerGuid);
-			}
-			else
-			{
-				childSubsystemGuids.insert(normalizeGuid(childGuid));
-			}
-		}
-	}
-
-	return childSubsystemGuids;
-}
 
 //---------------------------------------------------------------------------
 __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std::make_unique<MetaDataManager>())
@@ -541,104 +321,42 @@ void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtu
 
 void __fastcall TMainForm::fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject)
 {
-	if (!metadataObject)
-		return;
-
-	initNode(childData, metadataObject->name, imgIndex);
-
-	fillStandardMetadataSections(VirtualStringTreeValue1C, childNode, metadataObject);
+	::fillCatalogsTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 }
 
 void __fastcall TMainForm::fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
 {
-	if (!metadataObject)
-		return;
-
-	initNode(childData, metadataObject->name, imgIndex);
-
-	fillInformationRegisterSections(VirtualStringTreeValue1C, childNode, metadataObject);
+	::fillAccumulationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 }
 
 void __fastcall TMainForm::fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TAccountingRegisters* metadataObject)
 {
-	if (!metadataObject)
-		return;
-
-	initNode(childData, metadataObject->name, imgIndex);
-
-	addSection(VirtualStringTreeValue1C, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources, 	metadataObject->getResources(),  [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
-
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета",          TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->getAccountingFlags(),          [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags,   TreeImage::SubcontoFlags,   metadataObject->getDimensionAccountingFlags(), [](const auto& item) { return item->name; });
-
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы",   TreeImage::Forms,    TreeImage::Forms,    metadataObject->getForms(),    [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",  TreeImage::Layouts,  TreeImage::Layouts,  metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
+	::fillAccountingRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 }
 
 void __fastcall TMainForm::fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
 {
-	if (!metadataObject)
-		return;
-
-	initNode(childData, metadataObject->name, imgIndex);
-
-	fillInformationRegisterSections(VirtualStringTreeValue1C, childNode, metadataObject);
+	::fillCalculationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 }
 
 void __fastcall TMainForm::fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
 {
-	if (!metadataObject)
-		return;
-
-	initNode(childData, metadataObject->name, imgIndex);
-
-	fillInformationRegisterSections(VirtualStringTreeValue1C, childNode, metadataObject);
+	::fillInformationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 }
 
 void __fastcall TMainForm::fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TChartOfAccounts* metadataObject)
 {
-	if (!metadataObject)
-		return;
-
-	initNode(childData, metadataObject->name, imgIndex);
-
-	addSection(VirtualStringTreeValue1C, childNode, L"Реквизиты",               TreeImage::Attributes,      TreeImage::Attributes,      metadataObject->getAttributes(),      [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета",          TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->accflags,             [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags,   TreeImage::SubcontoFlags,   metadataObject->dimaccflags,          [](const auto& item) { return item->name; });
-	addTabularSections(VirtualStringTreeValue1C, childNode, metadataObject->getTabularSections());
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы",                   TreeImage::Forms,           TreeImage::Forms,           metadataObject->getForms(),           [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды",                 TreeImage::Commands,        TreeImage::Commands,        metadataObject->getCommands(),        [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",                  TreeImage::Layouts,         TreeImage::Layouts,         metadataObject->getLayouts(),         [](const auto& item) { return item->name; });
+	::fillChartAccTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 }
-
 
 void __fastcall TMainForm::fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject)
 {
-	if (!metadataObject)
-		return;
-
-	initNode(childData, metadataObject->name, imgIndex);
-
-	addSection(VirtualStringTreeValue1C, childNode, L"Графы",           TreeImage::JournalColumns,  TreeImage::JournalColumns,  metadataObject->getAttributes(),      [](const auto& item) { return item->name; });
-	addTabularSections(VirtualStringTreeValue1C, childNode, metadataObject->getTabularSections());
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы",           TreeImage::Forms,           TreeImage::Forms,           metadataObject->getForms(),           [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды",         TreeImage::Commands,        TreeImage::Commands,        metadataObject->getCommands(),        [](const auto& item) { return item->name; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",          TreeImage::Layouts,         TreeImage::Layouts,         metadataObject->getLayouts(),         [](const auto& item) { return item->name; });
+	::fillJournalTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 }
 
-
-// Вспомогательная функция для заполнения дерева перечислений
 void __fastcall TMainForm::fillEnumTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TEnums* CurCat)
 {
-    initNode(childData, CurCat->name, imgIndex);
-
-	addSection(VirtualStringTreeValue1C, childNode, L"Значения", TreeImage::Attributes, TreeImage::Attributes, CurCat->attributes, [](const auto& item) { return item; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Формы",    TreeImage::Forms,      TreeImage::Forms,      CurCat->forms,      [](const auto& item) { return item; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Команды",  TreeImage::Commands,   TreeImage::Commands,   CurCat->comands,    [](const auto& item) { return item; });
-	addSection(VirtualStringTreeValue1C, childNode, L"Макеты",   TreeImage::Layouts,    TreeImage::Layouts,    CurCat->moxels,     [](const auto& item) { return item; });
+	::fillEnumTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
 }
 
 void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
@@ -1537,83 +1255,6 @@ void get_cf_name(v8catalog* cf, Messager* mess)
 
 	get_cf_name(tr.release(), mess);
 }
-
-String GetNameSubsystem(v8catalog *cf, String &guid_md)
-{
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
-
-	node = &(*node)[0][1][1][2]; // имя подсистемы
-	Result = node->get_value();
-
-	delete tree_md;
-	return Result;
-}
-
-String GetSubsystemInnerGuid(v8catalog *cf, String &guid_md)
-{
-	String Result = "";
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return Result;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return Result;
-	}
-	tree* node = tree_md;
-
-	node = &(*node)[0][1][1][1]; // внутренний guid подсистемы
-	Result = node->get_value();
-
-	delete tree_md;
-	return Result;
-}
-
-void GetListChildrenSubsystem(v8catalog *cf, String &guid_md, std::vector<String>& child)
-{
-	v8file *filedata = cf->GetFile(guid_md);
-	if(!filedata)
-	{
-		return;
-	}
-	tree* tree_md = get_treeFromV8file(filedata);
-	if(!tree_md)
-	{
-		return;
-	}
-	tree* node = tree_md;
-
-	node = &(*node)[0][3][0];
-
-	int CountChild = (node->get_next())->get_value().ToInt();
-
-	tree* curNodeChild = node->get_next();
-
-	while (curNodeChild)
-	{
-		curNodeChild = curNodeChild->get_next();
-		if (curNodeChild)
-		{
-		   child.push_back(curNodeChild->get_value());
-		}
-
-	}
-
-}
-
 
 void fill_subsystem(tree* tr, std::vector<SubSys> &md_subsys)
 {
