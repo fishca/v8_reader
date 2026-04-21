@@ -46,9 +46,6 @@
 #include "SynHighlighterCpp.hpp"
 
 class Messager;
-class TChartOfAccounts;
-class MetadataObjectInformationRegister;
-class TAccountingRegisters;
 
 struct SubSys
 {
@@ -126,14 +123,7 @@ public:		// User declarations
 	void __fastcall	FillVirtualTree();
 	void __fastcall FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
 	void __fastcall FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
-	void __fastcall fillEnumTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TEnums* CurCat);
-	void __fastcall fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject);
-	void __fastcall fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject);
-	void __fastcall fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TChartOfAccounts* metadataObject);
-	void __fastcall fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject);
-	void __fastcall fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject);
-	void __fastcall fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TAccountingRegisters* metadataObject);
-	void __fastcall fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject);
+
 
 	String ConfigName;
 

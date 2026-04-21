@@ -319,45 +319,6 @@ void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtu
 	}
 }
 
-void __fastcall TMainForm::fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject)
-{
-	::fillCatalogsTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
-}
-
-void __fastcall TMainForm::fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
-{
-	::fillAccumulationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
-}
-
-void __fastcall TMainForm::fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TAccountingRegisters* metadataObject)
-{
-	::fillAccountingRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
-}
-
-void __fastcall TMainForm::fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
-{
-	::fillCalculationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
-}
-
-void __fastcall TMainForm::fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
-{
-	::fillInformationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
-}
-
-void __fastcall TMainForm::fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TChartOfAccounts* metadataObject)
-{
-	::fillChartAccTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
-}
-
-void __fastcall TMainForm::fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, BaseMetadataObject* metadataObject)
-{
-	::fillJournalTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
-}
-
-void __fastcall TMainForm::fillEnumTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TEnums* CurCat)
-{
-	::fillEnumTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
-}
 
 void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
 {
@@ -375,14 +336,14 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
         {
 			BaseMetadataObject* metadataObject = dynamic_cast<BaseMetadataObject*>(mdData[i].get());
 			if (metadataObject)
-				fillCatalogsTree(childNode, childData, imgIndex, metadataObject);
+				::fillCatalogsTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
 		}
         else if (journalTypes.count(md_name))
         {
             if (md_name == md_DocumentJournals)
             {
                 TJournals* CurCat = dynamic_cast<TJournals*>(mdData[i].get());
-                if (CurCat) fillJournalTree(childNode, childData, imgIndex, CurCat);
+                if (CurCat) ::fillJournalTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
 		}
         else if (chartAccTypes.count(md_name))
@@ -390,7 +351,7 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
             if (md_name == md_ChartOfAccounts)
             {
                 TChartOfAccounts* CurCat = dynamic_cast<TChartOfAccounts*>(mdData[i].get());
-                if (CurCat) fillChartAccTree(childNode, childData, imgIndex, CurCat);
+                if (CurCat) ::fillChartAccTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
         }
         else if (informationRegisterTypes.count(md_name))
@@ -398,40 +359,40 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
             if (md_name == md_InformationRegisters)
             {
                 TInformationRegisters* CurCat = dynamic_cast<TInformationRegisters*>(mdData[i].get());
-                if (CurCat) fillInformationRegisterTree(childNode, childData, imgIndex, CurCat);
+                if (CurCat) ::fillInformationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
             else if (md_name == md_AccumulationRegisters)
             {
                 TAccumulationRegisters* CurCat = dynamic_cast<TAccumulationRegisters*>(mdData[i].get());
-                if (CurCat) fillAccumulationRegisterTree(childNode, childData, imgIndex, CurCat);
+                if (CurCat) ::fillAccumulationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
             else if (md_name == md_AccountingRegisters)
             {
                 TAccountingRegisters* CurCat = dynamic_cast<TAccountingRegisters*>(mdData[i].get());
-                if (CurCat) fillAccountingRegisterTree(childNode, childData, imgIndex, CurCat);
+                if (CurCat) ::fillAccountingRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
             else if (md_name == md_CalculationRegisters)
             {
                 TCalculationRegisters* CurCat = dynamic_cast<TCalculationRegisters*>(mdData[i].get());
-                if (CurCat) fillCalculationRegisterTree(childNode, childData, imgIndex, CurCat);
+                if (CurCat) ::fillCalculationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
         }
         else if (md_name == md_Enums)
         {
             TEnums* CurCat = dynamic_cast<TEnums*>(mdData[i].get());
-            if (CurCat) fillEnumTree(childNode, childData, imgIndex, CurCat);
+            if (CurCat) ::fillEnumTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
 		}
         else
         {
             if (md_name == md_DocumentNumerators)
             {
                 TNumerators* CurCat = dynamic_cast<TNumerators*>(mdData[i].get());
-                if (CurCat) { childData->Name = CurCat->name; childData->Age = 30; childData->ImgIndex = imgIndex; }
+                if (CurCat) initNode(childData, CurCat->name, imgIndex);
 			}
 			else if (md_name == md_Sequences)
 			{
 				TSequences* CurCat = dynamic_cast<TSequences*>(mdData[i].get());
-                if (CurCat) { childData->Name = CurCat->name; childData->Age = 30; childData->ImgIndex = imgIndex; }
+                if (CurCat) initNode(childData, CurCat->name, imgIndex);
 			}
 		}
 	}
@@ -534,204 +495,33 @@ void __fastcall TMainForm::FillVirtualTree() {
 
 				for (const auto& item : *categoryCom.data)
 				{
+					BaseMetadataObject* mdObj = dynamic_cast<BaseMetadataObject*>(item.get());
+					if (!mdObj) continue;
+
 					if (categoryCom.name == md_Subsystems)
 					{
-						TSubsystem* CurSubsystem = static_cast<TSubsystem*>(item.get());
-						if (CurSubsystem)
-						{
-							String subsystemFileGuid = normalizeGuid(CurSubsystem->guid);
-							String originalGuid = CurSubsystem->guid;
-							String subsystemInnerGuid = normalizeGuid(GetSubsystemInnerGuid(MainForm->GlobalCF.get(), originalGuid));
-							if (nestedSubsystemGuids.count(subsystemFileGuid) || nestedSubsystemGuids.count(subsystemInnerGuid))
+						TSubsystem* CurSubsystem = static_cast<TSubsystem*>(mdObj);
+						String subsystemFileGuid = normalizeGuid(CurSubsystem->guid);
+						String originalGuid = CurSubsystem->guid;
+						String subsystemInnerGuid = normalizeGuid(GetSubsystemInnerGuid(MainForm->GlobalCF.get(), originalGuid));
+						if (nestedSubsystemGuids.count(subsystemFileGuid) || nestedSubsystemGuids.count(subsystemInnerGuid))
 							continue;
-						}
 					}
 
 					PVirtualNode childNodeCom = VirtualStringTreeValue1C->AddChild(parentNodeCom);
 					VirtualTreeData *childDataCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeCom);
 
-					if (categoryCom.name == md_CommonModules)
-					{
-						TCommonModules* CurModule = static_cast<TCommonModules*>(item.get());
-						childDataCom->Name = CurModule->name;
-						childDataCom->text_module = L"";
-						childDataCom->MetadataObject = CurModule;
-					}
-					else if (categoryCom.name == md_SessionParameters)
-					{
-						TSessionParameters* CurParam = static_cast<TSessionParameters*>(item.get());
-						childDataCom->Name = CurParam->name;
-						childDataCom->text_module = L"";
-						childDataCom->MetadataObject = CurParam;
-					}
-					else if (categoryCom.name == md_Roles)
-					{
-						TRoles* CurRole = static_cast<TRoles*>(item.get());
-						childDataCom->Name = CurRole->GetRoleName();
-						childDataCom->text_module = L"";
-						childDataCom->MetadataObject = CurRole;
-					}
-					else if (categoryCom.name == md_CommonAttributes)
-					{
-						TCommonAttributes* CurCommonAtt = static_cast<TCommonAttributes*>(item.get());
-						childDataCom->Name = CurCommonAtt->name;
-						childDataCom->text_module = L"";
-						childDataCom->MetadataObject = CurCommonAtt;
-					}
-					else if (categoryCom.name == md_ExchangePlans)
-					{
-						TExchangePlans* CurExchPlan = static_cast<TExchangePlans*>(item.get());
-						childDataCom->Name = CurExchPlan->GetExchangePlanName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_FilterCriteria)
-					{
-						TFilterCriteria* CurFilter = static_cast<TFilterCriteria*>(item.get());
-						childDataCom->Name = CurFilter->GetFilterCriteriaName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_EventSubscriptions)
-					{
-						TEventSubscriptions* CurEventSub = static_cast<TEventSubscriptions*>(item.get());
-						childDataCom->Name = CurEventSub->GetEventSubscriptionName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_ScheduledJobs)
-					{
-						TScheduledJobs* CurScheduledJob = static_cast<TScheduledJobs*>(item.get());
-						childDataCom->Name = CurScheduledJob->GetScheduledJobsName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_CommonCommands)
-					{
-						TCommonCommands* CurCommonCommand = static_cast<TCommonCommands*>(item.get());
-						childDataCom->Name = CurCommonCommand->GetCommandName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_CommandGroups)
-					{
-						TCommandGroups* CurCommandGroup = static_cast<TCommandGroups*>(item.get());
-						childDataCom->Name = CurCommandGroup->GetCommandName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_CommonForms)
-					{
-						TCommonForms* CurCommonForm = static_cast<TCommonForms*>(item.get());
-						childDataCom->Name = CurCommonForm->GetFormName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_Interfaces)
-					{
-						TInterfaces* CurInterface = static_cast<TInterfaces*>(item.get());
-						childDataCom->Name = CurInterface->GetInterfaceName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_CommonTemplates)
-					{
-						TCommonTemplates* CurCommonTemplate = static_cast<TCommonTemplates*>(item.get());
-						childDataCom->Name = CurCommonTemplate->GetTemplateName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_CommonPictures)
-					{
-						TCommonPictures* CurCommonPicture = static_cast<TCommonPictures*>(item.get());
-						childDataCom->Name = CurCommonPicture->GetPictureName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_XDTOPackages)
-					{
-						TXDTOPackages* CurXDTOPackage = static_cast<TXDTOPackages*>(item.get());
-						childDataCom->Name = CurXDTOPackage->GetXDTOPackageName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_WebServices)
-					{
-						TWebServices* CurWebService = static_cast<TWebServices*>(item.get());
-						childDataCom->Name = CurWebService->GetWebServiceName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_HTTPServices)
-					{
-						THTTPServices* CurHTTPServices = static_cast<THTTPServices*>(item.get());
-						childDataCom->Name = CurHTTPServices->GetHTTPServicesName();
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_FunctionalOptions)
-					{
-						TFunctionalOptions* CurFO = static_cast<TFunctionalOptions*>(item.get());
-						childDataCom->Name = CurFO->name;
-						childDataCom->text_module = L"";
-						childDataCom->Age = 99;
-						childDataCom->ImgIndex = categoryCom.imgIndex;
-					}
-					else if (categoryCom.name == md_FunctionalOptionsParameters)
-					{
-						TFunctionalOptionsParameters* CurFOP = static_cast<TFunctionalOptionsParameters*>(item.get());
-						childDataCom->Name = CurFOP->name;
-						childDataCom->Age = 99;
-						childDataCom->ImgIndex = categoryCom.imgIndex;
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_DefinedTypes)
-					{
-						TDefinedTypes* CurDT = static_cast<TDefinedTypes*>(item.get());
-						childDataCom->Name = CurDT->name;
-						childDataCom->Age = 99;
-						childDataCom->ImgIndex = categoryCom.imgIndex;
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_SettingsStorages)
-					{
-						TSettingsStorages* CurSS = static_cast<TSettingsStorages*>(item.get());
-						childDataCom->Name = CurSS->name;
-						childDataCom->Age = 99;
-						childDataCom->ImgIndex = categoryCom.imgIndex;
-						childDataCom->text_module = L"";
-					}
-					else if (categoryCom.name == md_Languages)
-					{
-						TLangs* CurLang = static_cast<TLangs*>(item.get());
-						childDataCom->Name = CurLang->name;
-						childDataCom->Age = 99;
-						childDataCom->ImgIndex = categoryCom.imgIndex;
-						childDataCom->text_module = L"";
-						childDataCom->MetadataObject = CurLang;
-					}
-					else if (categoryCom.name == md_Subsystems)
-					{
-						TSubsystem* CurSubsystem = static_cast<TSubsystem*>(item.get());
-						childDataCom->Name = CurSubsystem->name;
-						childDataCom->Age = 99;
-						childDataCom->ImgIndex = categoryCom.imgIndex;
-						childDataCom->text_module = L"";
-						childDataCom->MetadataObject = CurSubsystem;
-						VirtualStringTreeValue1C->Expanded[childNodeCom] = true;
-						addSubsystemChildrenToTree(VirtualStringTreeValue1C, childNodeCom, MainForm->GlobalCF.get(), MainForm->mdSubsystems, CurSubsystem, categoryCom.imgIndex);
-					}
-					else
-					{
-						childDataCom->Name = L"";
-						childDataCom->text_module = L"";
-						childDataCom->MetadataObject = nullptr;
-					}
+					childDataCom->Name = mdObj->GetName();
 					childDataCom->Age = 99;
 					childDataCom->ImgIndex = categoryCom.imgIndex;
-				}
+					childDataCom->text_module = L"";
+					childDataCom->MetadataObject = mdObj;
 
-
-				// Для Bots добавляем элементы из MainForm->mdBots
-				if (categoryCom.name == md_Bots && !MainForm->mdBots.empty())
-				{
-					for (size_t i = 0; i < MainForm->mdBots.size(); i++)
+					if (categoryCom.name == md_Subsystems)
 					{
-						TBots* CurBot = static_cast<TBots*>(MainForm->mdBots[i].get());
-						PVirtualNode childNodeBots = VirtualStringTreeValue1C->AddChild(parentNodeCom);
-						VirtualTreeData *childDataBots = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeBots);
-						childDataBots->Name = CurBot->name;
-						childDataBots->Age = 99;
-						childDataBots->ImgIndex = categoryCom.imgIndex;
-						childDataBots->text_module = L"";
-						childDataBots->MetadataObject = CurBot;
+						TSubsystem* CurSubsystem = static_cast<TSubsystem*>(mdObj);
+						VirtualStringTreeValue1C->Expanded[childNodeCom] = true;
+						addSubsystemChildrenToTree(VirtualStringTreeValue1C, childNodeCom, MainForm->GlobalCF.get(), MainForm->mdSubsystems, CurSubsystem, categoryCom.imgIndex);
 					}
 				}
 			}
