@@ -50,7 +50,7 @@ ConfigFile* __fastcall ConfigStorageDirectory::readfile(const String& path)
 		cf = new ConfigFile;
 		try
 		{
-			cf->str = new TFileStream(filename, fmOpenRead);
+			cf->str = new TFileStream(filename, fmOpenRead | fmShareDenyNone);
 			cf->addin = NULL;
 			return cf;
 		}

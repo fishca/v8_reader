@@ -17,7 +17,7 @@
 46b4cd97-fd13-4eaa-aba2-3bddd7699218 // Хранилища настроек
 4e828da6-0f44-4b5b-b1c0-a2b3cfe7bdcc // Подписки на события
 58848766-36ea-4076-8800-e91eb49590d7 // Элементы стиля
-6e6dc072-b7ac-41e7-8f88-278d25b6da2a // Неизвестный
+6e6dc072-b7ac-41e7-8f88-278d25b6da2a // Боты
 7dcd43d9-aca5-4926-b549-1842e6a4e8cf // Общие картинки
 857c4a91-e5f4-4fac-86ec-787626f1c108 // Планы обмена
 8657032e-7740-4e1d-a3ba-5dd6e8afb78f // Web-сервисы
@@ -151,7 +151,7 @@ constexpr const char* GUID_CalculationRegisters        = "f2de87a8-64e5-45eb-a22
 constexpr const char* GUID_BusinessProcesses           = "fcd3404e-1523-48ce-9bc0-ecdb822684a1";
 constexpr const char* GUID_Tasks                       = "3e63355c-1378-4953-be9b-1deb5fb6bec5";
 constexpr const char* GUID_ExternalDataSources         = "5274d9fc-9c3a-4a71-8f5e-a0db8ab23de5";
-constexpr const char* GUID_Bots                        = "a89b4a3c-01ea-4f0e-8541-05b97d19a7c6";
+constexpr const char* GUID_Bots                        = "6e6dc072-b7ac-41e7-8f88-278d25b6da2a";
 //constexpr const char* GUID_SettingsStorages            = "46b4cd97-fd13-4eaa-aba2-3bddd7699218";
 
 // Макеты Справочника

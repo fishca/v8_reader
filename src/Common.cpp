@@ -524,6 +524,11 @@ String __fastcall GetNameFormPVH(v8catalog *cf, String &guid_md)
 //	return Result;
 }
 
+String __fastcall GetNameFormDescriptor(v8catalog *cf, String &guid_md)
+{
+	std::vector<int> path = {0, 1, 1, 2};
+	return GetNameFromTreePath(cf, guid_md, path);
+}
 
 String __fastcall GetNameMoxCatalogs(v8catalog *cf, String &guid_md)
 {

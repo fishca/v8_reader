@@ -33,6 +33,7 @@ String __fastcall GetNameFromTreePath(v8catalog *cf, String &guid_md, const std:
 String __fastcall GetNameFormCatalogs(v8catalog *cf, String &guid_md);
 String __fastcall GetNameFormReports(v8catalog  *cf, String &guid_md);
 String __fastcall GetNameFormPVH(v8catalog      *cf, String &guid_md);
+String __fastcall GetNameFormDescriptor(v8catalog *cf, String &guid_md);
 String __fastcall GetNameMoxCatalogs(v8catalog  *cf, String &guid_md);
 
 //---------------------------------------------------------------------------
