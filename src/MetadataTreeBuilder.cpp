@@ -53,7 +53,7 @@ void fillStandardMetadataSections(TVirtualStringTree* tree, PVirtualNode childNo
 
 	addSection(tree, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes,
 		metadataObject->getAttributes(), [](const auto& item) { return item->name; });
-	addTabularSections(tree, childNode, metadataObject->getTabularSections());
+	addTabularSections(tree, childNode, metadataObject->getTabularSections(), 0);
 	addSection(tree, childNode, L"Формы",    TreeImage::Forms,    TreeImage::Forms,
 		metadataObject->getForms(),      [](const auto& item) { return item->name; });
 	addSection(tree, childNode, L"Команды",  TreeImage::Commands, TreeImage::Commands,
@@ -92,6 +92,18 @@ void fillCatalogsTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualT
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
 	fillStandardMetadataSections(tree, childNode, metadataObject);
+}
+
+void fillFormsCommandsTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
+	int imgIndex, BaseMetadataObject* metadataObject)
+{
+	if (!metadataObject)
+		return;
+	initNode(childData, metadataObject->name, imgIndex);
+	addSection(tree, childNode, L"Формы",   TreeImage::Forms,    TreeImage::Forms,
+		metadataObject->getForms(),    [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
+		metadataObject->getCommands(), [](const auto& item) { return item->name; });
 }
 
 void fillAccumulationRegisterTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
@@ -159,7 +171,7 @@ void fillChartAccTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualT
 		metadataObject->accflags,         [](const auto& item) { return item->name; });
 	addSection(tree, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags,   TreeImage::SubcontoFlags,
 		metadataObject->dimaccflags,      [](const auto& item) { return item->name; });
-	addTabularSections(tree, childNode, metadataObject->getTabularSections());
+	addTabularSections(tree, childNode, metadataObject->getTabularSections(), 0);
 	addSection(tree, childNode, L"Формы",   TreeImage::Forms,    TreeImage::Forms,
 		metadataObject->getForms(),    [](const auto& item) { return item->name; });
 	addSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,

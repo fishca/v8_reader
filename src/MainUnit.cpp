@@ -322,11 +322,11 @@ void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtu
 
 void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
 {
-    static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Documents, md_Reports, md_DataProcessors, md_ChartsOfCharacteristicTypes, md_ChartOfCalculationTypes, md_BusinessProcesses, md_Tasks};
+static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Documents, md_Reports, md_DataProcessors, md_ChartsOfCharacteristicTypes, md_ChartOfCalculationTypes, md_BusinessProcesses, md_Tasks};
     static const std::unordered_set<String> journalTypes = {md_DocumentJournals};
     static const std::unordered_set<String> chartAccTypes = {md_ChartOfAccounts};
     static const std::unordered_set<String> informationRegisterTypes = {md_InformationRegisters, md_AccumulationRegisters, md_AccountingRegisters, md_CalculationRegisters};
-
+    static const std::unordered_set<String> exchangePlanTypes = {md_ExchangePlans};
 	for(size_t i = 0; i < mdData.size(); i++)
 	{
 		PVirtualNode childNode = VirtualStringTreeValue1C->AddChild(parentNode);
@@ -346,7 +346,7 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
                 if (CurCat) ::fillJournalTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
 		}
-        else if (chartAccTypes.count(md_name))
+else if (chartAccTypes.count(md_name))
         {
             if (md_name == md_ChartOfAccounts)
             {
@@ -377,6 +377,16 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
                 if (CurCat) ::fillCalculationRegisterTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
         }
+        else if (exchangePlanTypes.count(md_name))
+        {
+            TExchangePlans* CurCat = dynamic_cast<TExchangePlans*>(mdData[i].get());
+            if (CurCat) ::fillCatalogsTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
+        }
+        else if (md_name == md_FilterCriteria)
+        {
+            BaseMetadataObject* metadataObject = dynamic_cast<BaseMetadataObject*>(mdData[i].get());
+            if (metadataObject) ::fillFormsCommandsTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, metadataObject);
+        }
         else if (md_name == md_Enums)
         {
             TEnums* CurCat = dynamic_cast<TEnums*>(mdData[i].get());
@@ -399,6 +409,12 @@ void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVec
 }
 
 void __fastcall TMainForm::FillVirtualTree() {
+    // Добавление команд и форм плана обмена
+    PVirtualNode exchangePlansNode = VirtualStringTreeValue1C->AddChild(nullptr);
+    VirtualTreeData *exchangePlansData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(exchangePlansNode);
+    initNode(exchangePlansData, L"Планы обмена", 41, 25);
+    VirtualStringTreeValue1C->Expanded[exchangePlansNode] = true;
+
 	struct CategoryData
 	{
 		const MetadataVector<TObject>* data;
@@ -490,7 +506,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 				parentNodeDataCom->Name = categoryCom.name;
 				parentNodeDataCom->Age = categoryCom.age;
 				parentNodeDataCom->ImgIndex = categoryCom.imgIndex;
-				if (categoryCom.name == md_Subsystems)
+				if (categoryCom.name == md_Subsystems || categoryCom.name == md_ExchangePlans || categoryCom.name == md_FilterCriteria)
 					VirtualStringTreeValue1C->Expanded[parentNodeCom] = true;
 
 				for (const auto& item : *categoryCom.data)
@@ -516,6 +532,19 @@ void __fastcall TMainForm::FillVirtualTree() {
 					childDataCom->ImgIndex = categoryCom.imgIndex;
 					childDataCom->text_module = L"";
 					childDataCom->MetadataObject = mdObj;
+
+					if (categoryCom.name == md_ExchangePlans || categoryCom.name == md_FilterCriteria)
+					{
+						BaseMetadataObject* metadataObject = dynamic_cast<BaseMetadataObject*>(mdObj);
+						if (metadataObject)
+						{
+							if (categoryCom.name == md_FilterCriteria)
+								::fillFormsCommandsTree(VirtualStringTreeValue1C, childNodeCom, childDataCom, categoryCom.imgIndex, metadataObject);
+							else
+								::fillCatalogsTree(VirtualStringTreeValue1C, childNodeCom, childDataCom, categoryCom.imgIndex, metadataObject);
+							VirtualStringTreeValue1C->Expanded[childNodeCom] = true;
+						}
+					}
 
 					if (categoryCom.name == md_Subsystems)
 					{
@@ -616,6 +645,14 @@ void __fastcall TMainForm::FillVirtualTree() {
 		else if (category.name == md_InformationRegisters)
 		{
 			FillTreeMD(parentNode, MainForm->mdInformationRegisters, md_InformationRegisters, category.imgIndex);
+		}
+		else if (category.name == md_ExchangePlans)
+		{
+			FillTreeMD(parentNode, MainForm->mdExchangePlans, md_ExchangePlans, category.imgIndex);
+		}
+		else if (category.name == md_FilterCriteria)
+		{
+			FillTreeMD(parentNode, MainForm->mdFilterCriteria, md_FilterCriteria, category.imgIndex);
 		}
 
 	}
@@ -2167,6 +2204,10 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
+
+
+
 
 
 

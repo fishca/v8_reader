@@ -3,7 +3,7 @@
 #ifndef ExchangePlansH
 #define ExchangePlansH
 
-#include "BaseMetadataObject.h"
+#include "MetadataObjectWithSections.h"
 //---------------------------------------------------------------------------
 
 /**
@@ -13,7 +13,7 @@
  * Планы обмена - это объекты метаданных, которые определяют
  * правила обмена данными между информационными базами 1С.
  */
-class TExchangePlans : public BaseMetadataObject
+class TExchangePlans : public MetadataObjectWithSections
 {
 private:
     String exchangePlanName;  // Имя плана обмена
@@ -28,22 +28,7 @@ public:
     String __fastcall GetExchangePlanName();
     void __fastcall SetExchangePlanName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
-    std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
-    std::vector<std::unique_ptr<TComand>>& getCommands() override;
-    std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
-    std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
-    std::vector<std::unique_ptr<TForm1C>>& getForms() override;
-
     void __fastcall initializeFromTree() override;
-
-private:
-    // Внутренние хранилища для совместимости с интерфейсом
-    std::vector<std::unique_ptr<TRequisite>> attributes;
-    std::vector<std::unique_ptr<TComand>> commands;
-    std::vector<std::unique_ptr<TMoxel>> layouts;
-    std::vector<std::unique_ptr<TTabular>> tabularSections;
-    std::vector<std::unique_ptr<TForm1C>> forms;
 };
 
 #endif

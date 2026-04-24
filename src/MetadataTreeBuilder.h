@@ -72,6 +72,9 @@ void fillInformationRegisterSections(TVirtualStringTree* tree, PVirtualNode chil
 void fillCatalogsTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
 	int imgIndex, BaseMetadataObject* metadataObject);
 
+void fillFormsCommandsTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
+	int imgIndex, BaseMetadataObject* metadataObject);
+
 void fillAccumulationRegisterTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
 	int imgIndex, MetadataObjectInformationRegister* metadataObject);
 
