@@ -15,6 +15,7 @@
 #include "AccountingRegisters.h"
 #include "ChartOfAccounts.h"
 #include "Enums.h"
+#include "ExternalDataSources.h"
 #include "Subsystem.h"
 #include "APIcfBase.h"
 
@@ -95,6 +96,9 @@ void fillJournalTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTr
 
 void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
 	int imgIndex, TEnums* curEnum);
+
+void fillExternalDataSourceTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
+	int imgIndex, TExternalDataSources* metadataObject);
 
 //---------------------------------------------------------------------------
 // Вспомогательные функции для подсистем

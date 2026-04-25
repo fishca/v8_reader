@@ -213,6 +213,85 @@ void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeD
 		curEnum->moxels,     [](const auto& item) { return item; });
 }
 
+namespace
+{
+	void addStringSection(TVirtualStringTree* tree, PVirtualNode parent,
+		const String& sectionName, int sectionImageIndex, int itemImageIndex,
+		const std::vector<String>& items)
+	{
+		PVirtualNode sectionNode = nullptr;
+		for (const auto& item : items)
+		{
+			if (!item.IsEmpty())
+			{
+				if (!sectionNode)
+					sectionNode = addChildNode(tree, parent, sectionName, sectionImageIndex);
+				addChildNode(tree, sectionNode, item, itemImageIndex);
+			}
+		}
+	}
+
+	void fillExternalTableTree(TVirtualStringTree* tree, PVirtualNode parent,
+		const TExternalDataSourceTable& tableData, int imgIndex)
+	{
+		PVirtualNode tableNode = addChildNode(tree, parent, tableData.name, imgIndex);
+		addStringSection(tree, tableNode, L"Поля",    TreeImage::Attributes, TreeImage::Attributes, tableData.fields);
+		addStringSection(tree, tableNode, L"Формы",   TreeImage::Forms,      TreeImage::Forms,      tableData.forms);
+		addStringSection(tree, tableNode, L"Команды", TreeImage::Commands,   TreeImage::Commands,   tableData.commands);
+		addStringSection(tree, tableNode, L"Макеты",  TreeImage::Layouts,    TreeImage::Layouts,    tableData.layouts);
+		tree->Expanded[tableNode] = true;
+	}
+
+	void fillExternalCubeTree(TVirtualStringTree* tree, PVirtualNode parent,
+		const TExternalDataSourceCube& cubeData, int imgIndex)
+	{
+		PVirtualNode cubeNode = addChildNode(tree, parent, cubeData.name, imgIndex);
+
+		if (!cubeData.dimensionTables.empty())
+		{
+			PVirtualNode dimensionTablesNode = addChildNode(tree, cubeNode, L"Таблицы измерений", TreeImage::TabularSections);
+			for (const auto& tableData : cubeData.dimensionTables)
+				fillExternalTableTree(tree, dimensionTablesNode, tableData, TreeImage::TabularSections);
+			tree->Expanded[dimensionTablesNode] = true;
+		}
+
+		addStringSection(tree, cubeNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, cubeData.dimensions);
+		addStringSection(tree, cubeNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources,  cubeData.resources);
+		addStringSection(tree, cubeNode, L"Формы",     TreeImage::Forms,      TreeImage::Forms,      cubeData.forms);
+		addStringSection(tree, cubeNode, L"Команды",   TreeImage::Commands,   TreeImage::Commands,   cubeData.commands);
+		addStringSection(tree, cubeNode, L"Макеты",    TreeImage::Layouts,    TreeImage::Layouts,    cubeData.layouts);
+		tree->Expanded[cubeNode] = true;
+	}
+}
+
+void fillExternalDataSourceTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData,
+	int imgIndex, TExternalDataSources* metadataObject)
+{
+	if (!metadataObject)
+		return;
+
+	initNode(childData, metadataObject->name, imgIndex);
+
+	if (!metadataObject->tables.empty())
+	{
+		PVirtualNode tablesNode = addChildNode(tree, childNode, L"Таблицы", TreeImage::TabularSections);
+		for (const auto& tableData : metadataObject->tables)
+			fillExternalTableTree(tree, tablesNode, tableData, TreeImage::TabularSections);
+		tree->Expanded[tablesNode] = true;
+	}
+
+	if (!metadataObject->cubes.empty())
+	{
+		PVirtualNode cubesNode = addChildNode(tree, childNode, L"Кубы", TreeImage::TabularSections);
+		for (const auto& cubeData : metadataObject->cubes)
+			fillExternalCubeTree(tree, cubesNode, cubeData, TreeImage::TabularSections);
+		tree->Expanded[cubesNode] = true;
+	}
+
+	addStringSection(tree, childNode, L"Функции", TreeImage::Commands, TreeImage::Commands, metadataObject->functions);
+	tree->Expanded[childNode] = true;
+}
+
 //---------------------------------------------------------------------------
 // Вспомогательные функции для подсистем
 

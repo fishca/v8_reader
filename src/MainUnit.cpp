@@ -59,6 +59,10 @@
 #include "XDTOPackages.h"
 #include "WebServices.h"
 #include "HTTPServices.h"
+#include "WebSocketClients.h"
+#include "IntegrationServices.h"
+#include "StyleItems.h"
+#include "Styles.h"
 #include "Langs.h"
 #include "Subsystem.h"
 
@@ -392,6 +396,11 @@ else if (chartAccTypes.count(md_name))
             TEnums* CurCat = dynamic_cast<TEnums*>(mdData[i].get());
             if (CurCat) ::fillEnumTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
 		}
+		else if (md_name == md_ExternalDataSources)
+		{
+			TExternalDataSources* CurCat = dynamic_cast<TExternalDataSources*>(mdData[i].get());
+			if (CurCat) ::fillExternalDataSourceTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
+		}
         else
         {
             if (md_name == md_DocumentNumerators)
@@ -469,6 +478,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 		{&MainForm->mdWebServices,                 md_WebServices,                     92,  25},
 		{&MainForm->mdHTTPServices,                md_HTTPServices,                    113, 25},
 		{&MainForm->mdWSReferences,                md_WSReferences,                   96,  25},
+		{&MainForm->mdWebSocketClients,            md_WebSocketClients,                96,  25},
 		{&MainForm->mdIntegrationServices,         md_IntegrationServices,             131, 25},
 		{&MainForm->mdStyleItems,                  md_StyleItems,                      76,  25},
 		{&MainForm->mdStyles,                      md_Styles,                          75,  25},
@@ -654,6 +664,10 @@ void __fastcall TMainForm::FillVirtualTree() {
 		{
 			FillTreeMD(parentNode, MainForm->mdFilterCriteria, md_FilterCriteria, category.imgIndex);
 		}
+		else if (category.name == md_ExternalDataSources)
+		{
+			FillTreeMD(parentNode, MainForm->mdExternalDataSources, md_ExternalDataSources, category.imgIndex);
+		}
 
 	}
 
@@ -772,6 +786,7 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		mdTasks.clear();
 		mdWebServices.clear();
 		mdWSReferences.clear();
+		mdWebSocketClients.clear();
 		mdXDTOPackages.clear();
 		mdIntegrationServices.clear();
 		mdSequences.clear();
@@ -1154,6 +1169,8 @@ void fill_md(tree* tr, String guid_md)
 		{GUID_CommonPictures,       {0,1,1,2}},
 		{GUID_ExchangePlans,        {0,1,12,2}},
 		{GUID_WebServices,          {0,1,2,2}},
+		{GUID_WebSocketClients,     {0,1,1,2}},
+		{GUID_IntegrationServices,  {0,1,1,2}},
 		{GUID_FunctionalOptions,    {0,1,1,2}},
 		{GUID_DefinedTypes,         {0,1,3,2}},
 		{GUID_XDTOPackages,         {0,1,1,2}},
@@ -1175,6 +1192,7 @@ void fill_md(tree* tr, String guid_md)
 		{GUID_ChartsOfCalculationTypes,   {0,1,1,1,2}},
 		{GUID_AccumulationRegisters,      {0,1,13,1,2}},
 		{GUID_Sequences,                  {0,1,7,1,2}},
+		{GUID_ExternalDataSources,        {1,1,1,2}},
 		{GUID_DataProcessors,             {0,1,3,1,2}},
 		{GUID_Enums,                      {0,1,5,1,2}},
 		{GUID_DefinedTypes,               {0,1,3,2}},
@@ -1227,6 +1245,25 @@ void fill_md(tree* tr, String guid_md)
 	}
 	int CountMD = nextNode->get_value().ToInt();
 	msreg->AddMessage(L"fill_md: Количество элементов: " + String(CountMD), MessageState::msInfo);
+
+	if (guid_md == GUID_ExternalDataSources)
+	{
+		tree* sourceNode = node_md->get_next();
+		int processedExternalCount = 0;
+		while (sourceNode)
+		{
+			sourceNode = sourceNode->get_next();
+			if (!sourceNode)
+				continue;
+
+			processedExternalCount++;
+			String sourceGuid = sourceNode->get_value();
+			msreg->AddMessage(L"fill_md: Создание внешнего источника данных из списка GUID: " + sourceGuid, MessageState::msInfo);
+			MainForm->mdExternalDataSources.push_back(std::make_unique<TExternalDataSources>(cf, sourceGuid));
+		}
+		msreg->AddMessage(L"fill_md: Внешних источников данных создано: " + String((int)MainForm->mdExternalDataSources.size()), MessageState::msInfo);
+		return;
+	}
 
 	//md_list.clear();
 
@@ -1301,6 +1338,11 @@ void fill_md(tree* tr, String guid_md)
 					candidatePaths.push_back({0,1,1});
 					candidatePaths.push_back({0,1,2});
 				}
+				else if (guid_md == GUID_ExternalDataSources)
+				{
+					candidatePaths.push_back({1,0,1,2});
+					candidatePaths.push_back({0,1,1,2});
+				}
 
 				for (size_t candidateIndex = 0; candidateIndex < candidatePaths.size() && !node; candidateIndex++)
 				{
@@ -1333,9 +1375,17 @@ void fill_md(tree* tr, String guid_md)
 			String val = node->get_value();
 			msreg->AddMessage(L"fill_md: Получено значение длиной: " + String(val.Length()), MessageState::msInfo);
 			if (val.Length() == 0) {
-				msreg->AddMessage(L"fill_md: Пропуск элемента - пустое значение: " + curNodeValue, MessageState::msError);
-				delete tree_md;
-				continue;
+				if (guid_md == GUID_ExternalDataSources)
+				{
+					val = curNodeValue;
+					msreg->AddMessage(L"fill_md: Имя внешнего источника данных пустое, используется GUID файла: " + val, MessageState::msWarning);
+				}
+				else
+				{
+					msreg->AddMessage(L"fill_md: Пропуск элемента - пустое значение: " + curNodeValue, MessageState::msError);
+					delete tree_md;
+					continue;
+				}
 			}
 			msreg->AddMessage(L"fill_md: Получено имя: " + val, MessageState::msInfo);
 
@@ -1407,7 +1457,8 @@ void fill_md(tree* tr, String guid_md)
 				}
 				else if (guid_md == GUID_Styles)
 				{
-					msreg->AddMessage(L"fill_md: Пропуск стиля: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание стиля: " + val, MessageState::msInfo);
+					MainForm->mdStyles.push_back(std::make_unique<TStyles>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_FilterCriteria)
 				{
@@ -1421,7 +1472,8 @@ void fill_md(tree* tr, String guid_md)
 				}
 				else if (guid_md == GUID_StyleItems)
 				{
-					msreg->AddMessage(L"fill_md: Пропуск элемента стиля: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание элемента стиля: " + val, MessageState::msInfo);
+					MainForm->mdStyleItems.push_back(std::make_unique<TStyleItems>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CommonPictures)
 				{
@@ -1461,6 +1513,16 @@ void fill_md(tree* tr, String guid_md)
 				else if (guid_md == GUID_WSReferences)
 				{
 					msreg->AddMessage(L"fill_md: Пропуск WS-ссылки: " + val, MessageState::msInfo);
+				}
+				else if (guid_md == GUID_WebSocketClients)
+				{
+					msreg->AddMessage(L"fill_md: Создание WebSocket-клиента: " + val, MessageState::msInfo);
+					MainForm->mdWebSocketClients.push_back(std::make_unique<TWebSocketClients>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_IntegrationServices)
+				{
+					msreg->AddMessage(L"fill_md: Создание сервиса интеграции: " + val, MessageState::msInfo);
+					MainForm->mdIntegrationServices.push_back(std::make_unique<TIntegrationServices>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Constants)
 				{
@@ -1568,6 +1630,11 @@ void fill_md(tree* tr, String guid_md)
 				{
 					msreg->AddMessage(L"fill_md: Создание бота: " + val, MessageState::msInfo);
 					MainForm->mdBots.push_back(std::make_unique<TBots>(cf, curNode->get_value(), val));
+				}
+				else if (guid_md == GUID_ExternalDataSources)
+				{
+					msreg->AddMessage(L"fill_md: Создание внешнего источника данных: " + val, MessageState::msInfo);
+					MainForm->mdExternalDataSources.push_back(std::make_unique<TExternalDataSources>(cf, curNode->get_value(), val));
 				}
 				else
 				{
@@ -2076,6 +2143,28 @@ void get_cf_name(tree* tr, Messager* mess)
                 mess->AddMessage(L"Исключение при обработке WS-ссылок", MessageState::msError);
         }
         mess->AddMessage(L"ws-ссылки обработаны", MessageState::msInfo);
+
+        // websocket-клиенты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка WebSocket-клиентов...");
+        mess->AddMessage(L"Начало обработки WebSocket-клиентов", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_WebSocketClients);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке WebSocket-клиентов", MessageState::msError);
+        }
+        mess->AddMessage(L"WebSocket-клиенты обработаны", MessageState::msInfo);
+
+        // сервисы интеграции
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка сервисов интеграции...");
+        mess->AddMessage(L"Начало обработки сервисов интеграции", MessageState::msInfo);
+        try {
+                fill_md(tr, GUID_IntegrationServices);
+        }
+        catch (...) {
+                mess->AddMessage(L"Исключение при обработке сервисов интеграции", MessageState::msError);
+        }
+        mess->AddMessage(L"Сервисы интеграции обработаны", MessageState::msInfo);
 
         // xdto-пакеты
         if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка XDTO-пакетов...");

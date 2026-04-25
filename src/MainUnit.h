@@ -173,6 +173,7 @@ public:		// User declarations
 	MetadataVector<TObject> mdTasks;
 	MetadataVector<TObject> mdWebServices;
 	MetadataVector<TObject> mdWSReferences;
+	MetadataVector<TObject> mdWebSocketClients;
 	MetadataVector<TObject> mdXDTOPackages;
 	MetadataVector<TObject> mdIntegrationServices;
 	MetadataVector<TObject> mdSequences;
