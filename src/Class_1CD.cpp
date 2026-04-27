@@ -7819,7 +7819,7 @@ __fastcall T_1CD::T_1CD(String _filename, MessageRegistrator* _err, bool _monopo
 
 	try
 	{
-		if(_monopoly) fs = new TFileStream(filename, fmOpenReadWrite | fmShareDenyWrite);
+		if(_monopoly) fs = new TFileStream(filename, fmOpenReadWrite | fmShareDenyNone);
 		else fs = new TFileStream(filename, fmOpenRead | fmShareDenyNone);
 		//fs = new TFileStream(filename, fmOpenRead);
 	}

@@ -123,57 +123,7 @@ public:		// User declarations
 	void __fastcall	FillVirtualTree();
 	void __fastcall FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
 	void __fastcall FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
-	void __fastcall fillEnumTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, TEnums* CurCat);
-	void __fastcall fillCatalogsTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-					const std::vector<std::unique_ptr<TRequisite>>& attributes,
-					const std::vector<std::unique_ptr<TTabular>>& tabulars,
-					const std::vector<std::unique_ptr<TForm1C>>& forms,
-					const std::vector<std::unique_ptr<TComand>>& comands,
-					const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillJournalTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-					const std::vector<std::unique_ptr<TRequisite>>& attributes,
-					const std::vector<std::unique_ptr<TTabular>>& tabulars,
-					const std::vector<std::unique_ptr<TForm1C>>& forms,
-					const std::vector<std::unique_ptr<TComand>>& comands,
-					const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillChartAccTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-					const std::vector<std::unique_ptr<TRequisite>>& attributes,
-					const std::vector<std::unique_ptr<TAccountingFlag>>& accflags,
-					const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimaccflags,
-					const std::vector<std::unique_ptr<TTabular>>& tabulars,
-					const std::vector<std::unique_ptr<TForm1C>>& forms,
-					const std::vector<std::unique_ptr<TComand>>& comands,
-					const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillInformationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-					const std::vector<std::unique_ptr<TRequisite>>& attributes,
-					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-					const std::vector<std::unique_ptr<TRequisite>>& resources,
-					const std::vector<std::unique_ptr<TForm1C>>& forms,
-					const std::vector<std::unique_ptr<TComand>>& comands,
-					const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillAccumulationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-					const std::vector<std::unique_ptr<TRequisite>>& attributes,
-					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-					const std::vector<std::unique_ptr<TRequisite>>& resources,
-					const std::vector<std::unique_ptr<TForm1C>>& forms,
-					const std::vector<std::unique_ptr<TComand>>& comands,
-					const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillAccountingRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-					const std::vector<std::unique_ptr<TRequisite>>& attributes,
-					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-					const std::vector<std::unique_ptr<TRequisite>>& resources,
-					const std::vector<std::unique_ptr<TAccountingFlag>>& accountingFlags,
-					const std::vector<std::unique_ptr<TDimensionAccountingFlag>>& dimensionAccountingFlags,
-					const std::vector<std::unique_ptr<TForm1C>>& forms,
-					const std::vector<std::unique_ptr<TComand>>& comands,
-					const std::vector<std::unique_ptr<TMoxel>>& moxels);
-	void __fastcall fillCalculationRegisterTree(PVirtualNode childNode, VirtualTreeData *childData, int imgIndex, String name,
-					const std::vector<std::unique_ptr<TRequisite>>& attributes,
-					const std::vector<std::unique_ptr<TRequisite>>& dimensions,
-					const std::vector<std::unique_ptr<TRequisite>>& resources,
-					const std::vector<std::unique_ptr<TForm1C>>& forms,
-					const std::vector<std::unique_ptr<TComand>>& comands,
-					const std::vector<std::unique_ptr<TMoxel>>& moxels);
+
 
 	String ConfigName;
 
@@ -218,11 +168,12 @@ public:		// User declarations
 	MetadataVector<TObject> mdSettingsStorages;
 	MetadataVector<TObject> mdStyleItems;
 	MetadataVector<TObject> mdStyles;
-	std::vector<SubSys> Subsystems;
+	//std::vector<SubSys> Subsystems;  - возможно надо удалить, т.к. лишнее уже
 	MetadataVector<TObject> mdSubsystems;
 	MetadataVector<TObject> mdTasks;
 	MetadataVector<TObject> mdWebServices;
 	MetadataVector<TObject> mdWSReferences;
+	MetadataVector<TObject> mdWebSocketClients;
 	MetadataVector<TObject> mdXDTOPackages;
 	MetadataVector<TObject> mdIntegrationServices;
 	MetadataVector<TObject> mdSequences;

@@ -10,15 +10,15 @@
 static MetadataTreePaths GetBusinessProcessesPaths()
 {
 	MetadataTreePaths paths;
-	paths.attIdx = 5;
+	paths.attIdx = 6;
 	paths.attItemPath = {0, 1, 1, 1, 2};
-	paths.tabIdx = 3;
+	paths.tabIdx = 7;
 	paths.tabItemPath = {0, 1, 5, 1, 2};
-	paths.formsIdx = 7;
-	paths.cmdIdx = 6;
+	paths.formsIdx = 4;
+	paths.cmdIdx = 5;
 	paths.cmdItemPath = {0, 1, 3, 2, 9, 2};
-	paths.moxIdx = 4;
-	paths.getFormNameFunc = GetNameFormCatalogs;
+	paths.moxIdx = 3;
+	paths.getFormNameFunc = GetNameFormDescriptor;
 	paths.hasTabulars = true;
 	return paths;
 }

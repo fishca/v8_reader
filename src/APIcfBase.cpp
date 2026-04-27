@@ -1062,7 +1062,7 @@ __fastcall v8catalog::v8catalog(String name)
 		}
 		else
 		{
-			cfu = new TFileStream(name, fmOpenReadWrite);
+			cfu = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
 			ZInflateStream(cfu, data);
 		}
 	}
@@ -1077,7 +1077,7 @@ __fastcall v8catalog::v8catalog(String name)
 			data->WriteBuffer(_empty_catalog_template, 16);
 			delete data;
 		}
-		data = new TFileStream(name, fmOpenReadWrite);
+		data = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
 	}
 
 	file = NULL;
@@ -1117,7 +1117,7 @@ __fastcall v8catalog::v8catalog(String name, bool _zipped)
 		delete data;
 	}
 
-	data = new TFileStream(name, fmOpenReadWrite);
+	data = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
 
 	file = NULL;
 
@@ -1996,9 +1996,9 @@ void __fastcall v8catalog::HalfOpen(const String& name)
 	Lock->Acquire();
 
 	if(is_cfu)
-    	cfu = new TFileStream(name, fmOpenReadWrite);
+    	cfu = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
 	else
-    	data = new TFileStream(name, fmOpenReadWrite);
+    	data = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
 
 	Lock->Release();
 }

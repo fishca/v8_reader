@@ -91,10 +91,27 @@ void __fastcall TChartOfAccounts::initializeFromTree()
 	int DeltaTab = CountAttTab - 2;
 	for (int i = 0; i < CountAttTab; i++)
 	{
-		tree* node_att_tab = root_data.get();
-		node_att_tab = &(*node_att_tab)[0][5][i+CountAttTab-DeltaTab][0][1][5][1][2];
+		tree* tabularNode = &(*root_data.get())[0][5][i+CountAttTab-DeltaTab];
+		tree* node_att_tab = &(*tabularNode)[0][1][5][1][2];
 		String NameAttTab = node_att_tab->get_value();
-		tabulars.push_back(std::make_unique<TTabular>(NameAttTab, ""));
+		String GuidAttTab;
+		try {
+			GuidAttTab = (*tabularNode)[0][1][5][1][1].get_value();
+		} catch (...) {
+			GuidAttTab = L"";
+		}
+
+		auto tabular = std::make_unique<TTabular>(NameAttTab, GuidAttTab);
+		std::unique_ptr<tree> tabularRootData;
+		if (parent && !GuidAttTab.IsEmpty())
+		{
+			v8file* tabularFile = parent->GetFile(GuidAttTab);
+			if (tabularFile)
+				tabularRootData.reset(get_treeFromV8file(tabularFile));
+		}
+
+		tabular->initializeFromTree(tabularRootData ? tabularRootData.get() : tabularNode);
+		tabulars.push_back(std::move(tabular));
 	}
 
 	// Получаем имена форм

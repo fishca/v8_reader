@@ -23,6 +23,8 @@
 #include "DefinedTypes.h"
 #include "SettingsStorages.h"
 #include "Interfaces.h"
+// Added for tree population utilities
+#include "MetadataTreeBuilder.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
@@ -132,7 +134,19 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 
 void MetaDataManager::populateTreeView(TVirtualStringTree* tvSringTree)
 {
+    // Simple implementation to ensure the tree view is populated with a root node.
+    if (!tvSringTree)
+        return;
 
+    // Clear any existing nodes
+    tvSringTree->Clear();
+
+    // Add root node
+    PVirtualNode rootNode = tvSringTree->AddChild(nullptr);
+    VirtualTreeData* rootData = static_cast<VirtualTreeData*>(tvSringTree->GetNodeData(rootNode));
+    // Use the defined root icon index from TreeImage namespace
+    initNode(rootData, L"Metadata", TreeImage::Root);
+    tvSringTree->Expanded[rootNode] = true;
 }
 
 std::shared_ptr<MetaObject> MetaDataManager::getObject(const String& type, const String& name)

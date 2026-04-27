@@ -87,3 +87,6 @@ Compile
 *.rc
 docs/
 *.ps1
+Analize
+.clinerules
+.continue

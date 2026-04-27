@@ -8,6 +8,43 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
+namespace
+{
+    tree* GetNodeByPath(tree* root, std::initializer_list<int> indexes)
+    {
+        tree* current = root;
+        if (!current)
+            return nullptr;
+
+        for (int index : indexes)
+        {
+            if (!current || index < 0 || index >= current->get_num_subnode())
+                return nullptr;
+
+            current = current->get_subnode(index);
+        }
+
+        return current;
+    }
+
+    tree* GetNodeByPath(tree* root, const std::vector<int>& indexes)
+    {
+        tree* current = root;
+        if (!current)
+            return nullptr;
+
+        for (int index : indexes)
+        {
+            if (!current || index < 0 || index >= current->get_num_subnode())
+                return nullptr;
+
+            current = current->get_subnode(index);
+        }
+
+        return current;
+    }
+}
+
 __fastcall MetadataObjectWithSections::MetadataObjectWithSections()
     : BaseMetadataObject()
 {
@@ -33,17 +70,16 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
 
     // Реквизиты
     attributes.clear();
-    tree* node_att = root_data.get();
-    node_att = &(*node_att)[0][paths.attIdx][1];
-    int CountAtt = node_att->get_value().ToInt();
+    tree* node_att = GetNodeByPath(root_data.get(), {0, paths.attIdx, 1});
+    int CountAtt = node_att ? node_att->get_value().ToIntDef(0) : 0;
     int Delta = CountAtt - 2;
     for (int i = 0; i < CountAtt; i++)
     {
         try {
-            tree* node_att_att = root_data.get();
-            tree* itemNode = &(*node_att_att)[0][paths.attIdx][i + CountAtt - Delta];
-            for (size_t p = 0; p < paths.attItemPath.size(); p++)
-                itemNode = &(*itemNode)[paths.attItemPath[p]];
+            tree* itemNode = GetNodeByPath(root_data.get(), {0, paths.attIdx, i + CountAtt - Delta});
+            itemNode = GetNodeByPath(itemNode, paths.attItemPath);
+            if (!itemNode)
+                continue;
             String NameAtt = itemNode->get_value();
             attributes.push_back(std::make_unique<TRequisite>(NameAtt, ""));
         } catch (...) {
@@ -54,67 +90,95 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
     tabulars.clear();
     if (paths.hasTabulars)
     {
-        tree* node_att_t = root_data.get();
-        node_att_t = &(*node_att_t)[0][paths.tabIdx][1];
-        int CountAttTab = node_att_t->get_value().ToInt();
+        tree* node_att_t = GetNodeByPath(root_data.get(), {0, paths.tabIdx, 1});
+        int CountAttTab = node_att_t ? node_att_t->get_value().ToIntDef(0) : 0;
         int DeltaTab = CountAttTab - 2;
         for (int i = 0; i < CountAttTab; i++)
         {
-            tree* node_att_tab = root_data.get();
-            tree* itemNode = &(*node_att_tab)[0][paths.tabIdx][i + CountAttTab - DeltaTab];
-            for (size_t p = 0; p < paths.tabItemPath.size(); p++)
-                itemNode = &(*itemNode)[paths.tabItemPath[p]];
+            tree* tabularNode = GetNodeByPath(root_data.get(), {0, paths.tabIdx, i + CountAttTab - DeltaTab});
+            tree* itemNode = GetNodeByPath(tabularNode, paths.tabItemPath);
+            if (!itemNode || !tabularNode)
+                continue;
             String NameAttTab = itemNode->get_value();
-            tabulars.push_back(std::make_unique<TTabular>(NameAttTab, ""));
+            String GuidAttTab;
+            tree* guidNode = GetNodeByPath(tabularNode, {0, 1, 5, 1, 1});
+            if (guidNode)
+                GuidAttTab = Trim(guidNode->get_value());
+
+            auto tabular = std::make_unique<TTabular>(NameAttTab, GuidAttTab);
+
+            std::unique_ptr<tree> tabularRootData;
+            if (parent && !GuidAttTab.IsEmpty())
+            {
+                v8file* tabularFile = parent->GetFile(GuidAttTab);
+                if (tabularFile)
+                    tabularRootData.reset(get_treeFromV8file(tabularFile));
+            }
+
+            tabular->initializeFromTree(tabularRootData ? tabularRootData.get() : tabularNode);
+            tabulars.push_back(std::move(tabular));
         }
     }
 
     // Формы
     forms.clear();
-    tree* node = root_data.get();
-    node = &(*node)[0][paths.formsIdx][0];
-    int CountChild = (node->get_next())->get_value().ToInt();
-    tree* curNodeChild = node->get_next();
+    tree* node = GetNodeByPath(root_data.get(), {0, paths.formsIdx, 0});
+    tree* curNodeChild = node ? node->get_next() : nullptr;
     while (curNodeChild)
     {
         curNodeChild = curNodeChild->get_next();
         if (curNodeChild)
         {
-            String guid_md = curNodeChild->get_value();
-            String NameForm = paths.getFormNameFunc(parent, guid_md);
-            forms.push_back(std::make_unique<TForm1C>(NameForm, ""));
+            try
+            {
+                String guid_md = curNodeChild->get_value();
+                String NameForm = paths.getFormNameFunc(parent, guid_md);
+                forms.push_back(std::make_unique<TForm1C>(NameForm, ""));
+            }
+            catch (...)
+            {
+            }
         }
     }
 
     // Команды
     comands.clear();
-    tree* node_att_c = root_data.get();
-    node_att_c = &(*node_att_c)[0][paths.cmdIdx][1];
-    int CountCom = node_att_c->get_value().ToInt();
+    tree* node_att_c = GetNodeByPath(root_data.get(), {0, paths.cmdIdx, 1});
+    int CountCom = node_att_c ? node_att_c->get_value().ToIntDef(0) : 0;
     int DeltaCom = CountCom - 2;
     for (int i = 0; i < CountCom; i++)
     {
-        tree* node_com = root_data.get();
-        tree* itemNode = &(*node_com)[0][paths.cmdIdx][i + CountCom - DeltaCom];
-        for (size_t p = 0; p < paths.cmdItemPath.size(); p++)
-            itemNode = &(*itemNode)[paths.cmdItemPath[p]];
-        String NameCom = itemNode->get_value();
-        comands.push_back(std::make_unique<TComand>(NameCom, ""));
+        try
+        {
+            tree* itemNode = GetNodeByPath(root_data.get(), {0, paths.cmdIdx, i + CountCom - DeltaCom});
+            itemNode = GetNodeByPath(itemNode, paths.cmdItemPath);
+            if (!itemNode)
+                continue;
+            String NameCom = itemNode->get_value();
+            comands.push_back(std::make_unique<TComand>(NameCom, ""));
+        }
+        catch (...)
+        {
+        }
     }
 
     // Макеты
     moxels.clear();
-    tree* node_mox = root_data.get();
-    node_mox = &(*node_mox)[0][paths.moxIdx][0];
-    int CountMox = (node_mox->get_next())->get_value().ToInt();
-    tree* curNodeChildMox = node_mox->get_next();
+    tree* node_mox = GetNodeByPath(root_data.get(), {0, paths.moxIdx, 0});
+    tree* curNodeChildMox = node_mox ? node_mox->get_next() : nullptr;
     while (curNodeChildMox)
     {
         curNodeChildMox = curNodeChildMox->get_next();
         if (curNodeChildMox)
         {
-            String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
-            moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
+            try
+            {
+                String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
+                moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
+            }
+            catch (...)
+            {
+            }
         }
     }
 }

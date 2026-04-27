@@ -1,13 +1,13 @@
 ﻿//---------------------------------------------------------------------------
 
+#pragma package(smart_init)
 #pragma hdrstop
 
 #include "MDObject.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 
-TMDObject* TMDObjectManager::newMetaData()
+TMDObject* __fastcall TMDObjectManager::newMetaData()
 {
 	TMDObject* md = CreateMetaData();
 	md_list->Add(md);

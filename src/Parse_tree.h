@@ -4,8 +4,8 @@
 #define Parse_treeH
 
 #include <vcl.h>
-#include <memory>
 #pragma hdrstop
+#include <memory>
 
 #include "NodeTypes.h"
 #include "MessageRegistration.h"

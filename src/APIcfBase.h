@@ -37,14 +37,7 @@
 typedef System::DynamicArray<System::Byte> ByteArr;
 
 //===========================================================================
-const size_t V8_DEFAULT_PAGE_SIZE = 512;
-const uint32_t V8_FF_SIGNATURE = 0x7fffffff;
-
-// Для конфигурации старше 8.3.16, без режима совместимости
-//const uint64_t V8_FF64_SIGNATURE = 0xffffffffffffffff;
-const __int64 V8_FF64_SIGNATURE = 0xffffffffffffffff;
-//const size_t V8_OFFSET_8316 = 0x1359;  // волшебное смещение, откуда такая цифра неизвестно...
-const int V8_OFFSET_8316 = 0x1359;  // волшебное смещение, откуда такая цифра неизвестно...
+#include "v8_constants.h"
 
 
 //===========================================================================
