@@ -1,27 +1,24 @@
 //---------------------------------------------------------------------------
 
-#ifndef CommonFormsH
-#define CommonFormsH
+#ifndef WSReferencesH
+#define WSReferencesH
 
 #include "BaseMetadataObject.h"
 //---------------------------------------------------------------------------
 
-class TCommonForms : public BaseMetadataObject
+class TWSReferences : public BaseMetadataObject
 {
 private:
-	String text;
-	bool textLoaded;
+	String referenceName;
 
 public:
-	__fastcall TCommonForms();
-	__fastcall TCommonForms(v8catalog* _parent, const String& _guid);
-	__fastcall TCommonForms(v8catalog* _parent, const String& _guid, const String& _name);
-	virtual __fastcall ~TCommonForms();
+	__fastcall TWSReferences();
+	__fastcall TWSReferences(v8catalog* _parent, const String& _guid);
+	__fastcall TWSReferences(v8catalog* _parent, const String& _guid, const String& _name);
+	virtual __fastcall ~TWSReferences();
 
-	String __fastcall GetFormName();
-	void __fastcall SetFormName(String _name);
-	String __fastcall GetText();
-	void __fastcall SetText(String _text);
+	String __fastcall GetReferenceName();
+	void __fastcall SetReferenceName(String _name);
 
 	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
 	std::vector<std::unique_ptr<TComand>>& getCommands() override;
@@ -37,7 +34,6 @@ private:
 	std::vector<std::unique_ptr<TMoxel>> layouts;
 	std::vector<std::unique_ptr<TTabular>> tabularSections;
 	std::vector<std::unique_ptr<TForm1C>> forms;
-	void __fastcall LoadTextIfNeeded();
 };
 
 #endif

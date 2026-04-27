@@ -58,6 +58,7 @@
 #include "SettingsStorages.h"
 #include "XDTOPackages.h"
 #include "WebServices.h"
+#include "WSReferences.h"
 #include "HTTPServices.h"
 #include "WebSocketClients.h"
 #include "IntegrationServices.h"
@@ -1135,6 +1136,113 @@ void fill_subsystem(tree* tr, std::vector<SubSys> &md_subsys)
 	}
 }
 
+namespace
+{
+	tree* GetNodeByPathSafe(tree* startNode, const std::vector<int>& path)
+	{
+		tree* currentNode = startNode;
+		if (!currentNode)
+			return nullptr;
+
+		for (size_t i = 0; i < path.size(); i++)
+		{
+			int idx = path[i];
+			if (idx < 0 || idx >= currentNode->get_num_subnode())
+				return nullptr;
+
+			currentNode = currentNode->get_subnode(idx);
+			if (!currentNode)
+				return nullptr;
+		}
+
+		return currentNode;
+	}
+
+	void AddUniqueGuid(std::vector<String>& guids, const String& guid)
+	{
+		if (guid.IsEmpty())
+			return;
+
+		for (const auto& existingGuid : guids)
+		{
+			if (existingGuid.CompareIC(guid) == 0)
+				return;
+		}
+
+		guids.push_back(guid);
+	}
+
+	void CollectMetadataSectionGuids(tree* node, const String& sectionGuid, std::vector<String>& guids)
+	{
+		if (!node)
+			return;
+
+		if (node->get_type() == nd_list && node->get_num_subnode() >= 2)
+		{
+			tree* guidNode = node->get_subnode(0);
+			tree* countNode = node->get_subnode(1);
+			if (guidNode && countNode && guidNode->get_value().CompareIC(sectionGuid) == 0 && countNode->get_type() == nd_number)
+			{
+				int count = countNode->get_value().ToIntDef(0);
+				for (int i = 0; i < count && i + 2 < node->get_num_subnode(); i++)
+				{
+					tree* itemNode = node->get_subnode(i + 2);
+					if (itemNode)
+						AddUniqueGuid(guids, itemNode->get_value());
+				}
+			}
+		}
+
+		for (int i = 0; i < node->get_num_subnode(); i++)
+			CollectMetadataSectionGuids(node->get_subnode(i), sectionGuid, guids);
+	}
+
+	String GetObjectNameByPath(v8catalog* cf, const String& objectGuid, const std::vector<int>& path)
+	{
+		if (!cf || objectGuid.IsEmpty())
+			return L"";
+
+		v8file* filedata = cf->GetFile(objectGuid);
+		if (!filedata)
+			return L"";
+
+		std::unique_ptr<tree> objectTree(get_treeFromV8file(filedata));
+		tree* nameNode = GetNodeByPathSafe(objectTree.get(), path);
+		if (nameNode && !nameNode->get_value().IsEmpty())
+			return nameNode->get_value();
+
+		std::function<String(tree*)> findWsReferenceName = [&](tree* node) -> String
+		{
+			if (!node)
+				return L"";
+
+			if (node->get_type() == nd_list && node->get_num_subnode() >= 3)
+			{
+				tree* markerNode = node->get_subnode(0);
+				tree* possibleNameNode = node->get_subnode(2);
+				if (markerNode && possibleNameNode &&
+					(markerNode->get_value() == L"2" || markerNode->get_value() == L"3") &&
+					possibleNameNode->get_type() == nd_string &&
+					!possibleNameNode->get_value().IsEmpty())
+				{
+					return possibleNameNode->get_value();
+				}
+			}
+
+			for (int i = 0; i < node->get_num_subnode(); i++)
+			{
+				String result = findWsReferenceName(node->get_subnode(i));
+				if (!result.IsEmpty())
+					return result;
+			}
+
+			return L"";
+		};
+
+		return findWsReferenceName(objectTree.get());
+	}
+}
+
 
 // Процедура заполняет метаданные по корневому гуиду
 void fill_md(tree* tr, String guid_md)
@@ -1169,6 +1277,7 @@ void fill_md(tree* tr, String guid_md)
 		{GUID_CommonPictures,       {0,1,1,2}},
 		{GUID_ExchangePlans,        {0,1,12,2}},
 		{GUID_WebServices,          {0,1,2,2}},
+		{GUID_WSReferences,         {1,2,2}},
 		{GUID_WebSocketClients,     {0,1,1,2}},
 		{GUID_IntegrationServices,  {0,1,1,2}},
 		{GUID_FunctionalOptions,    {0,1,1,2}},
@@ -1236,6 +1345,25 @@ void fill_md(tree* tr, String guid_md)
 	msreg->AddMessage(L"fill_md: Узел найден", MessageState::msInfo);
 
 	const std::vector<int>& path = pathIt->second;
+
+	if (guid_md == GUID_WSReferences)
+	{
+		std::vector<String> referenceGuids;
+		CollectMetadataSectionGuids(tr, GUID_WSReferences, referenceGuids);
+		msreg->AddMessage(L"fill_md: WS-ссылок найдено структурным поиском: " + String((int)referenceGuids.size()), MessageState::msInfo);
+
+		for (const auto& referenceGuid : referenceGuids)
+		{
+			String val = GetObjectNameByPath(cf, referenceGuid, path);
+			if (val.IsEmpty())
+				val = referenceGuid;
+
+			msreg->AddMessage(L"fill_md: Создание WS-ссылки: " + val, MessageState::msInfo);
+			MainForm->mdWSReferences.push_back(std::make_unique<TWSReferences>(cf, referenceGuid, val));
+		}
+
+		return;
+	}
 
 	msreg->AddMessage(L"fill_md: Получение количества элементов", MessageState::msInfo);
 	tree* nextNode = node_md->get_next();
@@ -1512,7 +1640,8 @@ void fill_md(tree* tr, String guid_md)
 				}
 				else if (guid_md == GUID_WSReferences)
 				{
-					msreg->AddMessage(L"fill_md: Пропуск WS-ссылки: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание WS-ссылки: " + val, MessageState::msInfo);
+					MainForm->mdWSReferences.push_back(std::make_unique<TWSReferences>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_WebSocketClients)
 				{
@@ -2289,7 +2418,13 @@ void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 		if (module)
 			MemoObject->Text = module->GetText();
 		else
-			MemoObject->Text = Data->text_module;
+		{
+			TCommonForms* commonForm = dynamic_cast<TCommonForms*>(Data->MetadataObject);
+			if (commonForm)
+				MemoObject->Text = commonForm->GetText();
+			else
+				MemoObject->Text = Data->text_module;
+		}
 	}
 }
 //---------------------------------------------------------------------------
