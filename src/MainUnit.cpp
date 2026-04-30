@@ -1481,6 +1481,9 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 
 		const String sourceCfDir = TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF");
 
+		if (TDirectory::Exists(sourceCfDir))
+			TDirectory::Delete(sourceCfDir, true);
+
 		if (UnpackCheckBox->Checked)
 			StartConfigUnpackThread(EditNameCF->Text, sourceCfDir);
 
