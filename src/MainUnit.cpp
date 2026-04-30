@@ -8,6 +8,7 @@
 
 #include <windows.h>
 
+#include <string>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -561,6 +562,30 @@ static void AddConditionalInfoMessageParams(Messager* mess, const String& descri
 		mess->AddMessage_(description, msInfo, parname1, par1, parname2, par2, parname3, par3);
 }
 
+static void StartConfigUnpackThread(const String& cfFileName, const String& sourceCfDir)
+{
+	const String targetDir = sourceCfDir;
+	const std::string cfFileNameStd = AnsiString(cfFileName).c_str();
+	const std::string targetDirStd = AnsiString(sourceCfDir).c_str();
+
+	TThread* unpackThread = TThread::CreateAnonymousThread([targetDir, cfFileNameStd, targetDirStd]()
+	{
+		try
+		{
+			if (TDirectory::Exists(targetDir))
+				TDirectory::Delete(targetDir, true);
+
+			std::vector<std::string> filter;
+			v8unpack::Parse(cfFileNameStd, targetDirStd, filter);
+		}
+		catch (...)
+		{
+		}
+	});
+	unpackThread->FreeOnTerminate = true;
+	unpackThread->Start();
+}
+
 static String FormatHeapStatus()
 {
 	THeapStatus hs = GetHeapStatus();
@@ -599,6 +624,7 @@ void __fastcall TMainForm::SetDefaultHighlightSettingsControls()
 	if (HighlightAnnotationColorBox) HighlightAnnotationColorBox->Selected = DefaultHighlightAnnotationColor;
 	if (HighlightKeywordBoldCheckBox) HighlightKeywordBoldCheckBox->Checked = true;
 	if (HighlightCommentItalicCheckBox) HighlightCommentItalicCheckBox->Checked = true;
+	if (UnpackCheckBox) UnpackCheckBox->Checked = false;
 }
 
 void __fastcall TMainForm::ApplyHighlightSettings()
@@ -656,6 +682,7 @@ void __fastcall TMainForm::LoadHighlightSettings()
 	HighlightAnnotationColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"Annotation", DefaultHighlightAnnotationColor);
 	HighlightKeywordBoldCheckBox->Checked = ini->ReadBool(L"Style", L"KeywordBold", true);
 	HighlightCommentItalicCheckBox->Checked = ini->ReadBool(L"Style", L"CommentItalic", true);
+	UnpackCheckBox->Checked = ini->ReadBool(L"Style", L"Unpack", false);
 	HighlightSettingsLoading = false;
 
 	ApplyHighlightSettings();
@@ -673,6 +700,7 @@ void __fastcall TMainForm::SaveHighlightSettings()
 	ini->WriteInteger(L"Colors", L"Annotation", HighlightAnnotationColorBox->Selected);
 	ini->WriteBool(L"Style", L"KeywordBold", HighlightKeywordBoldCheckBox->Checked);
 	ini->WriteBool(L"Style", L"CommentItalic", HighlightCommentItalicCheckBox->Checked);
+	ini->WriteBool(L"Style", L"Unpack", UnpackCheckBox->Checked);
 }
 
 void __fastcall TMainForm::HighlightSettingsChanged(TObject *Sender)
@@ -698,7 +726,7 @@ void __fastcall TMainForm::CreateHighlightSettingsTab()
 	TTabSheet* previousActivePage = pagesEdit ? pagesEdit->ActivePage : nullptr;
 	HighlightSettingsTab = new TTabSheet(this);
 	HighlightSettingsTab->PageControl = pagesEdit;
-	HighlightSettingsTab->Caption = L"Подсветка";
+	HighlightSettingsTab->Caption = L"Настройка";
 
 	TPanel* panel = new TPanel(HighlightSettingsTab);
 	panel->Parent = HighlightSettingsTab;
@@ -752,6 +780,15 @@ void __fastcall TMainForm::CreateHighlightSettingsTab()
 	HighlightCommentItalicCheckBox->Checked = true;
 	HighlightCommentItalicCheckBox->OnClick = HighlightSettingsChanged;
 
+	UnpackCheckBox = new TCheckBox(panel);
+	UnpackCheckBox->Parent = panel;
+	UnpackCheckBox->Left = 18;
+	UnpackCheckBox->Top = 316;
+	UnpackCheckBox->Width = 250;
+	UnpackCheckBox->Caption = L"Распаковывать в исходники";
+	UnpackCheckBox->Checked = false;
+	UnpackCheckBox->OnClick = HighlightSettingsChanged;
+
 	TButton* resetButton = new TButton(panel);
 	resetButton->Parent = panel;
 	resetButton->Left = 18;
@@ -774,13 +811,15 @@ void __fastcall TMainForm::CreateHighlightSettingsTab()
 	HighlightPreviewMemo->OnScanForFoldRanges = ModuleMemoScanForFoldRanges;
 	HighlightPreviewMemo->UseCodeFolding = true;
 	HighlightPreviewMemo->Lines->Text =
+		L"#Область ПримерКода\n"
 		L"&НаСервере\n"
 		L"Процедура ОбновитьДанные() Экспорт\n"
 		L"    // Комментарий\n"
 		L"    Если Значение = 10 Тогда\n"
 		L"        Сообщить(\"Готово\");\n"
 		L"    КонецЕсли;\n"
-		L"КонецПроцедуры";
+		L"КонецПроцедуры\n"
+		L"#КонецОбласти";
 	HighlightPreviewMemo->Invalidate();
 
 	LoadHighlightSettings();
@@ -1439,11 +1478,11 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 
 		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: построение дерева интерфейса");
 		AdvanceLoadProgress(L"Построение дерева метаданных...");
-		std::vector<std::string> filter;
+
 		const String sourceCfDir = TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF");
-		if (TDirectory::Exists(sourceCfDir))
-			TDirectory::Delete(sourceCfDir, true);
-		v8unpack::Parse(AnsiString(EditNameCF->Text).c_str(), AnsiString(sourceCfDir).c_str(), filter);
+
+		if (UnpackCheckBox->Checked)
+			StartConfigUnpackThread(EditNameCF->Text, sourceCfDir);
 
 		VirtualStringTreeValue1C->BeginUpdate();
 		try

@@ -139,6 +139,8 @@ private:	// User declarations
 	TColorBox *HighlightAnnotationColorBox;
 	TCheckBox *HighlightKeywordBoldCheckBox;
 	TCheckBox *HighlightCommentItalicCheckBox;
+	TCheckBox *UnpackCheckBox;
+
 	TSynMemo *HighlightPreviewMemo;
 	bool HighlightSettingsLoading;
 	TTimer *ModuleSelectionTimer;
