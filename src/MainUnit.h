@@ -19,10 +19,14 @@
 #include <Vcl.ActnList.hpp>
 #include <Vcl.Menus.hpp>
 #include <Vcl.ExtCtrls.hpp>
+#include <Vcl.Graphics.hpp>
 #include "SynEdit.hpp"
 #include "SynEditHighlighter.hpp"
 #include "SynHighlighterCpp.hpp"
+#include "SynEditCodeFolding.hpp"
+#include "SynHighlighterGeneral.hpp"
 #include "SynMemo.hpp"
+#include "SynHighlighter1C.h"
 
 #include <memory>
 
@@ -44,6 +48,9 @@
 #include "SynMemo.hpp"
 #include "SynEditHighlighter.hpp"
 #include "SynHighlighterCpp.hpp"
+#include "SynEditCodeFolding.hpp"
+#include "SynHighlighterGeneral.hpp"
+#include "SynHighlighter1C.h"
 
 class Messager;
 
@@ -109,11 +116,42 @@ __published:	// IDE-managed Components
 	void __fastcall ActionOpenCFExecute(TObject *Sender);
 	void __fastcall FormDestroy(TObject *Sender);
 	void __fastcall VirtualStringTreeValue1CClick(TObject *Sender);
+	void __fastcall VirtualStringTreeValue1CChange(TBaseVirtualTree *Sender, PVirtualNode Node);
+	void __fastcall VirtualStringTreeValue1CNodeClick(TBaseVirtualTree *Sender, const THitInfo &HitInfo);
+	void __fastcall VirtualStringTreeValue1CFocusChanged(TBaseVirtualTree *Sender, PVirtualNode Node,
+		  TColumnIndex Column);
+	void __fastcall ModuleMemoScanForFoldRanges(TObject *Sender, TSynFoldRanges *FoldRanges,
+		  TStrings *LinesToScan, int FromLine, int ToLine);
+	void __fastcall ModuleSelectionTimerTimer(TObject *Sender);
 
 
 private:	// User declarations
 	Messager* mess; // регистратор сообщений
+	TSyn1CSyn *Syn1CSyn;
+	TSynGeneralSyn *ModuleGeneralSyn;
+	TTabSheet *HighlightSettingsTab;
+	TColorBox *HighlightKeywordColorBox;
+	TColorBox *HighlightCommentColorBox;
+	TColorBox *HighlightStringColorBox;
+	TColorBox *HighlightNumberColorBox;
+	TColorBox *HighlightPreprocessorColorBox;
+	TColorBox *HighlightSymbolColorBox;
+	TColorBox *HighlightAnnotationColorBox;
+	TCheckBox *HighlightKeywordBoldCheckBox;
+	TCheckBox *HighlightCommentItalicCheckBox;
+	TSynMemo *HighlightPreviewMemo;
+	bool HighlightSettingsLoading;
+	TTimer *ModuleSelectionTimer;
+	PVirtualNode LastModuleNodeShown;
     std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
+	void __fastcall CreateHighlightSettingsTab();
+	void __fastcall ApplyHighlightSettings();
+	void __fastcall LoadHighlightSettings();
+	void __fastcall SaveHighlightSettings();
+	void __fastcall SetDefaultHighlightSettingsControls();
+	void __fastcall HighlightSettingsChanged(TObject *Sender);
+	void __fastcall ResetHighlightSettingsClick(TObject *Sender);
+	void __fastcall ShowMetadataNodeText(PVirtualNode Node);
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
 	void __fastcall ResetLoadProgress(int maxValue, const String& statusText = L"");

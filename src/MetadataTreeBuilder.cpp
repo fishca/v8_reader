@@ -14,6 +14,8 @@ void initNode(VirtualTreeData* data, const String& name, int imageIndex, int age
 	data->Name = name;
 	data->Age = age;
 	data->ImgIndex = imageIndex;
+	data->text_module = L"";
+	data->MetadataObject = nullptr;
 }
 
 PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const String& name, int imageIndex, int age)
@@ -91,6 +93,7 @@ void fillCatalogsTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualT
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 	fillStandardMetadataSections(tree, childNode, metadataObject);
 }
 
@@ -100,6 +103,7 @@ void fillFormsCommandsTree(TVirtualStringTree* tree, PVirtualNode childNode, Vir
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 	addSection(tree, childNode, L"Формы",   TreeImage::Forms,    TreeImage::Forms,
 		metadataObject->getForms(),    [](const auto& item) { return item->name; });
 	addSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands,
@@ -112,6 +116,7 @@ void fillAccumulationRegisterTree(TVirtualStringTree* tree, PVirtualNode childNo
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 	fillInformationRegisterSections(tree, childNode, metadataObject);
 }
 
@@ -121,6 +126,7 @@ void fillCalculationRegisterTree(TVirtualStringTree* tree, PVirtualNode childNod
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 	fillInformationRegisterSections(tree, childNode, metadataObject);
 }
 
@@ -130,6 +136,7 @@ void fillInformationRegisterTree(TVirtualStringTree* tree, PVirtualNode childNod
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 	fillInformationRegisterSections(tree, childNode, metadataObject);
 }
 
@@ -139,6 +146,7 @@ void fillAccountingRegisterTree(TVirtualStringTree* tree, PVirtualNode childNode
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 
 	addSection(tree, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions,
 		metadataObject->getDimensions(), [](const auto& item) { return item->name; });
@@ -164,6 +172,7 @@ void fillChartAccTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualT
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 
 	addSection(tree, childNode, L"Реквизиты",               TreeImage::Attributes,      TreeImage::Attributes,
 		metadataObject->getAttributes(),  [](const auto& item) { return item->name; });
@@ -186,6 +195,7 @@ void fillJournalTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTr
 	if (!metadataObject)
 		return;
 	initNode(childData, metadataObject->name, imgIndex);
+	childData->MetadataObject = metadataObject;
 
 	addSection(tree, childNode, L"Графы",   TreeImage::JournalColumns, TreeImage::JournalColumns,
 		metadataObject->getAttributes(), [](const auto& item) { return item->name; });
@@ -202,6 +212,7 @@ void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeD
 	int imgIndex, TEnums* curEnum)
 {
 	initNode(childData, curEnum->name, imgIndex);
+	childData->MetadataObject = curEnum;
 
 	addSection(tree, childNode, L"Значения", TreeImage::Attributes, TreeImage::Attributes,
 		curEnum->attributes, [](const auto& item) { return item; });

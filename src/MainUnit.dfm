@@ -114,6 +114,7 @@ object MainForm: TMainForm
       TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages]
       TreeOptions.SelectionOptions = [toExtendedFocus, toFullRowSelect]
       OnClick = VirtualStringTreeValue1CClick
+      OnFocusChanged = VirtualStringTreeValue1CFocusChanged
       OnFreeNode = VirtualStringTreeValue1CFreeNode
       OnGetText = VirtualStringTreeValue1CGetText
       OnGetImageIndex = VirtualStringTreeValue1CGetImageIndex
@@ -137,7 +138,7 @@ object MainForm: TMainForm
       Top = 1
       Width = 571
       Height = 507
-      ActivePage = TabSheet1
+      ActivePage = TabModuleObject
       Align = alClient
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText

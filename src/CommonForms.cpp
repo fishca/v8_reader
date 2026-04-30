@@ -34,6 +34,22 @@ namespace
 
 		return L"";
 	}
+
+	String __fastcall GetManagedFormModuleText(tree* root)
+	{
+		if (!root || root->get_num_subnode() <= 0)
+			return L"";
+
+		tree* formRoot = root->get_subnode(0);
+		if (!formRoot || formRoot->get_num_subnode() <= 2)
+			return L"";
+
+		tree* moduleNode = formRoot->get_subnode(2);
+		if (!moduleNode || moduleNode->get_type() != nd_string)
+			return L"";
+
+		return moduleNode->get_value();
+	}
 }
 
 __fastcall TCommonForms::TCommonForms() : BaseMetadataObject()
@@ -124,7 +140,9 @@ void __fastcall TCommonForms::LoadTextIfNeeded()
 		if (text.IsEmpty())
 		{
 			std::unique_ptr<tree> form_tree(get_treeFromV8file(data_form));
-			text = FindEmbeddedModuleText(form_tree.get());
+			text = GetManagedFormModuleText(form_tree.get());
+			if (text.IsEmpty())
+				text = FindEmbeddedModuleText(form_tree.get());
 		}
 	}
 

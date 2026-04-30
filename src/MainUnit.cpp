@@ -3,6 +3,7 @@
 #include <vcl.h>
 #pragma hdrstop
 
+#include <System.IniFiles.hpp>
 #include <System.IOUtils.hpp>
 
 #include <windows.h>
@@ -75,13 +76,23 @@
 #pragma link "SynMemo"
 #pragma link "SynEditHighlighter"
 #pragma link "SynHighlighterCpp"
+#pragma link "SynHighlighterGeneral"
 #pragma link "SynEdit"
 #pragma link "SynEditHighlighter"
 #pragma link "SynHighlighterCpp"
+#pragma link "SynHighlighterGeneral"
 #pragma link "SynMemo"
 #pragma resource "*.dfm"
 TMainForm *MainForm;
 MessageRegistrator* msreg;
+
+static const TColor DefaultHighlightKeywordColor = clNavy;
+static const TColor DefaultHighlightCommentColor = clGreen;
+static const TColor DefaultHighlightStringColor = clMaroon;
+static const TColor DefaultHighlightNumberColor = clPurple;
+static const TColor DefaultHighlightPreprocessorColor = clTeal;
+static const TColor DefaultHighlightSymbolColor = clGrayText;
+static const TColor DefaultHighlightAnnotationColor = clOlive;
 
 static bool IsVerboseUiLoggingEnabled()
 {
@@ -137,6 +148,401 @@ static bool IsFileLoggingEnabled()
 	return false;
 }
 
+static String GetHighlightSettingsFileName()
+{
+	String appData = GetEnvironmentVariable(L"APPDATA");
+	if (appData.IsEmpty())
+		appData = TPath::GetHomePath();
+
+	String settingsDir = TPath::Combine(appData, L"v8reader");
+	ForceDirectories(settingsDir);
+	return TPath::Combine(settingsDir, L"highlight.ini");
+}
+
+static void Configure1CHighlighter(TSyn1CSyn* highlighter)
+{
+	if (!highlighter)
+		return;
+
+	highlighter->CommentAttri->Foreground = DefaultHighlightCommentColor;
+	highlighter->IdentifierAttri->Foreground = clWindowText;
+	highlighter->SpaceAttri->Foreground = clWindowText;
+	highlighter->KeyAttri->Foreground = DefaultHighlightKeywordColor;
+	highlighter->NumberAttri->Foreground = DefaultHighlightNumberColor;
+	highlighter->DirectiveAttri->Foreground = DefaultHighlightPreprocessorColor;
+	highlighter->StringAttri->Foreground = DefaultHighlightStringColor;
+	highlighter->SymbolAttri->Foreground = DefaultHighlightSymbolColor;
+	highlighter->AnnotationAttri->Foreground = DefaultHighlightAnnotationColor;
+	highlighter->KeyAttri->Style = TFontStyles() << fsBold;
+	highlighter->CommentAttri->Style = TFontStyles() << fsItalic;
+}
+
+static void ConfigureModuleGeneralHighlighter(TSynGeneralSyn* highlighter)
+{
+	if (!highlighter)
+		return;
+
+	highlighter->Comments = TCommentStyles() << csCPPStyle;
+	highlighter->StringDelim = sdDoubleQuote;
+	highlighter->DetectPreprocessor = true;
+	highlighter->IdentifierChars =
+		L"_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		L"абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+		L"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+
+	highlighter->KeyWords->Clear();
+	const wchar_t* keywords[] = {
+		L"Если", L"Тогда", L"Иначе", L"ИначеЕсли", L"КонецЕсли",
+		L"Для", L"Каждого", L"Из", L"По", L"Цикл", L"Пока", L"КонецЦикла",
+		L"Процедура", L"КонецПроцедуры", L"Функция", L"КонецФункции",
+		L"Возврат", L"Экспорт", L"Попытка", L"Исключение", L"КонецПопытки",
+		L"ВызватьИсключение", L"Продолжить", L"Прервать", L"Перейти",
+		L"Новый", L"Неопределено", L"Истина", L"Ложь", L"И", L"Или", L"Не",
+		L"Выполнить", L"Перем"
+	};
+
+	for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i)
+	{
+		highlighter->KeyWords->Add(keywords[i]);
+		highlighter->KeyWords->Add(String(keywords[i]).LowerCase());
+	}
+
+	highlighter->CommentAttri->Foreground = DefaultHighlightCommentColor;
+	highlighter->CommentAttri->Style = TFontStyles() << fsItalic;
+	highlighter->IdentifierAttri->Foreground = clBlack;
+	highlighter->KeyAttri->Foreground = DefaultHighlightKeywordColor;
+	highlighter->KeyAttri->Style = TFontStyles() << fsBold;
+	highlighter->NumberAttri->Foreground = DefaultHighlightNumberColor;
+	highlighter->PreprocessorAttri->Foreground = DefaultHighlightPreprocessorColor;
+	highlighter->StringAttri->Foreground = DefaultHighlightStringColor;
+	highlighter->SymbolAttri->Foreground = DefaultHighlightSymbolColor;
+	highlighter->SpaceAttri->Foreground = clBlack;
+}
+
+static TColorBox* CreateHighlightColorBox(TWinControl* parent, int top, TColor selected)
+{
+	TColorBox* colorBox = new TColorBox(parent);
+	colorBox->Parent = parent;
+	colorBox->Left = 210;
+	colorBox->Top = top - 3;
+	colorBox->Width = 240;
+	colorBox->Height = 22;
+	colorBox->Style = TColorBoxStyle() << cbStandardColors << cbExtendedColors << cbSystemColors << cbPrettyNames;
+	colorBox->Selected = selected;
+	return colorBox;
+}
+
+static String Strip1CStringAndComment(const String& line)
+{
+	String result;
+	bool inString = false;
+
+	for (int i = 1; i <= line.Length(); ++i)
+	{
+		wchar_t ch = line[i];
+		if (inString)
+		{
+			if (ch == L'"')
+			{
+				if (i < line.Length() && line[i + 1] == L'"')
+					++i;
+				else
+					inString = false;
+			}
+			result += L' ';
+			continue;
+		}
+
+		if (ch == L'"')
+		{
+			inString = true;
+			result += L' ';
+			continue;
+		}
+
+		if (ch == L'/' && i < line.Length() && line[i + 1] == L'/')
+			break;
+
+		result += ch;
+	}
+
+	return Trim(result).LowerCase();
+}
+
+static bool IsLineComment(const UnicodeString& s)
+{
+	UnicodeString t = s.TrimLeft();
+	return t.SubString(1, 2) == L"//";
+}
+
+
+static bool Is1CProcedureOrFunctionStart(const String& line)
+{
+	return line.Pos(L"\u043F\u0440\u043E\u0446\u0435\u0434\u0443\u0440\u0430") == 1
+		|| line.Pos(L"\u0444\u0443\u043D\u043A\u0446\u0438\u044F") == 1;
+}
+
+static bool Is1CProcedureOrFunctionEnd(const String& line)
+{
+	return line.Pos(L"\u043A\u043E\u043D\u0435\u0446\u043F\u0440\u043E\u0446\u0435\u0434\u0443\u0440\u044B") == 1
+		|| line.Pos(L"\u043A\u043E\u043D\u0435\u0446\u0444\u0443\u043D\u043A\u0446\u0438\u0438") == 1;
+}
+
+static PVirtualNode GetActiveTreeNode(TVirtualStringTree* tree, PVirtualNode fallbackNode = nullptr)
+{
+	if (fallbackNode)
+		return fallbackNode;
+
+	if (!tree)
+		return nullptr;
+
+	if (tree->FocusedNode)
+		return tree->FocusedNode;
+
+	return tree->GetFirstSelected();
+}
+
+static bool LooksLikeGuidFileName(const String& value)
+{
+	if (value.Length() != 36)
+		return false;
+
+	for (int i = 1; i <= value.Length(); ++i)
+	{
+		wchar_t ch = value[i];
+		if (i == 9 || i == 14 || i == 19 || i == 24)
+		{
+			if (ch != L'-')
+				return false;
+		}
+		else if (!((ch >= L'0' && ch <= L'9')
+			|| (ch >= L'a' && ch <= L'f')
+			|| (ch >= L'A' && ch <= L'F')))
+			return false;
+	}
+
+	return true;
+}
+
+static String DecodeTextFileForModuleFallback(const String& fileName)
+{
+	if (!FileExists(fileName))
+		return L"";
+
+	try
+	{
+		TBytes bytes = TFile::ReadAllBytes(fileName);
+		if (bytes.empty())
+			return L"";
+
+		TEncoding* encoding = nullptr;
+		int offset = TEncoding::GetBufferEncoding(bytes, encoding);
+		if (offset > 0)
+			return encoding->GetString(bytes, offset, bytes.Length - offset);
+
+		int limit = bytes.Length < 200 ? bytes.Length : 200;
+		int checked = 0;
+		int zeroOdd = 0;
+		for (int i = 1; i < limit; i += 2)
+		{
+			++checked;
+			if (bytes[i] == 0)
+				++zeroOdd;
+		}
+
+		if (checked > 0 && zeroOdd * 2 >= checked)
+			return String((wchar_t*)&bytes[0], bytes.Length / 2);
+
+		return TEncoding::UTF8->GetString(bytes);
+	}
+	catch (...)
+	{
+		return L"";
+	}
+}
+
+static bool LooksLike1CModuleFallbackText(const String& text)
+{
+	return text.Length() > 20
+		&& (text.Pos(L"\n") > 0
+			|| text.Pos(L"\r") > 0
+			|| text.Pos(L"Процедура") > 0
+			|| text.Pos(L"Функция") > 0
+			|| text.Pos(L"КонецПроцедуры") > 0
+			|| text.Pos(L"КонецФункции") > 0);
+}
+
+static String ReadUnpackedModuleTextByObjectGuid(const String& sourceDir, const String& guid)
+{
+	for (int i = 0; i <= 5; ++i)
+	{
+		String suffix = L"." + IntToStr(i);
+		String objectDir = TPath::Combine(sourceDir, guid + suffix);
+
+		String text = DecodeTextFileForModuleFallback(TPath::Combine(objectDir, L"text"));
+		if (LooksLike1CModuleFallbackText(text))
+			return text;
+
+		text = DecodeTextFileForModuleFallback(TPath::Combine(objectDir, L"module"));
+		if (LooksLike1CModuleFallbackText(text))
+			return text;
+
+		text = DecodeTextFileForModuleFallback(TPath::Combine(sourceDir, guid + suffix));
+		if (LooksLike1CModuleFallbackText(text))
+			return text;
+	}
+
+	return L"";
+}
+
+static String FindUnpackedModuleTextByNodeName(const String& nodeName)
+{
+	if (nodeName.IsEmpty())
+		return L"";
+
+	std::vector<String> sourceDirs;
+	sourceDirs.push_back(TPath::Combine(GetCurrentDir(), L"SourceCF"));
+	sourceDirs.push_back(TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF"));
+
+	for (const auto& sourceDir : sourceDirs)
+	{
+		if (!TDirectory::Exists(sourceDir))
+			continue;
+
+		TStringDynArray files = TDirectory::GetFiles(sourceDir);
+		for (int i = 0; i < files.Length; ++i)
+		{
+			String guid = ExtractFileName(files[i]);
+			if (!LooksLikeGuidFileName(guid))
+				continue;
+
+			String metadataText = DecodeTextFileForModuleFallback(files[i]);
+			if (metadataText.Pos(nodeName) <= 0)
+				continue;
+
+			String moduleText = ReadUnpackedModuleTextByObjectGuid(sourceDir, guid);
+			if (!moduleText.IsEmpty())
+				return moduleText;
+		}
+	}
+
+	return L"";
+}
+
+void __fastcall TMainForm::ModuleMemoScanForFoldRanges(TObject *Sender,
+	TSynFoldRanges *FoldRanges, TStrings *LinesToScan, int FromLine, int ToLine)
+{
+	if (FoldRanges == NULL || LinesToScan == NULL)
+		return;
+
+	const int ProcedureFoldType = 2;
+	const int CommentFoldType   = 1;
+
+	bool inCommentBlock = false;
+	int commentStartLine = -1;
+
+	bool inMultiLineComment = false;
+	int multiCommentStartLine = -1;
+
+	bool inProcBlock = false;
+
+	for (int lineIndex = FromLine; lineIndex <= ToLine; ++lineIndex)
+	{
+		if (lineIndex < 0 || lineIndex >= LinesToScan->Count)
+			continue;
+
+		int foldLine = lineIndex + 1;
+		String originalLine = LinesToScan->Strings[lineIndex];
+		String line = Strip1CStringAndComment(originalLine);
+
+		bool foldInfoSet = false;
+		bool isLineComment = IsLineComment(originalLine);
+		bool startsMultiLineComment = !isLineComment && line.Pos(L"/*") > 0;
+		bool endsMultiLineComment = line.Pos(L"*/") > 0;
+
+		// --- folding для многострочных комментариев /* */ ---
+		if (!inMultiLineComment && startsMultiLineComment)
+		{
+			if (endsMultiLineComment)
+			{
+				FoldRanges->NoFoldInfo(foldLine);
+			}
+			else
+			{
+				inMultiLineComment = true;
+				multiCommentStartLine = foldLine;
+				FoldRanges->StartFoldRange(multiCommentStartLine, CommentFoldType);
+			}
+			foldInfoSet = true;
+		}
+		else if (inMultiLineComment && endsMultiLineComment)
+		{
+			FoldRanges->StopFoldRange(foldLine, CommentFoldType);
+			inMultiLineComment = false;
+			multiCommentStartLine = -1;
+			foldInfoSet = true;
+		}
+		else if (inMultiLineComment)
+		{
+			FoldRanges->NoFoldInfo(foldLine);
+			foldInfoSet = true;
+		}
+
+		// --- folding для последовательных // комментариев ---
+		if (!foldInfoSet)
+		{
+			if (isLineComment)
+			{
+				if (!inCommentBlock)
+				{
+					inCommentBlock = true;
+					commentStartLine = foldLine;
+					FoldRanges->StartFoldRange(commentStartLine, CommentFoldType);
+				}
+				else
+				{
+					FoldRanges->NoFoldInfo(foldLine);
+				}
+				foldInfoSet = true;
+			}
+			else if (inCommentBlock)
+			{
+				FoldRanges->StopFoldRange(foldLine - 1, CommentFoldType);
+				inCommentBlock = false;
+				commentStartLine = -1;
+			}
+		}
+
+		// --- folding для procedure/function ---
+		if (!foldInfoSet)
+		{
+			if (line.IsEmpty())
+			{
+				FoldRanges->NoFoldInfo(foldLine);
+			}
+			else if (Is1CProcedureOrFunctionStart(line))
+			{
+				inProcBlock = true;
+				FoldRanges->StartFoldRange(foldLine, ProcedureFoldType);
+			}
+			else if (inProcBlock && Is1CProcedureOrFunctionEnd(line))
+			{
+				FoldRanges->StopFoldRange(foldLine, ProcedureFoldType);
+				inProcBlock = false;
+			}
+			else
+			{
+				FoldRanges->NoFoldInfo(foldLine);
+			}
+		}
+	}
+
+	if (inCommentBlock)
+		FoldRanges->StopFoldRange(ToLine + 1, CommentFoldType);
+	if (inMultiLineComment)
+		FoldRanges->StopFoldRange(ToLine + 1, CommentFoldType);
+}
+
 static void AddConditionalInfoMessage(Messager* mess, const String& message)
 {
 	if (mess && mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
@@ -164,11 +570,7 @@ static String FormatHeapStatus()
 		+ L", Uncommitted=" + IntToStr((__int64)hs.TotalUncommitted);
 }
 
-static void LogHeapStatus(const String& stage,
-	const String& guid = L"",
-	const String& fileName = L"",
-	int currentIndex = -1,
-	int totalCount = -1)
+static void LogHeapStatus(const String& stage, const String& guid = L"", const String& fileName = L"", int currentIndex = -1, int totalCount = -1)
 {
 	Messager* activeMessager = dynamic_cast<Messager*>(msreg);
 	if(!msreg || (activeMessager && !activeMessager->getUiMessagesEnabled())) return;
@@ -186,12 +588,234 @@ static void LogHeapStatus(const String& stage,
 	msreg->AddMessage(stage, msInfo, ts);
 }
 
+void __fastcall TMainForm::SetDefaultHighlightSettingsControls()
+{
+	if (HighlightKeywordColorBox) HighlightKeywordColorBox->Selected = DefaultHighlightKeywordColor;
+	if (HighlightCommentColorBox) HighlightCommentColorBox->Selected = DefaultHighlightCommentColor;
+	if (HighlightStringColorBox) HighlightStringColorBox->Selected = DefaultHighlightStringColor;
+	if (HighlightNumberColorBox) HighlightNumberColorBox->Selected = DefaultHighlightNumberColor;
+	if (HighlightPreprocessorColorBox) HighlightPreprocessorColorBox->Selected = DefaultHighlightPreprocessorColor;
+	if (HighlightSymbolColorBox) HighlightSymbolColorBox->Selected = DefaultHighlightSymbolColor;
+	if (HighlightAnnotationColorBox) HighlightAnnotationColorBox->Selected = DefaultHighlightAnnotationColor;
+	if (HighlightKeywordBoldCheckBox) HighlightKeywordBoldCheckBox->Checked = true;
+	if (HighlightCommentItalicCheckBox) HighlightCommentItalicCheckBox->Checked = true;
+}
 
+void __fastcall TMainForm::ApplyHighlightSettings()
+{
+	if (!Syn1CSyn && !ModuleGeneralSyn)
+		return;
+
+	if (Syn1CSyn)
+	{
+		if (HighlightKeywordColorBox) Syn1CSyn->KeyAttri->Foreground = HighlightKeywordColorBox->Selected;
+		if (HighlightCommentColorBox) Syn1CSyn->CommentAttri->Foreground = HighlightCommentColorBox->Selected;
+		if (HighlightStringColorBox) Syn1CSyn->StringAttri->Foreground = HighlightStringColorBox->Selected;
+		if (HighlightNumberColorBox) Syn1CSyn->NumberAttri->Foreground = HighlightNumberColorBox->Selected;
+		if (HighlightPreprocessorColorBox) Syn1CSyn->DirectiveAttri->Foreground = HighlightPreprocessorColorBox->Selected;
+		if (HighlightSymbolColorBox) Syn1CSyn->SymbolAttri->Foreground = HighlightSymbolColorBox->Selected;
+		if (HighlightAnnotationColorBox) Syn1CSyn->AnnotationAttri->Foreground = HighlightAnnotationColorBox->Selected;
+
+		Syn1CSyn->KeyAttri->Style =
+			(HighlightKeywordBoldCheckBox && HighlightKeywordBoldCheckBox->Checked) ? (TFontStyles() << fsBold) : TFontStyles();
+		Syn1CSyn->CommentAttri->Style =
+			(HighlightCommentItalicCheckBox && HighlightCommentItalicCheckBox->Checked) ? (TFontStyles() << fsItalic) : TFontStyles();
+	}
+
+	if (ModuleGeneralSyn)
+	{
+		if (HighlightKeywordColorBox) ModuleGeneralSyn->KeyAttri->Foreground = HighlightKeywordColorBox->Selected;
+		if (HighlightCommentColorBox) ModuleGeneralSyn->CommentAttri->Foreground = HighlightCommentColorBox->Selected;
+		if (HighlightStringColorBox) ModuleGeneralSyn->StringAttri->Foreground = HighlightStringColorBox->Selected;
+		if (HighlightNumberColorBox) ModuleGeneralSyn->NumberAttri->Foreground = HighlightNumberColorBox->Selected;
+		if (HighlightPreprocessorColorBox) ModuleGeneralSyn->PreprocessorAttri->Foreground = HighlightPreprocessorColorBox->Selected;
+		if (HighlightSymbolColorBox) ModuleGeneralSyn->SymbolAttri->Foreground = HighlightSymbolColorBox->Selected;
+		ModuleGeneralSyn->IdentifierAttri->Foreground = clBlack;
+		ModuleGeneralSyn->SpaceAttri->Foreground = clBlack;
+		ModuleGeneralSyn->KeyAttri->Style =
+			(HighlightKeywordBoldCheckBox && HighlightKeywordBoldCheckBox->Checked) ? (TFontStyles() << fsBold) : TFontStyles();
+		ModuleGeneralSyn->CommentAttri->Style =
+			(HighlightCommentItalicCheckBox && HighlightCommentItalicCheckBox->Checked) ? (TFontStyles() << fsItalic) : TFontStyles();
+	}
+
+	if (MemoObject) MemoObject->Invalidate();
+	if (MemoManager) MemoManager->Invalidate();
+	if (HighlightPreviewMemo) HighlightPreviewMemo->Invalidate();
+}
+
+void __fastcall TMainForm::LoadHighlightSettings()
+{
+	HighlightSettingsLoading = true;
+	std::unique_ptr<TIniFile> ini(new TIniFile(GetHighlightSettingsFileName()));
+	HighlightKeywordColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"Keyword", DefaultHighlightKeywordColor);
+	HighlightCommentColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"Comment", DefaultHighlightCommentColor);
+	HighlightStringColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"String", DefaultHighlightStringColor);
+	HighlightNumberColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"Number", DefaultHighlightNumberColor);
+	HighlightPreprocessorColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"Preprocessor", DefaultHighlightPreprocessorColor);
+	HighlightSymbolColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"Symbol", DefaultHighlightSymbolColor);
+	HighlightAnnotationColorBox->Selected = (TColor)ini->ReadInteger(L"Colors", L"Annotation", DefaultHighlightAnnotationColor);
+	HighlightKeywordBoldCheckBox->Checked = ini->ReadBool(L"Style", L"KeywordBold", true);
+	HighlightCommentItalicCheckBox->Checked = ini->ReadBool(L"Style", L"CommentItalic", true);
+	HighlightSettingsLoading = false;
+
+	ApplyHighlightSettings();
+}
+
+void __fastcall TMainForm::SaveHighlightSettings()
+{
+	std::unique_ptr<TIniFile> ini(new TIniFile(GetHighlightSettingsFileName()));
+	ini->WriteInteger(L"Colors", L"Keyword", HighlightKeywordColorBox->Selected);
+	ini->WriteInteger(L"Colors", L"Comment", HighlightCommentColorBox->Selected);
+	ini->WriteInteger(L"Colors", L"String", HighlightStringColorBox->Selected);
+	ini->WriteInteger(L"Colors", L"Number", HighlightNumberColorBox->Selected);
+	ini->WriteInteger(L"Colors", L"Preprocessor", HighlightPreprocessorColorBox->Selected);
+	ini->WriteInteger(L"Colors", L"Symbol", HighlightSymbolColorBox->Selected);
+	ini->WriteInteger(L"Colors", L"Annotation", HighlightAnnotationColorBox->Selected);
+	ini->WriteBool(L"Style", L"KeywordBold", HighlightKeywordBoldCheckBox->Checked);
+	ini->WriteBool(L"Style", L"CommentItalic", HighlightCommentItalicCheckBox->Checked);
+}
+
+void __fastcall TMainForm::HighlightSettingsChanged(TObject *Sender)
+{
+	if (HighlightSettingsLoading)
+		return;
+
+	ApplyHighlightSettings();
+	SaveHighlightSettings();
+}
+
+void __fastcall TMainForm::ResetHighlightSettingsClick(TObject *Sender)
+{
+	HighlightSettingsLoading = true;
+	SetDefaultHighlightSettingsControls();
+	HighlightSettingsLoading = false;
+	ApplyHighlightSettings();
+	SaveHighlightSettings();
+}
+
+void __fastcall TMainForm::CreateHighlightSettingsTab()
+{
+	TTabSheet* previousActivePage = pagesEdit ? pagesEdit->ActivePage : nullptr;
+	HighlightSettingsTab = new TTabSheet(this);
+	HighlightSettingsTab->PageControl = pagesEdit;
+	HighlightSettingsTab->Caption = L"Подсветка";
+
+	TPanel* panel = new TPanel(HighlightSettingsTab);
+	panel->Parent = HighlightSettingsTab;
+	panel->Align = alClient;
+	panel->BevelOuter = bvNone;
+	panel->ParentColor = true;
+
+	const wchar_t* captions[] = {
+		L"Ключевые слова", L"Комментарии", L"Строки",
+		L"Числа", L"Директивы #", L"Символы", L"Аннотации &"
+	};
+	TColorBox** boxes[] = {
+		&HighlightKeywordColorBox, &HighlightCommentColorBox, &HighlightStringColorBox,
+		&HighlightNumberColorBox, &HighlightPreprocessorColorBox, &HighlightSymbolColorBox,
+		&HighlightAnnotationColorBox
+	};
+	TColor defaults[] = {
+		DefaultHighlightKeywordColor, DefaultHighlightCommentColor, DefaultHighlightStringColor,
+		DefaultHighlightNumberColor, DefaultHighlightPreprocessorColor, DefaultHighlightSymbolColor,
+		DefaultHighlightAnnotationColor
+	};
+
+	for (int i = 0; i < 7; ++i)
+	{
+		int top = 18 + i * 34;
+		TLabel* label = new TLabel(panel);
+		label->Parent = panel;
+		label->Left = 18;
+		label->Top = top;
+		label->Caption = captions[i];
+
+		*boxes[i] = CreateHighlightColorBox(panel, top, defaults[i]);
+		(*boxes[i])->OnChange = HighlightSettingsChanged;
+	}
+
+	HighlightKeywordBoldCheckBox = new TCheckBox(panel);
+	HighlightKeywordBoldCheckBox->Parent = panel;
+	HighlightKeywordBoldCheckBox->Left = 18;
+	HighlightKeywordBoldCheckBox->Top = 264;
+	HighlightKeywordBoldCheckBox->Width = 250;
+	HighlightKeywordBoldCheckBox->Caption = L"Ключевые слова жирным";
+	HighlightKeywordBoldCheckBox->Checked = true;
+	HighlightKeywordBoldCheckBox->OnClick = HighlightSettingsChanged;
+
+	HighlightCommentItalicCheckBox = new TCheckBox(panel);
+	HighlightCommentItalicCheckBox->Parent = panel;
+	HighlightCommentItalicCheckBox->Left = 18;
+	HighlightCommentItalicCheckBox->Top = 294;
+	HighlightCommentItalicCheckBox->Width = 250;
+	HighlightCommentItalicCheckBox->Caption = L"Комментарии курсивом";
+	HighlightCommentItalicCheckBox->Checked = true;
+	HighlightCommentItalicCheckBox->OnClick = HighlightSettingsChanged;
+
+	TButton* resetButton = new TButton(panel);
+	resetButton->Parent = panel;
+	resetButton->Left = 18;
+	resetButton->Top = 336;
+	resetButton->Width = 150;
+	resetButton->Caption = L"Сбросить";
+	resetButton->OnClick = ResetHighlightSettingsClick;
+
+	HighlightPreviewMemo = new TSynMemo(panel);
+	HighlightPreviewMemo->Parent = panel;
+	HighlightPreviewMemo->Left = 480;
+	HighlightPreviewMemo->Top = 18;
+	HighlightPreviewMemo->Width = 430;
+	HighlightPreviewMemo->Height = 230;
+	HighlightPreviewMemo->Anchors = TAnchors() << akLeft << akTop << akRight;
+	HighlightPreviewMemo->ReadOnly = true;
+	HighlightPreviewMemo->Font->Name = L"Courier New";
+	HighlightPreviewMemo->Font->Size = 10;
+	HighlightPreviewMemo->Highlighter = Syn1CSyn;
+	HighlightPreviewMemo->OnScanForFoldRanges = ModuleMemoScanForFoldRanges;
+	HighlightPreviewMemo->UseCodeFolding = true;
+	HighlightPreviewMemo->Lines->Text =
+		L"&НаСервере\n"
+		L"Процедура ОбновитьДанные() Экспорт\n"
+		L"    // Комментарий\n"
+		L"    Если Значение = 10 Тогда\n"
+		L"        Сообщить(\"Готово\");\n"
+		L"    КонецЕсли;\n"
+		L"КонецПроцедуры";
+	HighlightPreviewMemo->Invalidate();
+
+	LoadHighlightSettings();
+	if (previousActivePage)
+		pagesEdit->ActivePage = previousActivePage;
+}
 
 //---------------------------------------------------------------------------
-__fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), MDManager(std::make_unique<MetaDataManager>())
+__fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSettingsLoading(false),
+	ModuleGeneralSyn(nullptr), ModuleSelectionTimer(nullptr), LastModuleNodeShown(nullptr), MDManager(std::make_unique<MetaDataManager>())
 {
 	VirtualStringTreeValue1C->NodeDataSize = sizeof(VirtualTreeData);
+	Syn1CSyn = new TSyn1CSyn(this);
+	Configure1CHighlighter(Syn1CSyn);
+	ModuleGeneralSyn = new TSynGeneralSyn(this);
+	ConfigureModuleGeneralHighlighter(ModuleGeneralSyn);
+	MemoObject->Highlighter = Syn1CSyn;
+	MemoManager->Highlighter = Syn1CSyn;
+	MemoObject->Color = clWindow;
+	MemoManager->Color = clWindow;
+	MemoObject->Font->Color = clBlack;
+	MemoManager->Font->Color = clBlack;
+	MemoObject->OnScanForFoldRanges = ModuleMemoScanForFoldRanges;
+	MemoManager->OnScanForFoldRanges = ModuleMemoScanForFoldRanges;
+	MemoObject->UseCodeFolding = true;
+	MemoManager->UseCodeFolding = true;
+	VirtualStringTreeValue1C->OnClick = VirtualStringTreeValue1CClick;
+	VirtualStringTreeValue1C->OnChange = VirtualStringTreeValue1CChange;
+	VirtualStringTreeValue1C->OnNodeClick = VirtualStringTreeValue1CNodeClick;
+	VirtualStringTreeValue1C->OnFocusChanged = VirtualStringTreeValue1CFocusChanged;
+	ModuleSelectionTimer = new TTimer(this);
+	ModuleSelectionTimer->Interval = 250;
+	ModuleSelectionTimer->OnTimer = ModuleSelectionTimerTimer;
+	ModuleSelectionTimer->Enabled = true;
+	CreateHighlightSettingsTab();
 	mess = new Messager(ListViewMessager, StatusBar1);
 	LoadProgressBar->Position = 0;
 	LoadProgressBar->Visible = false;
@@ -351,7 +975,7 @@ static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Document
                 if (CurCat) ::fillJournalTree(VirtualStringTreeValue1C, childNode, childData, imgIndex, CurCat);
             }
 		}
-else if (chartAccTypes.count(md_name))
+		else if (chartAccTypes.count(md_name))
         {
             if (md_name == md_ChartOfAccounts)
             {
@@ -490,6 +1114,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 
 	// Создаем корневой узел
 	VirtualStringTreeValue1C->Clear();
+	LastModuleNodeShown = nullptr;
 	PVirtualNode RootNode = VirtualStringTreeValue1C->AddChild(nullptr);
 
 
@@ -543,6 +1168,18 @@ void __fastcall TMainForm::FillVirtualTree() {
 					childDataCom->ImgIndex = categoryCom.imgIndex;
 					childDataCom->text_module = L"";
 					childDataCom->MetadataObject = mdObj;
+
+					TCommonModules* commonModule = dynamic_cast<TCommonModules*>(mdObj);
+					if (commonModule)
+					{
+						childDataCom->text_module = commonModule->GetText();
+					}
+					else
+					{
+						TCommonForms* commonForm = dynamic_cast<TCommonForms*>(mdObj);
+						if (commonForm)
+							childDataCom->text_module = commonForm->GetText();
+					}
 
 					if (categoryCom.name == md_ExchangePlans || categoryCom.name == md_FilterCriteria)
 					{
@@ -802,6 +1439,12 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 
 		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: построение дерева интерфейса");
 		AdvanceLoadProgress(L"Построение дерева метаданных...");
+		std::vector<std::string> filter;
+		const String sourceCfDir = TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF");
+		if (TDirectory::Exists(sourceCfDir))
+			TDirectory::Delete(sourceCfDir, true);
+		v8unpack::Parse(AnsiString(EditNameCF->Text).c_str(), AnsiString(sourceCfDir).c_str(), filter);
+
 		VirtualStringTreeValue1C->BeginUpdate();
 		try
 		{
@@ -2404,28 +3047,111 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
+void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 {
-	PVirtualNode Node = VirtualStringTreeValue1C->FocusedNode;
+	if (!MemoObject)
+		return;
+
+	Node = GetActiveTreeNode(VirtualStringTreeValue1C, Node);
+	if (!Node)
+		return;
 
 	VirtualTreeData* Data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(Node);
-
-	MemoObject->Clear();
+	bool moduleTextSelected = false;
+	String moduleText = L"";
+	LastModuleNodeShown = Node;
 
 	if (Data)
 	{
-		TCommonModules* module = dynamic_cast<TCommonModules*>(Data->MetadataObject);
-		if (module)
-			MemoObject->Text = module->GetText();
+		if (!Data->text_module.IsEmpty())
+		{
+			moduleText = Data->text_module;
+			moduleTextSelected = true;
+		}
 		else
 		{
-			TCommonForms* commonForm = dynamic_cast<TCommonForms*>(Data->MetadataObject);
-			if (commonForm)
-				MemoObject->Text = commonForm->GetText();
+			TCommonModules* module = dynamic_cast<TCommonModules*>(Data->MetadataObject);
+			if (module)
+			{
+				moduleText = module->GetText();
+				moduleTextSelected = true;
+			}
 			else
-				MemoObject->Text = Data->text_module;
+			{
+				TCommonForms* commonForm = dynamic_cast<TCommonForms*>(Data->MetadataObject);
+				if (commonForm)
+				{
+					moduleText = commonForm->GetText();
+					moduleTextSelected = true;
+				}
+			}
+		}
+
+		if (moduleText.IsEmpty())
+		{
+			moduleText = FindUnpackedModuleTextByNodeName(Data->Name);
+			moduleTextSelected = !moduleText.IsEmpty();
 		}
 	}
+
+	MemoObject->BeginUpdate();
+	try
+	{
+		MemoObject->Lines->Text = moduleText;
+	}
+	__finally
+	{
+		MemoObject->EndUpdate();
+	}
+	MemoObject->CaretX = 1;
+	MemoObject->CaretY = 1;
+	MemoObject->TopLine = 1;
+	MemoObject->LeftChar = 1;
+	MemoObject->Invalidate();
+	MemoObject->Refresh();
+
+	if (moduleTextSelected && mess)
+	{
+		String nodeName = Data ? Data->Name : L"";
+		mess->Status(L"Модуль: " + nodeName + L", длина текста: " + IntToStr(moduleText.Length()));
+	}
+
+	if (moduleTextSelected && pagesEdit && TabModuleObject)
+		pagesEdit->ActivePage = TabModuleObject;
+}
+
+void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
+{
+	ShowMetadataNodeText(GetActiveTreeNode(VirtualStringTreeValue1C));
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::VirtualStringTreeValue1CChange(TBaseVirtualTree *Sender, PVirtualNode Node)
+{
+	ShowMetadataNodeText(Node);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::VirtualStringTreeValue1CNodeClick(TBaseVirtualTree *Sender, const THitInfo &HitInfo)
+{
+	ShowMetadataNodeText(HitInfo.HitNode);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::ModuleSelectionTimerTimer(TObject *Sender)
+{
+	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
+	if (!node || node == LastModuleNodeShown)
+		return;
+
+	ShowMetadataNodeText(node);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::VirtualStringTreeValue1CFocusChanged(TBaseVirtualTree *Sender, PVirtualNode Node,
+		  TColumnIndex Column)
+{
+	ShowMetadataNodeText(Node);
 }
 //---------------------------------------------------------------------------
 
