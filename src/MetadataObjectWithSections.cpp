@@ -10,6 +10,32 @@
 
 namespace
 {
+	bool SupportsMetadataObjectModuleKind(ModuleTextKind kind)
+	{
+		return kind == ModuleTextKind::Unknown
+			|| kind == ModuleTextKind::ObjectModule
+			|| kind == ModuleTextKind::ManagerModule;
+	}
+
+	String FindFirstGuid(tree* node)
+	{
+		if (!node)
+			return L"";
+
+		String value = Trim(node->get_value());
+		if (ModuleTextStorage::IsGuidLike(value))
+			return value;
+
+		for (int i = 0; i < node->get_num_subnode(); i++)
+		{
+			String found = FindFirstGuid(node->get_subnode(i));
+			if (!found.IsEmpty())
+				return found;
+		}
+
+		return L"";
+	}
+
     tree* GetNodeByPath(tree* root, std::initializer_list<int> indexes)
     {
         tree* current = root;
@@ -48,16 +74,22 @@ namespace
 __fastcall MetadataObjectWithSections::MetadataObjectWithSections()
     : BaseMetadataObject()
 {
+	objectModuleDocument.loaded = false;
+	managerModuleDocument.loaded = false;
 }
 
 __fastcall MetadataObjectWithSections::MetadataObjectWithSections(v8catalog* _parent, const String& _guid)
     : BaseMetadataObject(_parent, _guid)
 {
+	objectModuleDocument.loaded = false;
+	managerModuleDocument.loaded = false;
 }
 
 __fastcall MetadataObjectWithSections::MetadataObjectWithSections(v8catalog* _parent, const String& _guid, const String& _name)
     : BaseMetadataObject(_parent, _guid, _name)
 {
+	objectModuleDocument.loaded = false;
+	managerModuleDocument.loaded = false;
 }
 
 __fastcall MetadataObjectWithSections::~MetadataObjectWithSections()
@@ -133,7 +165,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             {
                 String guid_md = curNodeChild->get_value();
                 String NameForm = paths.getFormNameFunc(parent, guid_md);
-                forms.push_back(std::make_unique<TForm1C>(NameForm, ""));
+                forms.push_back(std::make_unique<TForm1C>(NameForm, guid_md));
             }
             catch (...)
             {
@@ -150,12 +182,13 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
     {
         try
         {
-            tree* itemNode = GetNodeByPath(root_data.get(), {0, paths.cmdIdx, i + CountCom - DeltaCom});
-            itemNode = GetNodeByPath(itemNode, paths.cmdItemPath);
+            tree* commandNode = GetNodeByPath(root_data.get(), {0, paths.cmdIdx, i + CountCom - DeltaCom});
+            String commandGuid = FindFirstGuid(commandNode);
+            tree* itemNode = GetNodeByPath(commandNode, paths.cmdItemPath);
             if (!itemNode)
                 continue;
             String NameCom = itemNode->get_value();
-            comands.push_back(std::make_unique<TComand>(NameCom, ""));
+            comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
         }
         catch (...)
         {
@@ -180,5 +213,104 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             {
             }
         }
-    }
+	}
+}
+
+ModuleTextDocument& __fastcall MetadataObjectWithSections::GetModuleDocument(ModuleTextKind kind)
+{
+	return kind == ModuleTextKind::ManagerModule ? managerModuleDocument : objectModuleDocument;
+}
+
+void __fastcall MetadataObjectWithSections::RefreshModuleDocument(ModuleTextKind kind)
+{
+	if (!SupportsMetadataObjectModuleKind(kind))
+		return;
+
+	ModuleTextKind effectiveKind = kind == ModuleTextKind::Unknown ? ModuleTextKind::ObjectModule : kind;
+	ModuleTextDocument& document = GetModuleDocument(effectiveKind);
+
+	if (document.loaded && document.location.editable)
+		return;
+
+	ModuleTextDocument refreshed = ModuleTextStorage::LoadByMetadataObject(parent, guid, name, effectiveKind);
+	if (!document.loaded || refreshed.location.editable)
+		document = refreshed;
+	document.loaded = true;
+}
+
+bool __fastcall MetadataObjectWithSections::HasEditableModuleText()
+{
+	return HasEditableModuleText(ModuleTextKind::ObjectModule);
+}
+
+String __fastcall MetadataObjectWithSections::GetEditableModuleText()
+{
+	return GetEditableModuleText(ModuleTextKind::ObjectModule);
+}
+
+void __fastcall MetadataObjectWithSections::SetEditableModuleText(const String& value)
+{
+	SetEditableModuleText(ModuleTextKind::ObjectModule, value);
+}
+
+bool __fastcall MetadataObjectWithSections::SaveEditableModuleText(const String& value, String& errorText)
+{
+	return SaveEditableModuleText(ModuleTextKind::ObjectModule, value, errorText);
+}
+
+ModuleTextLocation __fastcall MetadataObjectWithSections::GetEditableModuleLocation()
+{
+	return GetEditableModuleLocation(ModuleTextKind::ObjectModule);
+}
+
+bool __fastcall MetadataObjectWithSections::HasEditableModuleText(ModuleTextKind kind)
+{
+	if (!SupportsMetadataObjectModuleKind(kind))
+		return false;
+
+	RefreshModuleDocument(kind);
+	ModuleTextDocument& document = GetModuleDocument(kind);
+	return !document.text.IsEmpty() || document.location.editable;
+}
+
+String __fastcall MetadataObjectWithSections::GetEditableModuleText(ModuleTextKind kind)
+{
+	if (!SupportsMetadataObjectModuleKind(kind))
+		return L"";
+
+	RefreshModuleDocument(kind);
+	return GetModuleDocument(kind).text;
+}
+
+void __fastcall MetadataObjectWithSections::SetEditableModuleText(ModuleTextKind kind, const String& value)
+{
+	if (!SupportsMetadataObjectModuleKind(kind))
+		return;
+
+	RefreshModuleDocument(kind);
+	ModuleTextDocument& document = GetModuleDocument(kind);
+	document.text = value;
+	document.dirty = true;
+	document.loaded = true;
+}
+
+bool __fastcall MetadataObjectWithSections::SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText)
+{
+	if (!SupportsMetadataObjectModuleKind(kind))
+	{
+		errorText = L"Неподдерживаемый вид модуля для объекта метаданных.";
+		return false;
+	}
+
+	RefreshModuleDocument(kind);
+	return ModuleTextStorage::SaveDocument(GetModuleDocument(kind), value, errorText);
+}
+
+ModuleTextLocation __fastcall MetadataObjectWithSections::GetEditableModuleLocation(ModuleTextKind kind)
+{
+	if (!SupportsMetadataObjectModuleKind(kind))
+		return ModuleTextLocation();
+
+	RefreshModuleDocument(kind);
+	return GetModuleDocument(kind).location;
 }

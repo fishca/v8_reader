@@ -357,73 +357,46 @@ namespace
 __fastcall TCommonModules::TCommonModules() : BaseMetadataObject()
 {
 	root_data.reset();
-	text = L"";
-	textLoaded = false;
+	textDocument.text = L"";
+	textDocument.loaded = false;
+	textDocument.dirty = false;
 }
 
 __fastcall TCommonModules::TCommonModules(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
 	root_data.reset();
-	text = L"";
-	textLoaded = false;
+	textDocument.text = L"";
+	textDocument.loaded = false;
+	textDocument.dirty = false;
 }
 
 __fastcall TCommonModules::TCommonModules(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
 	root_data.reset();
-	text = L"";
-	textLoaded = false;
+	textDocument.text = L"";
+	textDocument.loaded = false;
+	textDocument.dirty = false;
 	name = _name;
 }
 
 void __fastcall TCommonModules::LoadTextIfNeeded()
 {
-	if (textLoaded)
+	if (textDocument.loaded)
 		return;
 
-	text = L"";
+	textDocument = ModuleTextStorage::LoadCommonModule(parent, guid, name);
+	textDocument.loaded = true;
+}
 
-	if (!guid.IsEmpty())
-		text = TryReadUnpackedModuleText(guid);
-	if (text.IsEmpty())
-		text = TryReadUnpackedModuleTextByName(name);
+void __fastcall TCommonModules::RefreshEditableTextIfNeeded()
+{
+	LoadTextIfNeeded();
+	if (textDocument.location.editable)
+		return;
 
-	if ((parent) && (!guid.IsEmpty()))
-	{
-		std::vector<String> candidates;
-		AddModuleFileCandidates(candidates, guid);
-
-		try
-		{
-			v8file* objectFile = parent->GetFile(guid);
-			if (objectFile)
-			{
-				std::unique_ptr<tree> objectTree(get_treeFromV8file(objectFile));
-				if (text.IsEmpty())
-					text = FindEmbeddedModuleText(objectTree.get());
-
-				std::vector<String> referencedGuids;
-				CollectGuidReferences(objectTree.get(), referencedGuids);
-				for (const auto& referencedGuid : referencedGuids)
-				{
-					if (text.IsEmpty())
-						text = TryReadUnpackedModuleText(referencedGuid);
-					AddModuleFileCandidates(candidates, referencedGuid);
-				}
-			}
-		}
-		catch (...)
-		{
-		}
-
-		for (size_t i = 0; i < candidates.size() && text.IsEmpty(); i++)
-		{
-			v8file* data_module = parent->GetFile(candidates[i]);
-			text = TryReadModuleContainer(data_module);
-		}
-	}
-
-	textLoaded = true;
+	ModuleTextDocument refreshed = ModuleTextStorage::LoadCommonModule(parent, guid, name);
+	if (refreshed.location.editable)
+		textDocument = refreshed;
 }
 
 __fastcall TCommonModules::~TCommonModules()
@@ -434,13 +407,54 @@ __fastcall TCommonModules::~TCommonModules()
 String __fastcall TCommonModules::GetText()
 {
 	LoadTextIfNeeded();
-	return text;
+	return textDocument.text;
 }
 
 void __fastcall TCommonModules::SetText(String _text)
 {
-	text = _text;
-	textLoaded = true;
+	LoadTextIfNeeded();
+	textDocument.text = _text;
+	textDocument.loaded = true;
+	textDocument.dirty = true;
+}
+
+ModuleTextDocument& __fastcall TCommonModules::GetTextDocument()
+{
+	RefreshEditableTextIfNeeded();
+	return textDocument;
+}
+
+bool __fastcall TCommonModules::SaveTextToSource(const String& newText, String& errorText)
+{
+	RefreshEditableTextIfNeeded();
+	return ModuleTextStorage::SaveDocument(textDocument, newText, errorText);
+}
+
+bool __fastcall TCommonModules::HasEditableModuleText()
+{
+	RefreshEditableTextIfNeeded();
+	return !textDocument.text.IsEmpty() || textDocument.location.editable;
+}
+
+String __fastcall TCommonModules::GetEditableModuleText()
+{
+	return GetText();
+}
+
+void __fastcall TCommonModules::SetEditableModuleText(const String& value)
+{
+	SetText(value);
+}
+
+bool __fastcall TCommonModules::SaveEditableModuleText(const String& value, String& errorText)
+{
+	return SaveTextToSource(value, errorText);
+}
+
+ModuleTextLocation __fastcall TCommonModules::GetEditableModuleLocation()
+{
+	RefreshEditableTextIfNeeded();
+	return textDocument.location;
 }
 
 void __fastcall TCommonModules::initializeFromTree()

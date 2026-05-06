@@ -45,3 +45,52 @@ String __fastcall BaseMetadataObject::GetGUID()
     return guid;
 }
 
+bool __fastcall BaseMetadataObject::HasEditableModuleText()
+{
+	return false;
+}
+
+String __fastcall BaseMetadataObject::GetEditableModuleText()
+{
+	return L"";
+}
+
+void __fastcall BaseMetadataObject::SetEditableModuleText(const String& value)
+{
+}
+
+bool __fastcall BaseMetadataObject::SaveEditableModuleText(const String& value, String& errorText)
+{
+	errorText = L"Для этого объекта редактирование модуля не реализовано.";
+	return false;
+}
+
+ModuleTextLocation __fastcall BaseMetadataObject::GetEditableModuleLocation()
+{
+	return ModuleTextLocation();
+}
+
+bool __fastcall BaseMetadataObject::HasEditableModuleText(ModuleTextKind kind)
+{
+	return HasEditableModuleText();
+}
+
+String __fastcall BaseMetadataObject::GetEditableModuleText(ModuleTextKind kind)
+{
+	return GetEditableModuleText();
+}
+
+void __fastcall BaseMetadataObject::SetEditableModuleText(ModuleTextKind kind, const String& value)
+{
+	SetEditableModuleText(value);
+}
+
+bool __fastcall BaseMetadataObject::SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText)
+{
+	return SaveEditableModuleText(value, errorText);
+}
+
+ModuleTextLocation __fastcall BaseMetadataObject::GetEditableModuleLocation(ModuleTextKind kind)
+{
+	return GetEditableModuleLocation();
+}

@@ -11,6 +11,7 @@ object MainForm: TMainForm
   Font.Name = 'Segoe UI'
   Font.Style = []
   Menu = MainMenu1
+  OnCloseQuery = FormCloseQuery
   OnDestroy = FormDestroy
   TextHeight = 15
   object split1: TSplitter
@@ -196,6 +197,7 @@ object MainForm: TMainForm
           Highlighter = SynCppSyn1
           WantReturns = False
           WantTabs = True
+          OnChange = MemoObjectChange
           FontSmoothing = fsmNone
         end
       end
@@ -8855,6 +8857,15 @@ object MainForm: TMainForm
       Caption = #1054#1090#1082#1088#1099#1090#1100' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1102
       OnExecute = ActionOpenCFExecute
     end
+    object ActionSaveCF: TAction
+      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1102
+      OnExecute = ActionSaveCFExecute
+    end
+    object ActionSaveModule: TAction
+      Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1084#1086#1076#1091#1083#1100
+      ShortCut = 16467
+      OnExecute = ActionSaveModuleExecute
+    end
   end
   object MainMenu1: TMainMenu
     Left = 476
@@ -8863,6 +8874,19 @@ object MainForm: TMainForm
       Caption = #1060#1072#1081#1083
       object N2: TMenuItem
         Action = ActionOpenCF
+      end
+      object N5: TMenuItem
+        Action = ActionSaveCF
+      end
+      object N6: TMenuItem
+        Action = ActionSaveModule
+      end
+      object N3: TMenuItem
+        Caption = '-'
+      end
+      object N4: TMenuItem
+        Caption = #1042#1099#1093#1086#1076
+        OnClick = N4Click
       end
     end
   end

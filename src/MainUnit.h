@@ -27,6 +27,7 @@
 #include "SynHighlighterGeneral.hpp"
 #include "SynMemo.hpp"
 #include "SynHighlighter1C.h"
+#include "ModuleTextStorage.h"
 
 #include <memory>
 
@@ -36,6 +37,7 @@
 #include "Tabular.h"
 #include "Form.h"
 #include "Enums.h"
+#include "BaseMetadataObject.h"
 
 
 
@@ -63,10 +65,14 @@ struct SubSys
 struct VirtualTreeData
 {
 	String Name;
-    String text_module;
-	TObject* MetadataObject;
-	int Age;
-	int ImgIndex;
+	String text_module;
+	String moduleItemGuid;
+	TObject* MetadataObject = nullptr;
+	ModuleTextLocation moduleLocation;
+	bool moduleEditable = false;
+	bool moduleDirty = false;
+	int Age = 0;
+	int ImgIndex = 0;
 };
 
 
@@ -102,6 +108,12 @@ __published:	// IDE-managed Components
 	TPanel *Panel1;
 	TProgressBar *LoadProgressBar;
 	TSynCppSyn *SynCppSyn1;
+	TMenuItem *N3;
+	TMenuItem *N4;
+	TMenuItem *N5;
+	TAction *ActionSaveCF;
+	TAction *ActionSaveModule;
+	TMenuItem *N6;
 	void __fastcall btnOpenEditNameClick(TObject *Sender);
 	void __fastcall btnGOClick(TObject *Sender);
 	void __fastcall VirtualStringTreeValue1CInitNode(TBaseVirtualTree *Sender, PVirtualNode ParentNode,
@@ -123,6 +135,11 @@ __published:	// IDE-managed Components
 	void __fastcall ModuleMemoScanForFoldRanges(TObject *Sender, TSynFoldRanges *FoldRanges,
 		  TStrings *LinesToScan, int FromLine, int ToLine);
 	void __fastcall ModuleSelectionTimerTimer(TObject *Sender);
+	void __fastcall N4Click(TObject *Sender);
+	void __fastcall ActionSaveCFExecute(TObject *Sender);
+	void __fastcall MemoObjectChange(TObject *Sender);
+	void __fastcall ActionSaveModuleExecute(TObject *Sender);
+	void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
 
 
 private:	// User declarations
@@ -145,6 +162,15 @@ private:	// User declarations
 	bool HighlightSettingsLoading;
 	TTimer *ModuleSelectionTimer;
 	PVirtualNode LastModuleNodeShown;
+	PVirtualNode CurrentModuleNode;
+	BaseMetadataObject* CurrentModuleObject;
+	bool LoadingModuleText;
+	bool CurrentModuleDirty;
+	String CurrentModuleOriginalText;
+	ModuleTextLocation CurrentModuleLocation;
+	ModuleTextKind CurrentModuleKind;
+	ModuleTextDocument CurrentStandaloneModuleDocument;
+	bool CurrentModuleStandalone;
     std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
 	void __fastcall CreateHighlightSettingsTab();
 	void __fastcall ApplyHighlightSettings();
@@ -154,6 +180,9 @@ private:	// User declarations
 	void __fastcall HighlightSettingsChanged(TObject *Sender);
 	void __fastcall ResetHighlightSettingsClick(TObject *Sender);
 	void __fastcall ShowMetadataNodeText(PVirtualNode Node);
+	bool __fastcall SaveCurrentModuleTextIfNeeded(bool forcePrompt);
+	bool __fastcall FlushCurrentModuleBeforeBuild();
+	void __fastcall SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text, ModuleTextKind kind);
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
 	void __fastcall ResetLoadProgress(int maxValue, const String& statusText = L"");

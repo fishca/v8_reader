@@ -4,8 +4,31 @@
 
 #include "Common.h"
 #include "ChartOfCharacteristicTypes.h"
+#include "ModuleTextStorage.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
+
+namespace
+{
+	String FindFirstGuid(tree* node)
+	{
+		if (!node)
+			return L"";
+
+		String value = Trim(node->get_value());
+		if (ModuleTextStorage::IsGuidLike(value))
+			return value;
+
+		for (int i = 0; i < node->get_num_subnode(); i++)
+		{
+			String found = FindFirstGuid(node->get_subnode(i));
+			if (!found.IsEmpty())
+				return found;
+		}
+
+		return L"";
+	}
+}
 
 __fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes():BaseMetadataObject()
 {
@@ -96,8 +119,9 @@ void __fastcall TChartOfCharacteristicTypes::initializeFromTree()
 		curNodeChild = curNodeChild->get_next();
 		if (curNodeChild)
 		{
-			String NameForm = GetNameFormPVH(parent, curNodeChild->get_value());
-			forms.push_back(std::make_unique<TForm1C>(NameForm, ""));
+			String formGuid = curNodeChild->get_value();
+			String NameForm = GetNameFormPVH(parent, formGuid);
+			forms.push_back(std::make_unique<TForm1C>(NameForm, formGuid));
 		}
 	}
 
@@ -112,10 +136,11 @@ void __fastcall TChartOfCharacteristicTypes::initializeFromTree()
 	int DeltaCom = CountCom - 2;
 	for (int i = 0; i < CountCom; i++)
 	{
-		tree* node_com = root_data.get();
-		node_com = &(*node_com)[0][6][i+CountCom-DeltaCom][0][1][3][2][9][2];
+		tree* commandNode = &(*root_data.get())[0][6][i+CountCom-DeltaCom];
+		String commandGuid = FindFirstGuid(commandNode);
+		tree* node_com = &(*commandNode)[0][1][3][2][9][2];
 		String NameCom = node_com->get_value();
-		comands.push_back(std::make_unique<TComand>(NameCom, ""));
+		comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
 	}
 	// Получаем макеты
 	auto& moxels = getLayouts();

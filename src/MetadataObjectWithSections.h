@@ -34,8 +34,12 @@ protected:
     std::vector<std::unique_ptr<TMoxel>> moxels;
     std::vector<std::unique_ptr<TTabular>> tabulars;
     std::vector<std::unique_ptr<TForm1C>> forms;
+	ModuleTextDocument objectModuleDocument;
+	ModuleTextDocument managerModuleDocument;
 
     void initializeFromTreeWithPaths(const MetadataTreePaths& paths);
+	void __fastcall RefreshModuleDocument(ModuleTextKind kind);
+	ModuleTextDocument& __fastcall GetModuleDocument(ModuleTextKind kind);
 
 public:
     __fastcall MetadataObjectWithSections();
@@ -48,6 +52,17 @@ public:
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override { return moxels; }
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override { return tabulars; }
     std::vector<std::unique_ptr<TForm1C>>& getForms() override { return forms; }
+
+	bool __fastcall HasEditableModuleText() override;
+	String __fastcall GetEditableModuleText() override;
+	void __fastcall SetEditableModuleText(const String& value) override;
+	bool __fastcall SaveEditableModuleText(const String& value, String& errorText) override;
+	ModuleTextLocation __fastcall GetEditableModuleLocation() override;
+	bool __fastcall HasEditableModuleText(ModuleTextKind kind) override;
+	String __fastcall GetEditableModuleText(ModuleTextKind kind) override;
+	void __fastcall SetEditableModuleText(ModuleTextKind kind, const String& value) override;
+	bool __fastcall SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText) override;
+	ModuleTextLocation __fastcall GetEditableModuleLocation(ModuleTextKind kind) override;
 };
 
 //---------------------------------------------------------------------------
