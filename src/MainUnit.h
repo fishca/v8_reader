@@ -19,10 +19,15 @@
 #include <Vcl.ActnList.hpp>
 #include <Vcl.Menus.hpp>
 #include <Vcl.ExtCtrls.hpp>
+#include <Vcl.Graphics.hpp>
 #include "SynEdit.hpp"
 #include "SynEditHighlighter.hpp"
 #include "SynHighlighterCpp.hpp"
+#include "SynEditCodeFolding.hpp"
+#include "SynHighlighterGeneral.hpp"
 #include "SynMemo.hpp"
+#include "SynHighlighter1C.h"
+#include "ModuleTextStorage.h"
 
 #include <memory>
 
@@ -32,6 +37,7 @@
 #include "Tabular.h"
 #include "Form.h"
 #include "Enums.h"
+#include "BaseMetadataObject.h"
 
 
 
@@ -44,6 +50,9 @@
 #include "SynMemo.hpp"
 #include "SynEditHighlighter.hpp"
 #include "SynHighlighterCpp.hpp"
+#include "SynEditCodeFolding.hpp"
+#include "SynHighlighterGeneral.hpp"
+#include "SynHighlighter1C.h"
 
 class Messager;
 
@@ -56,10 +65,14 @@ struct SubSys
 struct VirtualTreeData
 {
 	String Name;
-    String text_module;
-	TObject* MetadataObject;
-	int Age;
-	int ImgIndex;
+	String text_module;
+	String moduleItemGuid;
+	TObject* MetadataObject = nullptr;
+	ModuleTextLocation moduleLocation;
+	bool moduleEditable = false;
+	bool moduleDirty = false;
+	int Age = 0;
+	int ImgIndex = 0;
 };
 
 
@@ -95,6 +108,12 @@ __published:	// IDE-managed Components
 	TPanel *Panel1;
 	TProgressBar *LoadProgressBar;
 	TSynCppSyn *SynCppSyn1;
+	TMenuItem *N3;
+	TMenuItem *N4;
+	TMenuItem *N5;
+	TAction *ActionSaveCF;
+	TAction *ActionSaveModule;
+	TMenuItem *N6;
 	void __fastcall btnOpenEditNameClick(TObject *Sender);
 	void __fastcall btnGOClick(TObject *Sender);
 	void __fastcall VirtualStringTreeValue1CInitNode(TBaseVirtualTree *Sender, PVirtualNode ParentNode,
@@ -109,11 +128,61 @@ __published:	// IDE-managed Components
 	void __fastcall ActionOpenCFExecute(TObject *Sender);
 	void __fastcall FormDestroy(TObject *Sender);
 	void __fastcall VirtualStringTreeValue1CClick(TObject *Sender);
+	void __fastcall VirtualStringTreeValue1CChange(TBaseVirtualTree *Sender, PVirtualNode Node);
+	void __fastcall VirtualStringTreeValue1CNodeClick(TBaseVirtualTree *Sender, const THitInfo &HitInfo);
+	void __fastcall VirtualStringTreeValue1CFocusChanged(TBaseVirtualTree *Sender, PVirtualNode Node,
+		  TColumnIndex Column);
+	void __fastcall ModuleMemoScanForFoldRanges(TObject *Sender, TSynFoldRanges *FoldRanges,
+		  TStrings *LinesToScan, int FromLine, int ToLine);
+	void __fastcall ModuleSelectionTimerTimer(TObject *Sender);
+	void __fastcall N4Click(TObject *Sender);
+	void __fastcall ActionSaveCFExecute(TObject *Sender);
+	void __fastcall MemoObjectChange(TObject *Sender);
+	void __fastcall ActionSaveModuleExecute(TObject *Sender);
+	void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
 
 
 private:	// User declarations
 	Messager* mess; // регистратор сообщений
+	TSyn1CSyn *Syn1CSyn;
+	TSynGeneralSyn *ModuleGeneralSyn;
+	TTabSheet *HighlightSettingsTab;
+	TColorBox *HighlightKeywordColorBox;
+	TColorBox *HighlightCommentColorBox;
+	TColorBox *HighlightStringColorBox;
+	TColorBox *HighlightNumberColorBox;
+	TColorBox *HighlightPreprocessorColorBox;
+	TColorBox *HighlightSymbolColorBox;
+	TColorBox *HighlightAnnotationColorBox;
+	TCheckBox *HighlightKeywordBoldCheckBox;
+	TCheckBox *HighlightCommentItalicCheckBox;
+	TCheckBox *UnpackCheckBox;
+
+	TSynMemo *HighlightPreviewMemo;
+	bool HighlightSettingsLoading;
+	TTimer *ModuleSelectionTimer;
+	PVirtualNode LastModuleNodeShown;
+	PVirtualNode CurrentModuleNode;
+	BaseMetadataObject* CurrentModuleObject;
+	bool LoadingModuleText;
+	bool CurrentModuleDirty;
+	String CurrentModuleOriginalText;
+	ModuleTextLocation CurrentModuleLocation;
+	ModuleTextKind CurrentModuleKind;
+	ModuleTextDocument CurrentStandaloneModuleDocument;
+	bool CurrentModuleStandalone;
     std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
+	void __fastcall CreateHighlightSettingsTab();
+	void __fastcall ApplyHighlightSettings();
+	void __fastcall LoadHighlightSettings();
+	void __fastcall SaveHighlightSettings();
+	void __fastcall SetDefaultHighlightSettingsControls();
+	void __fastcall HighlightSettingsChanged(TObject *Sender);
+	void __fastcall ResetHighlightSettingsClick(TObject *Sender);
+	void __fastcall ShowMetadataNodeText(PVirtualNode Node);
+	bool __fastcall SaveCurrentModuleTextIfNeeded(bool forcePrompt);
+	bool __fastcall FlushCurrentModuleBeforeBuild();
+	void __fastcall SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text, ModuleTextKind kind);
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
 	void __fastcall ResetLoadProgress(int maxValue, const String& statusText = L"");

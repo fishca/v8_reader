@@ -8,6 +8,28 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
+namespace
+{
+    String FindFirstGuid(tree* node)
+    {
+        if (!node)
+            return L"";
+
+        String value = Trim(node->get_value());
+        if (ModuleTextStorage::IsGuidLike(value))
+            return value;
+
+        for (int i = 0; i < node->get_num_subnode(); i++)
+        {
+            String found = FindFirstGuid(node->get_subnode(i));
+            if (!found.IsEmpty())
+                return found;
+        }
+
+        return L"";
+    }
+}
+
 __fastcall MetadataObjectInformationRegister::MetadataObjectInformationRegister()
     : BaseMetadataObject()
 {
@@ -98,7 +120,7 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         {
             String guid_md = curNodeChild->get_value();
             String NameForm = paths.getFormNameFunc(parent, guid_md);
-            forms.push_back(std::make_unique<TForm1C>(NameForm, ""));
+            forms.push_back(std::make_unique<TForm1C>(NameForm, guid_md));
         }
     }
 
@@ -110,11 +132,13 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
     int DeltaCom = CountCom - 2;
     for (int i = 0; i < CountCom; i++)
     {
-        tree* itemNode = &(*root_data.get())[0][paths.cmdIdx][i + CountCom - DeltaCom];
+        tree* commandNode = &(*root_data.get())[0][paths.cmdIdx][i + CountCom - DeltaCom];
+        String commandGuid = FindFirstGuid(commandNode);
+        tree* itemNode = commandNode;
         for (size_t p = 0; p < paths.cmdItemPath.size(); p++)
             itemNode = &(*itemNode)[paths.cmdItemPath[p]];
         String NameCom = itemNode->get_value();
-        comands.push_back(std::make_unique<TComand>(NameCom, ""));
+        comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
     }
 
     // Макеты

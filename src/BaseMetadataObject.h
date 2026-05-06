@@ -14,6 +14,7 @@
 #include "Moxel.h"
 #include "Tabular.h"
 #include "Form.h"
+#include "ModuleTextStorage.h"
 
 //---------------------------------------------------------------------------
 // Абстрактный базовый класс для всех объектов метаданных
@@ -46,6 +47,17 @@ public:
 
     // Виртуальный метод для инициализации данных из root_data
     virtual void __fastcall initializeFromTree() = 0;
+
+	virtual bool __fastcall HasEditableModuleText();
+	virtual String __fastcall GetEditableModuleText();
+	virtual void __fastcall SetEditableModuleText(const String& value);
+	virtual bool __fastcall SaveEditableModuleText(const String& value, String& errorText);
+	virtual ModuleTextLocation __fastcall GetEditableModuleLocation();
+	virtual bool __fastcall HasEditableModuleText(ModuleTextKind kind);
+	virtual String __fastcall GetEditableModuleText(ModuleTextKind kind);
+	virtual void __fastcall SetEditableModuleText(ModuleTextKind kind, const String& value);
+	virtual bool __fastcall SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText);
+	virtual ModuleTextLocation __fastcall GetEditableModuleLocation(ModuleTextKind kind);
 };
 
 

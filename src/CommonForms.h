@@ -9,8 +9,7 @@
 class TCommonForms : public BaseMetadataObject
 {
 private:
-	String text;
-	bool textLoaded;
+	ModuleTextDocument textDocument;
 
 public:
 	__fastcall TCommonForms();
@@ -22,6 +21,13 @@ public:
 	void __fastcall SetFormName(String _name);
 	String __fastcall GetText();
 	void __fastcall SetText(String _text);
+	ModuleTextDocument& __fastcall GetTextDocument();
+	bool __fastcall SaveTextToSource(const String& newText, String& errorText);
+	bool __fastcall HasEditableModuleText() override;
+	String __fastcall GetEditableModuleText() override;
+	void __fastcall SetEditableModuleText(const String& value) override;
+	bool __fastcall SaveEditableModuleText(const String& value, String& errorText) override;
+	ModuleTextLocation __fastcall GetEditableModuleLocation() override;
 
 	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
 	std::vector<std::unique_ptr<TComand>>& getCommands() override;
@@ -38,6 +44,7 @@ private:
 	std::vector<std::unique_ptr<TTabular>> tabularSections;
 	std::vector<std::unique_ptr<TForm1C>> forms;
 	void __fastcall LoadTextIfNeeded();
+	void __fastcall RefreshEditableTextIfNeeded();
 };
 
 #endif
