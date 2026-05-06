@@ -1,9 +1,4 @@
-(instruction.md and start_vs.md are documentation files that should not be added to .gitignore)
-
-The file changes consist only of documentation/markdown files (.md) and there are no build artifacts, dependencies, or temporary files that need to be ignored.
-
-Therefore, the optimized .gitignore content is:
-
 ```
-
+# Executable/binary files
+v8_reader_wx
 ```
