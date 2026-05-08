@@ -17,7 +17,10 @@ enum class ModuleTextKind
 	ObjectModule,
 	ManagerModule,
 	FormModule,
-	CommandModule
+	CommandModule,
+	ApplicationModule,
+	SessionModule,
+	ExternalConnectionModule
 };
 
 enum class ModuleTextEncodingKind
@@ -61,6 +64,7 @@ namespace ModuleTextStorage
 	ModuleTextDocument __fastcall LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
 	ModuleTextDocument __fastcall LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
 	ModuleTextDocument __fastcall LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind);
+	ModuleTextDocument __fastcall LoadConfigurationModule(v8catalog* parent, ModuleTextKind kind);
 
 	bool __fastcall SaveDocument(ModuleTextDocument& document, const String& newText, String& errorText);
 	String __fastcall DescribeLocation(const ModuleTextLocation& location);

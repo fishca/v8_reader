@@ -159,9 +159,14 @@ private:	// User declarations
 	TCheckBox *UnpackCheckBox;
 
 	TSynMemo *HighlightPreviewMemo;
+	TPopupMenu *ConfigurationPopupMenu;
+	TMenuItem *OpenApplicationModuleMenuItem;
+	TMenuItem *OpenSessionModuleMenuItem;
+	TMenuItem *OpenExternalConnectionModuleMenuItem;
 	bool HighlightSettingsLoading;
 	TTimer *ModuleSelectionTimer;
 	PVirtualNode LastModuleNodeShown;
+	PVirtualNode PendingModuleNode;
 	PVirtualNode CurrentModuleNode;
 	BaseMetadataObject* CurrentModuleObject;
 	bool LoadingModuleText;
@@ -179,7 +184,12 @@ private:	// User declarations
 	void __fastcall SetDefaultHighlightSettingsControls();
 	void __fastcall HighlightSettingsChanged(TObject *Sender);
 	void __fastcall ResetHighlightSettingsClick(TObject *Sender);
+	void __fastcall ScheduleMetadataNodeText(PVirtualNode Node);
 	void __fastcall ShowMetadataNodeText(PVirtualNode Node);
+	void __fastcall ShowConfigurationModule(ModuleTextKind kind, const String& caption);
+	void __fastcall ConfigurationPopupMenuPopup(TObject *Sender);
+	void __fastcall OpenConfigurationModuleMenuItemClick(TObject *Sender);
+	void __fastcall VirtualStringTreeValue1CMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
 	bool __fastcall SaveCurrentModuleTextIfNeeded(bool forcePrompt);
 	bool __fastcall FlushCurrentModuleBeforeBuild();
 	void __fastcall SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text, ModuleTextKind kind);

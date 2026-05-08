@@ -23,8 +23,7 @@ at http://mozilla.org/MPL/2.0/.
 
 #include <cstdint>
 #include <vector>
-#include <boost/shared_array.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <algorithm>
 
 #include "v8_constants.h"
@@ -369,7 +368,7 @@ bool try_inflate(std::istream &source, std::ostream &dest);
  *         false - ошибка распаковки: данные повреждены или не упакованы
  */
 bool
-try_inflate(const boost::filesystem::path &source, const boost::filesystem::path &dest);
+try_inflate(const std::filesystem::path &source, const std::filesystem::path &dest);
 
 template<typename T>
 void full_copy(std::basic_istream<T> &in_file, std::basic_ostream<T> &out_file)

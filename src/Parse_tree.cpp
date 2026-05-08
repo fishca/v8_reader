@@ -3,8 +3,6 @@
 #include "Parse_tree.h"
 #include "Common.h"
 
-#include <boost/regex.hpp>
-
 //---------------------------------------------------------------------------
 
 #pragma package(smart_init)
@@ -138,16 +136,6 @@ namespace
         return true;
     }
 }
-
-//const boost::wregex exp_number(L"^-?[0-9]+\\.?[0-9]*$");
-//const boost::wregex exp_number_exp(L"^-?[0-9]+\\.?[0-9]*e-?[0-9]+$");
-const boost::wregex exp_number(L"^-?\\d+$");
-const boost::wregex exp_number_exp(L"^-?\\d+(\\.?\\d*)?((e|E)-?\\d+)?$");
-const boost::wregex exp_guid(L"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
-const boost::wregex exp_binary(L"^#base64:[0-9a-zA-Z\\+=\\r\\n\\/]*$");
-const boost::wregex exp_binary2(L"^[0-9a-zA-Z\\+=\\r\\n\\/]+$");
-const boost::wregex exp_link(L"^[0-9]+:[0-9a-fA-F]{32}$");
-const boost::wregex exp_binary_d(L"^#data:[0-9a-zA-Z\\+=\\r\\n\\/]*$");
 
 extern MessageRegistrator* msreg;
 #define error if(msreg) msreg->AddError

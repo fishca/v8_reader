@@ -303,6 +303,11 @@ static PVirtualNode GetActiveTreeNode(TVirtualStringTree* tree, PVirtualNode fal
 	return tree->GetFirstSelected();
 }
 
+static bool IsConfigurationRootNode(TVirtualStringTree* tree, PVirtualNode node)
+{
+	return tree && node && node->Parent == tree->RootNode;
+}
+
 static bool LooksLikeGuidFileName(const String& value)
 {
 	if (value.Length() != 36)
@@ -829,7 +834,7 @@ void __fastcall TMainForm::CreateHighlightSettingsTab()
 
 //---------------------------------------------------------------------------
 __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSettingsLoading(false),
-	ModuleGeneralSyn(nullptr), ModuleSelectionTimer(nullptr), LastModuleNodeShown(nullptr),
+	ModuleGeneralSyn(nullptr), ModuleSelectionTimer(nullptr), LastModuleNodeShown(nullptr), PendingModuleNode(nullptr),
 	CurrentModuleNode(nullptr), CurrentModuleObject(nullptr), LoadingModuleText(false),
 	CurrentModuleDirty(false), CurrentModuleOriginalText(L""), CurrentModuleKind(ModuleTextKind::Unknown),
 	CurrentModuleStandalone(false), MDManager(std::make_unique<MetaDataManager>())
@@ -854,10 +859,29 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 	VirtualStringTreeValue1C->OnChange = VirtualStringTreeValue1CChange;
 	VirtualStringTreeValue1C->OnNodeClick = VirtualStringTreeValue1CNodeClick;
 	VirtualStringTreeValue1C->OnFocusChanged = VirtualStringTreeValue1CFocusChanged;
+	VirtualStringTreeValue1C->OnMouseDown = VirtualStringTreeValue1CMouseDown;
+	ConfigurationPopupMenu = new TPopupMenu(this);
+	ConfigurationPopupMenu->OnPopup = ConfigurationPopupMenuPopup;
+	OpenApplicationModuleMenuItem = new TMenuItem(ConfigurationPopupMenu);
+	OpenApplicationModuleMenuItem->Caption = L"Открыть модуль приложения";
+	OpenApplicationModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ApplicationModule);
+	OpenApplicationModuleMenuItem->OnClick = OpenConfigurationModuleMenuItemClick;
+	ConfigurationPopupMenu->Items->Add(OpenApplicationModuleMenuItem);
+	OpenSessionModuleMenuItem = new TMenuItem(ConfigurationPopupMenu);
+	OpenSessionModuleMenuItem->Caption = L"Открыть модуль сеанса";
+	OpenSessionModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::SessionModule);
+	OpenSessionModuleMenuItem->OnClick = OpenConfigurationModuleMenuItemClick;
+	ConfigurationPopupMenu->Items->Add(OpenSessionModuleMenuItem);
+	OpenExternalConnectionModuleMenuItem = new TMenuItem(ConfigurationPopupMenu);
+	OpenExternalConnectionModuleMenuItem->Caption = L"Открыть модуль внешнего соединения";
+	OpenExternalConnectionModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ExternalConnectionModule);
+	OpenExternalConnectionModuleMenuItem->OnClick = OpenConfigurationModuleMenuItemClick;
+	ConfigurationPopupMenu->Items->Add(OpenExternalConnectionModuleMenuItem);
+	VirtualStringTreeValue1C->PopupMenu = ConfigurationPopupMenu;
 	ModuleSelectionTimer = new TTimer(this);
 	ModuleSelectionTimer->Interval = 250;
 	ModuleSelectionTimer->OnTimer = ModuleSelectionTimerTimer;
-	ModuleSelectionTimer->Enabled = true;
+	ModuleSelectionTimer->Enabled = false;
 	CreateHighlightSettingsTab();
 	mess = new Messager(ListViewMessager, StatusBar1);
 	LoadProgressBar->Position = 0;
@@ -1212,18 +1236,6 @@ void __fastcall TMainForm::FillVirtualTree() {
 					childDataCom->text_module = L"";
 					childDataCom->MetadataObject = mdObj;
 
-					TCommonModules* commonModule = dynamic_cast<TCommonModules*>(mdObj);
-					if (commonModule)
-					{
-						childDataCom->text_module = commonModule->GetText();
-					}
-					else
-					{
-						TCommonForms* commonForm = dynamic_cast<TCommonForms*>(mdObj);
-						if (commonForm)
-							childDataCom->text_module = commonForm->GetText();
-					}
-
 					if (categoryCom.name == md_ExchangePlans || categoryCom.name == md_FilterCriteria)
 					{
 						BaseMetadataObject* metadataObject = dynamic_cast<BaseMetadataObject*>(mdObj);
@@ -1485,9 +1497,6 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 
 		const String sourceCfDir = TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF");
 
-		if (TDirectory::Exists(sourceCfDir))
-			TDirectory::Delete(sourceCfDir, true);
-
 		if (UnpackCheckBox->Checked)
 			StartConfigUnpackThread(EditNameCF->Text, sourceCfDir);
 
@@ -1611,8 +1620,9 @@ void __fastcall Messager::AddMessage(const String& message, const MessageState m
 	TFileStream* log = NULL;
 	TStreamWriter* sw;
 	String s;
+	const bool verboseInfo = (mstate == msInfo && !IsVerboseUiLoggingEnabled());
 
-	if (uiMessagesEnabled)
+	if (uiMessagesEnabled && !verboseInfo)
 	{
 		ListView->AddItem(message, param);
 		TListItem* item = ListView->Items->Item[ListView->Items->Count - 1];
@@ -3095,7 +3105,7 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
 
 void __fastcall TMainForm::MemoObjectChange(TObject *Sender)
 {
-	if (LoadingModuleText || !MemoObject || !CurrentModuleObject)
+	if (LoadingModuleText || !MemoObject || (!CurrentModuleObject && !CurrentModuleStandalone))
 		return;
 
 	CurrentModuleDirty = MemoObject->Lines->Text != CurrentModuleOriginalText;
@@ -3220,6 +3230,103 @@ bool __fastcall TMainForm::FlushCurrentModuleBeforeBuild()
 }
 //---------------------------------------------------------------------------
 
+void __fastcall TMainForm::ConfigurationPopupMenuPopup(TObject *Sender)
+{
+	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
+	const bool rootSelected = IsConfigurationRootNode(VirtualStringTreeValue1C, node);
+
+	OpenApplicationModuleMenuItem->Visible = rootSelected;
+	OpenSessionModuleMenuItem->Visible = rootSelected;
+	OpenExternalConnectionModuleMenuItem->Visible = rootSelected;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::OpenConfigurationModuleMenuItemClick(TObject *Sender)
+{
+	TMenuItem* item = dynamic_cast<TMenuItem*>(Sender);
+	if (!item)
+		return;
+
+	ShowConfigurationModule(static_cast<ModuleTextKind>(item->Tag), item->Caption);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::VirtualStringTreeValue1CMouseDown(TObject *Sender,
+	TMouseButton Button, TShiftState Shift, int X, int Y)
+{
+	if (Button != mbRight || !VirtualStringTreeValue1C)
+		return;
+
+	PVirtualNode node = VirtualStringTreeValue1C->GetNodeAt(X, Y);
+	if (!node)
+		return;
+
+	VirtualStringTreeValue1C->FocusedNode = node;
+	VirtualStringTreeValue1C->ClearSelection();
+	VirtualStringTreeValue1C->Selected[node] = true;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& caption)
+{
+	if (!MemoObject)
+		return;
+
+	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
+	if (!IsConfigurationRootNode(VirtualStringTreeValue1C, node))
+		return;
+
+	if (CurrentModuleNode && node != CurrentModuleNode)
+	{
+		if (!SaveCurrentModuleTextIfNeeded(true))
+			return;
+	}
+
+	CurrentStandaloneModuleDocument = ModuleTextStorage::LoadConfigurationModule(GlobalCF.get(), kind);
+	const String moduleText = CurrentStandaloneModuleDocument.text;
+
+	LoadingModuleText = true;
+	MemoObject->BeginUpdate();
+	try
+	{
+		MemoObject->Lines->Text = moduleText;
+	}
+	__finally
+	{
+		MemoObject->EndUpdate();
+		LoadingModuleText = false;
+	}
+
+	MemoObject->CaretX = 1;
+	MemoObject->CaretY = 1;
+	MemoObject->TopLine = 1;
+	MemoObject->LeftChar = 1;
+	MemoObject->Invalidate();
+	MemoObject->Refresh();
+
+	CurrentModuleNode = node;
+	CurrentModuleObject = nullptr;
+	CurrentModuleDirty = false;
+	CurrentModuleOriginalText = moduleText;
+	CurrentModuleKind = kind;
+	CurrentModuleStandalone = true;
+	CurrentModuleLocation = CurrentStandaloneModuleDocument.location;
+	MemoObject->ReadOnly = !(CurrentModuleLocation.editable && FileExists(CurrentModuleLocation.filePath));
+
+	if (pagesEdit && TabModuleObject)
+		pagesEdit->ActivePage = TabModuleObject;
+
+	if (mess)
+	{
+		const String location = ModuleTextStorage::DescribeLocation(CurrentModuleLocation);
+		if (!location.IsEmpty())
+			mess->Status(caption + L": " + location);
+		else
+			mess->Status(caption + L": модуль не найден");
+	}
+}
+//---------------------------------------------------------------------------
+
 void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 {
 	if (!MemoObject)
@@ -3286,11 +3393,6 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 			}
 		}
 
-		if (moduleText.IsEmpty())
-		{
-			moduleText = FindUnpackedModuleTextByNodeName(Data->Name);
-			moduleTextSelected = !moduleText.IsEmpty();
-		}
 	}
 
 	LoadingModuleText = true;
@@ -3365,27 +3467,43 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 		pagesEdit->ActivePage = TabModuleObject;
 }
 
+void __fastcall TMainForm::ScheduleMetadataNodeText(PVirtualNode Node)
+{
+	PendingModuleNode = GetActiveTreeNode(VirtualStringTreeValue1C, Node);
+	if (!PendingModuleNode)
+		return;
+
+	if (ModuleSelectionTimer)
+		ModuleSelectionTimer->Enabled = true;
+}
+//---------------------------------------------------------------------------
+
 void __fastcall TMainForm::VirtualStringTreeValue1CClick(TObject *Sender)
 {
-	ShowMetadataNodeText(GetActiveTreeNode(VirtualStringTreeValue1C));
+	ScheduleMetadataNodeText(GetActiveTreeNode(VirtualStringTreeValue1C));
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TMainForm::VirtualStringTreeValue1CChange(TBaseVirtualTree *Sender, PVirtualNode Node)
 {
-	ShowMetadataNodeText(Node);
+	ScheduleMetadataNodeText(Node);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TMainForm::VirtualStringTreeValue1CNodeClick(TBaseVirtualTree *Sender, const THitInfo &HitInfo)
 {
-	ShowMetadataNodeText(HitInfo.HitNode);
+	ScheduleMetadataNodeText(HitInfo.HitNode);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TMainForm::ModuleSelectionTimerTimer(TObject *Sender)
 {
-	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
+	if (ModuleSelectionTimer)
+		ModuleSelectionTimer->Enabled = false;
+
+	PVirtualNode node = PendingModuleNode ? PendingModuleNode : GetActiveTreeNode(VirtualStringTreeValue1C);
+	PendingModuleNode = nullptr;
+
 	if (!node || node == LastModuleNodeShown)
 		return;
 
@@ -3396,7 +3514,7 @@ void __fastcall TMainForm::ModuleSelectionTimerTimer(TObject *Sender)
 void __fastcall TMainForm::VirtualStringTreeValue1CFocusChanged(TBaseVirtualTree *Sender, PVirtualNode Node,
 		  TColumnIndex Column)
 {
-	ShowMetadataNodeText(Node);
+	ScheduleMetadataNodeText(Node);
 }
 //---------------------------------------------------------------------------
 

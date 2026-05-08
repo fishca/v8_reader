@@ -112,6 +112,19 @@ namespace
 	{
 		std::vector<String> candidates;
 
+		if (kind == ModuleTextKind::ApplicationModule)
+		{
+			AddUniqueString(candidates, baseGuid + L".6");
+			return candidates;
+		}
+
+		if (kind == ModuleTextKind::SessionModule
+			|| kind == ModuleTextKind::ExternalConnectionModule)
+		{
+			AddUniqueString(candidates, baseGuid + (kind == ModuleTextKind::SessionModule ? L".7" : L".5"));
+			return candidates;
+		}
+
 		if (kind == ModuleTextKind::ManagerModule)
 		{
 			AddUniqueString(candidates, baseGuid + L".3");
@@ -322,6 +335,27 @@ namespace
 		return L"";
 	}
 
+	String __fastcall ReadRootMetadataGuid(v8catalog* parent)
+	{
+		if (!parent)
+			return L"";
+
+		try
+		{
+			v8file* rootFile = parent->GetFile(L"root");
+			std::unique_ptr<tree> rootTree(get_treeFromV8file(rootFile));
+			std::vector<String> rootGuids;
+			CollectGuidReferences(rootTree.get(), rootGuids);
+			for (const auto& guid : rootGuids)
+				return guid;
+		}
+		catch (...)
+		{
+		}
+
+		return L"";
+	}
+
 	String __fastcall ReadV8FileAsText(v8file* file)
 	{
 		if (!file)
@@ -342,6 +376,44 @@ namespace
 			delete sb;
 			return L"";
 		}
+	}
+
+	String __fastcall ExtractConfigurationObjectGuid(const String& metadataText)
+	{
+		const String marker = L"{1,0,";
+		int searchFrom = 1;
+		while (searchFrom <= metadataText.Length())
+		{
+			const int relativePos = metadataText.SubString(searchFrom, metadataText.Length() - searchFrom + 1).Pos(marker);
+			if (relativePos <= 0)
+				break;
+
+			const int markerPos = searchFrom + relativePos - 1;
+			const int guidStart = markerPos + marker.Length();
+			if (guidStart + 35 <= metadataText.Length())
+			{
+				String guid = metadataText.SubString(guidStart, 36);
+				if (ModuleTextStorage::IsGuidLike(guid))
+					return guid;
+			}
+
+			searchFrom = markerPos + marker.Length();
+		}
+
+		return L"";
+	}
+
+
+	String __fastcall ReadConfigurationObjectGuid(v8catalog* parent)
+	{
+		const String metadataGuid = ReadRootMetadataGuid(parent);
+		if (metadataGuid.IsEmpty() || !parent)
+			return metadataGuid;
+
+		v8file* metadataFile = parent->GetFile(metadataGuid);
+		String metadataText = ReadV8FileAsText(metadataFile);
+		String objectGuid = ExtractConfigurationObjectGuid(metadataText);
+		return objectGuid.IsEmpty() ? metadataGuid : objectGuid;
 	}
 
 	String __fastcall TryReadNamedTextFile(v8catalog* catalog, const String& fileName)
@@ -460,6 +532,10 @@ namespace ModuleTextStorage
 {
 	bool __fastcall LooksLike1CModuleText(const String& value)
 	{
+		String trimmed = Trim(value);
+		if (trimmed.IsEmpty() || trimmed[1] == L'{')
+			return false;
+
 		return value.Length() > 0
 			&& (value.Pos(L"\n") > 0
 				|| value.Pos(L"\r") > 0
@@ -635,6 +711,42 @@ namespace ModuleTextStorage
 					document.location.editable = false;
 					document.location.foundInSourceCF = false;
 					return document;
+				}
+			}
+		}
+
+		return document;
+	}
+
+	ModuleTextDocument __fastcall LoadConfigurationModule(v8catalog* parent, ModuleTextKind kind)
+	{
+		ModuleTextDocument document;
+		document.loaded = true;
+		document.location.kind = kind;
+
+		const String rootMetadataGuid = ReadConfigurationObjectGuid(parent);
+		document.location.metadataGuid = rootMetadataGuid;
+
+		if (!rootMetadataGuid.IsEmpty())
+		{
+			if (TryLoadFromSourceCfByGuid(rootMetadataGuid, kind, document))
+				return document;
+
+			if (parent)
+			{
+				const String normalizedGuid = NormalizeGuidFileName(rootMetadataGuid);
+				const std::vector<String> candidates = GetModuleContainerCandidates(normalizedGuid, kind);
+				for (const auto& candidate : candidates)
+				{
+					String text = TryReadModuleContainer(parent->GetFile(candidate));
+					if (!text.IsEmpty())
+					{
+						document.text = text;
+						document.location.moduleDataGuid = candidate;
+						document.location.editable = false;
+						document.location.foundInSourceCF = false;
+						return document;
+					}
 				}
 			}
 		}
