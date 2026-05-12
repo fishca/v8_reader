@@ -1,8 +1,8 @@
 set(V8READER_METADATA_LEGACY_SOURCES
 	# Support infrastructure required by legacy metadata classes
 	../src/Common.cpp
-	../src/Parse_tree.cpp
-	../src/ModuleTextStorage.cpp
+	src/metadata/Parse_tree.cpp
+	src/metadata/ModuleTextStorage.cpp
 
 	# P1: metadata model core
 	src/metadata/MDO.cpp
@@ -30,4 +30,7 @@ set(V8READER_METADATA_LEGACY_SOURCES
 	src/metadata/AccumulationRegisters.cpp
 	src/metadata/CalculationRegisters.cpp
 	src/metadata/AccountingRegisters.cpp
+
+	# P3: metadata loading/orchestration
+	src/metadata/MetaDataManager.cpp
 )

@@ -29,4 +29,10 @@
 #include "CalculationRegisters.h"
 #include "AccountingRegisters.h"
 
+#include "NodeTypes.h"
+#include "Parse_tree.h"
+#include "ModuleTextStorage.h"
+#include "MetaDataManager.h"
+#include "guids.h"
+
 #endif // V8READER_CORE_V8METADATALEGACY_H
