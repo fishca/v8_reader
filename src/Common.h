@@ -5,7 +5,7 @@
 
 //#include <vcl.h>
 #include <vector>
-#include "APIcfBase.h"
+#include "../core/src/APIcfBase.h"
 #include <System.Classes.hpp>
 
 //---------------------------------------------------------------------------

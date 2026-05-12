@@ -2,7 +2,7 @@
 
 #pragma hdrstop
 
-#include "APIcfBase.h"
+#include "../APIcfBase.h"
 #include "Parse_tree.h"
 #include "Class_1CD.h"
 #include "guids.h"

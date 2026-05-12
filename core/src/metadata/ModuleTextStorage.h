@@ -6,7 +6,7 @@
 #include <System.Classes.hpp>
 #include <System.SysUtils.hpp>
 
-#include "APIcfBase.h"
+#include "../APIcfBase.h"
 #include "Parse_tree.h"
 
 enum class ModuleTextKind

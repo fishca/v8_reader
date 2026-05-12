@@ -15,7 +15,7 @@
 
 #include <System.SysUtils.hpp>
 
-#include "ApicfBase.h"
+#include "../core/src/APIcfBase.h"
 #include "MetadataTreeBuilder.h"
 #include "Class_1CD.h"
 #include "CommonModules.h"

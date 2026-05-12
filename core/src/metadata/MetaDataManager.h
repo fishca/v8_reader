@@ -17,7 +17,7 @@
 #include <optional>
 #include <variant>
 
-#include "APIcfBase.h"
+#include "../APIcfBase.h"
 #include "MetaObject.h"
 #include "SessionParameters.h"
 #include "Roles.h"

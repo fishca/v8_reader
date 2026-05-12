@@ -1,7 +1,7 @@
 ﻿#include "APIcfBase.h"
-#include "../core/include/v8reader_core/io/IByteStream.h"
-#include "../core/include/v8reader_core/io/MemoryByteStream.h"
-#include "../core/include/v8reader_core/io/StdFileStream.h"
+#include "../include/v8reader_core/io/IByteStream.h"
+#include "../include/v8reader_core/io/MemoryByteStream.h"
+#include "../include/v8reader_core/io/StdFileStream.h"
 
 
 #include "UZlib.h"
