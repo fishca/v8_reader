@@ -30,6 +30,7 @@
 #include "ModuleTextStorage.h"
 
 #include <memory>
+#include <unordered_map>
 
 #include "Requisite.h"
 #include "Comand.h"
@@ -55,6 +56,7 @@
 #include "SynHighlighter1C.h"
 
 class Messager;
+class v8catalog;
 
 struct SubSys
 {
@@ -73,6 +75,22 @@ struct VirtualTreeData
 	bool moduleDirty = false;
 	int Age = 0;
 	int ImgIndex = 0;
+};
+
+struct ModuleEditorTabState
+{
+	TTabSheet* tab = nullptr;
+	TSynMemo* memo = nullptr;
+	String key;
+	String title;
+	PVirtualNode node = nullptr;
+	BaseMetadataObject* metadataObject = nullptr;
+	ModuleTextKind kind = ModuleTextKind::Unknown;
+	ModuleTextDocument standaloneDocument;
+	bool standalone = false;
+	bool dirty = false;
+	String originalText;
+	ModuleTextLocation location;
 };
 
 
@@ -160,6 +178,9 @@ private:	// User declarations
 
 	TSynMemo *HighlightPreviewMemo;
 	TPopupMenu *ConfigurationPopupMenu;
+	TMenuItem *ConstantsModulesMenuItem;
+	TMenuItem *OpenConstantsManagerModuleMenuItem;
+	TMenuItem *OpenConstantsValueManagerModuleMenuItem;
 	TMenuItem *OpenApplicationModuleMenuItem;
 	TMenuItem *OpenSessionModuleMenuItem;
 	TMenuItem *OpenExternalConnectionModuleMenuItem;
@@ -176,6 +197,8 @@ private:	// User declarations
 	ModuleTextKind CurrentModuleKind;
 	ModuleTextDocument CurrentStandaloneModuleDocument;
 	bool CurrentModuleStandalone;
+	bool SwitchingModuleTab;
+	std::unordered_map<TTabSheet*, ModuleEditorTabState> ModuleTabs;
     std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
 	void __fastcall CreateHighlightSettingsTab();
 	void __fastcall ApplyHighlightSettings();
@@ -187,12 +210,26 @@ private:	// User declarations
 	void __fastcall ScheduleMetadataNodeText(PVirtualNode Node);
 	void __fastcall ShowMetadataNodeText(PVirtualNode Node);
 	void __fastcall ShowConfigurationModule(ModuleTextKind kind, const String& caption);
+	void __fastcall ShowConstantsModule(ModuleTextKind kind, const String& caption);
 	void __fastcall ConfigurationPopupMenuPopup(TObject *Sender);
 	void __fastcall OpenConfigurationModuleMenuItemClick(TObject *Sender);
+	void __fastcall OpenConstantsModuleMenuItemClick(TObject *Sender);
 	void __fastcall VirtualStringTreeValue1CMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
 	bool __fastcall SaveCurrentModuleTextIfNeeded(bool forcePrompt);
 	bool __fastcall FlushCurrentModuleBeforeBuild();
 	void __fastcall SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text, ModuleTextKind kind);
+	String __fastcall BuildModuleTabKey(PVirtualNode node, BaseMetadataObject* metadataObject, const String& moduleItemGuid, ModuleTextKind kind) const;
+	TTabSheet* __fastcall FindModuleTabByKey(const String& key) const;
+	TTabSheet* __fastcall CreateModuleTab(const String& key, const String& title);
+	String __fastcall BuildModuleTabTitle(const String& objectName, ModuleTextKind kind, const String& fallbackTitle) const;
+	ModuleEditorTabState* __fastcall GetModuleTabStateByMemo(TObject* sender);
+	ModuleEditorTabState* __fastcall GetActiveModuleTabState();
+	void __fastcall ActivateModuleTab(TTabSheet* tab);
+	void __fastcall PopulateModuleTab(ModuleEditorTabState& state, const String& text);
+	bool __fastcall SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePrompt);
+	void __fastcall SyncCurrentModuleFromTab(const ModuleEditorTabState* state);
+	void __fastcall PagesEditChange(TObject *Sender);
+	bool __fastcall IsConstantsContextNode(PVirtualNode node) const;
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
 	void __fastcall ResetLoadProgress(int maxValue, const String& statusText = L"");
@@ -283,10 +320,5 @@ public:
 	virtual void __fastcall AddMessage(const String& message, const MessageState mstate, TStringList* param = NULL);
 	virtual void __fastcall Status(const String& message);
 };
-
-
-
-void get_cf_name(v8catalog* cf, Messager* mess);
-void get_cf_name(tree* tr,      Messager* mess);
 
 #endif

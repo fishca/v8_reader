@@ -414,7 +414,7 @@ directory_container_compatibility(const string &in_dirname)
 //			return v.compatibility();
 //		}
 //	}
-//	return VersionFile::COMPATIBILITY_DEFAULT;
+	return VersionFile::COMPATIBILITY_DEFAULT;
 }
 
 void CV8File::Dispose()
@@ -661,6 +661,40 @@ static int list_files(std::ifstream &file)
 	return V8UNPACK_OK;
 }
 
+template<typename format>
+static int list_file_names(std::ifstream &file, vector<string> &names)
+{
+	typename format::file_header_t FileHeader;
+
+	file.seekg(format::BASE_OFFSET);
+	file.read((char*)&FileHeader, FileHeader.Size());
+
+	auto pElemsAddrs = ReadElementsAllocationTable<format>(file);
+	auto ElemsNum    = pElemsAddrs.size();
+
+	for (uint32_t i = 0; i < ElemsNum; i++)
+    {
+		if (pElemsAddrs[i].fffffff != format::UNDEFINED_VALUE)
+        {
+			ElemsNum = i;
+			break;
+		}
+
+		file.seekg(pElemsAddrs[i].elem_header_addr + format::BASE_OFFSET, ios_base::beg);
+
+		CV8Elem elem;
+
+		if (!SafeReadBlockData<format>(file, elem.header))
+        {
+			continue;
+		}
+
+		names.push_back(elem.GetName());
+	}
+
+	return V8UNPACK_OK;
+}
+
 int ListFiles(const string &filename)
 {
 	std::ifstream file(filename, ios_base::binary);
@@ -682,6 +716,31 @@ int ListFiles(const string &filename)
 	}
 
 	return list_files<Format15>(file);
+}
+
+int ListFileNames(const string &filename, vector<string> &names)
+{
+	names.clear();
+
+	std::ifstream file(filename, ios_base::binary);
+
+	if (!file)
+    {
+		cerr << "ListFileNames `" << filename << "`. Input file not found!" << endl;
+		return V8UNPACK_SOURCE_DOES_NOT_EXIST;
+	}
+
+	if (!IsV8File(file))
+    {
+		return V8UNPACK_NOT_V8_FILE;
+	}
+
+	if (IsV8File16(file))
+    {
+		return list_file_names<Format16>(file, names);
+	}
+
+	return list_file_names<Format15>(file, names);
 }
 
 template<typename format>
@@ -1360,4 +1419,3 @@ stBlockHeader64 stBlockHeader64::create(uint64_t  block_data_size, uint64_t  pag
 }
 
 }
-#pragma clang diagnostic pop

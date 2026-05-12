@@ -233,6 +233,8 @@ void fillJournalTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTr
 
 	childData->MetadataObject = metadataObject;
 
+	addModuleTextNode(tree, childNode, metadataObject, L"Модуль менеджера", ModuleTextKind::ManagerModule, TreeImage::Forms);
+
 	addSection(tree, childNode, L"Графы",   TreeImage::JournalColumns, TreeImage::JournalColumns, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
 
 	addTabularSections(tree, childNode, metadataObject->getTabularSections());
@@ -247,6 +249,12 @@ void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeD
 	initNode(childData, curEnum->name, imgIndex);
 
 	childData->MetadataObject = curEnum;
+
+	PVirtualNode managerModuleNode = addChildNode(tree, childNode, L"Модуль менеджера", TreeImage::Forms);
+	VirtualTreeData* managerModuleData = static_cast<VirtualTreeData*>(tree->GetNodeData(managerModuleNode));
+	managerModuleData->MetadataObject = curEnum;
+	managerModuleData->moduleLocation.kind = ModuleTextKind::ManagerModule;
+	managerModuleData->moduleEditable = false;
 
 	addSection(tree, childNode, L"Значения", TreeImage::Attributes, TreeImage::Attributes, curEnum->attributes, [](const auto& item) { return item; });
 	addSection(tree, childNode, L"Формы",    TreeImage::Forms,      TreeImage::Forms,      curEnum->forms,      [](const auto& item) { return item; });

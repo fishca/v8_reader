@@ -15,7 +15,6 @@
 
 #include <System.SysUtils.hpp>
 
-#include "V8File.h"
 #include "ApicfBase.h"
 #include "MetadataTreeBuilder.h"
 #include "Class_1CD.h"
@@ -68,6 +67,7 @@
 #include "Styles.h"
 #include "Langs.h"
 #include "Subsystem.h"
+#include "../core/include/v8reader_core/V8ReaderCore.h"
 
 //---------------------------------------------------------------------------
 
@@ -86,6 +86,9 @@
 #pragma resource "*.dfm"
 TMainForm *MainForm;
 MessageRegistrator* msreg;
+
+static void get_cf_name(v8catalog* cf, Messager* mess);
+static void get_cf_name(tree* tr, Messager* mess);
 
 static const TColor DefaultHighlightKeywordColor = clNavy;
 static const TColor DefaultHighlightCommentColor = clGreen;
@@ -581,7 +584,7 @@ static void StartConfigUnpackThread(const String& cfFileName, const String& sour
 				TDirectory::Delete(targetDir, true);
 
 			std::vector<std::string> filter;
-			v8unpack::Parse(cfFileNameStd, targetDirStd, filter);
+			v8reader::core::parse_to_folder(cfFileNameStd, targetDirStd, filter);
 		}
 		catch (...)
 		{
@@ -837,7 +840,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 	ModuleGeneralSyn(nullptr), ModuleSelectionTimer(nullptr), LastModuleNodeShown(nullptr), PendingModuleNode(nullptr),
 	CurrentModuleNode(nullptr), CurrentModuleObject(nullptr), LoadingModuleText(false),
 	CurrentModuleDirty(false), CurrentModuleOriginalText(L""), CurrentModuleKind(ModuleTextKind::Unknown),
-	CurrentModuleStandalone(false), MDManager(std::make_unique<MetaDataManager>())
+	CurrentModuleStandalone(false), SwitchingModuleTab(false), MDManager(std::make_unique<MetaDataManager>())
 {
 	VirtualStringTreeValue1C->NodeDataSize = sizeof(VirtualTreeData);
 	Syn1CSyn = new TSyn1CSyn(this);
@@ -860,6 +863,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 	VirtualStringTreeValue1C->OnNodeClick = VirtualStringTreeValue1CNodeClick;
 	VirtualStringTreeValue1C->OnFocusChanged = VirtualStringTreeValue1CFocusChanged;
 	VirtualStringTreeValue1C->OnMouseDown = VirtualStringTreeValue1CMouseDown;
+	pagesEdit->OnChange = PagesEditChange;
 	ConfigurationPopupMenu = new TPopupMenu(this);
 	ConfigurationPopupMenu->OnPopup = ConfigurationPopupMenuPopup;
 	OpenApplicationModuleMenuItem = new TMenuItem(ConfigurationPopupMenu);
@@ -877,6 +881,19 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 	OpenExternalConnectionModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ExternalConnectionModule);
 	OpenExternalConnectionModuleMenuItem->OnClick = OpenConfigurationModuleMenuItemClick;
 	ConfigurationPopupMenu->Items->Add(OpenExternalConnectionModuleMenuItem);
+	ConstantsModulesMenuItem = new TMenuItem(ConfigurationPopupMenu);
+	ConstantsModulesMenuItem->Caption = L"Модули констант";
+	ConfigurationPopupMenu->Items->Add(ConstantsModulesMenuItem);
+	OpenConstantsManagerModuleMenuItem = new TMenuItem(ConstantsModulesMenuItem);
+	OpenConstantsManagerModuleMenuItem->Caption = L"Открыть модуль менеджера";
+	OpenConstantsManagerModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ManagerModule);
+	OpenConstantsManagerModuleMenuItem->OnClick = OpenConstantsModuleMenuItemClick;
+	ConstantsModulesMenuItem->Add(OpenConstantsManagerModuleMenuItem);
+	OpenConstantsValueManagerModuleMenuItem = new TMenuItem(ConstantsModulesMenuItem);
+	OpenConstantsValueManagerModuleMenuItem->Caption = L"Открыть модуль менеджера значения";
+	OpenConstantsValueManagerModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ObjectModule);
+	OpenConstantsValueManagerModuleMenuItem->OnClick = OpenConstantsModuleMenuItemClick;
+	ConstantsModulesMenuItem->Add(OpenConstantsValueManagerModuleMenuItem);
 	VirtualStringTreeValue1C->PopupMenu = ConfigurationPopupMenu;
 	ModuleSelectionTimer = new TTimer(this);
 	ModuleSelectionTimer->Interval = 250;
@@ -958,8 +975,6 @@ void __fastcall TMainForm::btnOpenEditNameClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::btnGOClick(TObject *Sender)
 {
-	std::vector<std::string> filter;
-	//v8unpack::Parse(AnsiString(EditNameCF->Text).c_str(), AnsiString(editFolderName->Text).c_str(), filter);
 }
 
 //---------------------------------------------------------------------------
@@ -1343,6 +1358,8 @@ void __fastcall TMainForm::FillVirtualTree() {
 				childDataConst->Name = CurConstant->name;
 				childDataConst->Age = 30;
 				childDataConst->ImgIndex = category.imgIndex;
+				childDataConst->MetadataObject = CurConstant;
+				childDataConst->text_module = L"";
 			}
 		}
 		else if (category.name == md_InformationRegisters)
@@ -1683,7 +1700,7 @@ void __fastcall Messager::AddMessage(const String& message, const MessageState m
 
 }
 
-void get_cf_name(v8catalog* cf, Messager* mess)
+static void get_cf_name(v8catalog* cf, Messager* mess)
 {
 	std::unique_ptr<tree> tr;
 	tree* node;
@@ -2492,7 +2509,7 @@ void fill_md(tree* tr, String guid_md)
 
 }
 
-void get_cf_name(tree* tr, Messager* mess)
+static void get_cf_name(tree* tr, Messager* mess)
 {
 	int j, k;
 	tree* node;
@@ -3103,22 +3120,254 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::MemoObjectChange(TObject *Sender)
+String __fastcall TMainForm::BuildModuleTabKey(PVirtualNode node, BaseMetadataObject* metadataObject,
+	const String& moduleItemGuid, ModuleTextKind kind) const
 {
-	if (LoadingModuleText || !MemoObject || (!CurrentModuleObject && !CurrentModuleStandalone))
-		return;
+	if (!moduleItemGuid.IsEmpty())
+		return L"guid:" + moduleItemGuid + L"|kind:" + IntToStr(static_cast<int>(kind));
+	if (metadataObject)
+		return L"obj:" + IntToHex((NativeInt)metadataObject, 16) + L"|kind:" + IntToStr(static_cast<int>(kind));
+	if (node)
+		return L"node:" + IntToHex((NativeInt)node, 16) + L"|kind:" + IntToStr(static_cast<int>(kind));
+	return L"kind:" + IntToStr(static_cast<int>(kind));
+}
+//---------------------------------------------------------------------------
 
-	CurrentModuleDirty = MemoObject->Lines->Text != CurrentModuleOriginalText;
-
-	if (CurrentModuleNode)
+TTabSheet* __fastcall TMainForm::FindModuleTabByKey(const String& key) const
+{
+	for (const auto& it : ModuleTabs)
 	{
-		VirtualTreeData* data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(CurrentModuleNode);
-		if (data)
-			data->moduleDirty = CurrentModuleDirty;
+		if (it.second.key == key)
+			return it.first;
+	}
+	return nullptr;
+}
+//---------------------------------------------------------------------------
+
+TTabSheet* __fastcall TMainForm::CreateModuleTab(const String& key, const String& title)
+{
+	TTabSheet* tab = new TTabSheet(pagesEdit);
+	tab->PageControl = pagesEdit;
+	tab->Caption = title;
+
+	TSynMemo* memo = new TSynMemo(tab);
+	memo->Parent = tab;
+	memo->Align = alClient;
+	memo->Highlighter = Syn1CSyn;
+	memo->Color = clWindow;
+	memo->Font->Color = clBlack;
+	memo->OnScanForFoldRanges = ModuleMemoScanForFoldRanges;
+	memo->UseCodeFolding = true;
+	memo->ReadOnly = false;
+	memo->OnChange = MemoObjectChange;
+
+	ModuleEditorTabState state;
+	state.tab = tab;
+	state.memo = memo;
+	state.key = key;
+	state.title = title;
+	ModuleTabs.emplace(tab, state);
+	return tab;
+}
+//---------------------------------------------------------------------------
+
+String __fastcall TMainForm::BuildModuleTabTitle(const String& objectName, ModuleTextKind kind, const String& fallbackTitle) const
+{
+	String modulePart = fallbackTitle;
+	if (modulePart.IsEmpty())
+	{
+		switch (kind)
+		{
+			case ModuleTextKind::ObjectModule: modulePart = L"Модуль объекта"; break;
+			case ModuleTextKind::ManagerModule: modulePart = L"Модуль менеджера"; break;
+			case ModuleTextKind::FormModule: modulePart = L"Модуль формы"; break;
+			case ModuleTextKind::CommandModule: modulePart = L"Модуль команды"; break;
+			case ModuleTextKind::ApplicationModule: modulePart = L"Модуль приложения"; break;
+			case ModuleTextKind::SessionModule: modulePart = L"Модуль сеанса"; break;
+			case ModuleTextKind::ExternalConnectionModule: modulePart = L"Модуль внешнего соединения"; break;
+			default: modulePart = L"Модуль"; break;
+		}
 	}
 
-	if (CurrentModuleDirty && mess)
-		mess->Status(L"Модуль изменен: " + ModuleTextStorage::DescribeLocation(CurrentModuleLocation));
+	if (!objectName.IsEmpty())
+		return objectName + L" · " + modulePart;
+	return modulePart;
+}
+//---------------------------------------------------------------------------
+
+ModuleEditorTabState* __fastcall TMainForm::GetModuleTabStateByMemo(TObject* sender)
+{
+	TSynMemo* memo = dynamic_cast<TSynMemo*>(sender);
+	if (!memo)
+		return nullptr;
+
+	for (auto& it : ModuleTabs)
+	{
+		if (it.second.memo == memo)
+			return &it.second;
+	}
+	return nullptr;
+}
+//---------------------------------------------------------------------------
+
+ModuleEditorTabState* __fastcall TMainForm::GetActiveModuleTabState()
+{
+	if (!pagesEdit)
+		return nullptr;
+	auto it = ModuleTabs.find(pagesEdit->ActivePage);
+	return it != ModuleTabs.end() ? &it->second : nullptr;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::ActivateModuleTab(TTabSheet* tab)
+{
+	if (!tab || !pagesEdit)
+		return;
+	SwitchingModuleTab = true;
+	pagesEdit->ActivePage = tab;
+	SwitchingModuleTab = false;
+	PagesEditChange(pagesEdit);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::PopulateModuleTab(ModuleEditorTabState& state, const String& text)
+{
+	if (!state.memo)
+		return;
+
+	LoadingModuleText = true;
+	state.memo->BeginUpdate();
+	try
+	{
+		state.memo->Lines->Text = text;
+	}
+	__finally
+	{
+		state.memo->EndUpdate();
+		LoadingModuleText = false;
+	}
+
+	state.memo->CaretX = 1;
+	state.memo->CaretY = 1;
+	state.memo->TopLine = 1;
+	state.memo->LeftChar = 1;
+	state.memo->Invalidate();
+	state.memo->Refresh();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::SyncCurrentModuleFromTab(const ModuleEditorTabState* state)
+{
+	if (!state)
+	{
+		CurrentModuleNode = nullptr;
+		CurrentModuleObject = nullptr;
+		CurrentModuleDirty = false;
+		CurrentModuleOriginalText = L"";
+		CurrentModuleKind = ModuleTextKind::Unknown;
+		CurrentModuleStandalone = false;
+		CurrentStandaloneModuleDocument = ModuleTextDocument();
+		CurrentModuleLocation = ModuleTextLocation();
+		return;
+	}
+
+	CurrentModuleNode = state->node;
+	CurrentModuleObject = state->metadataObject;
+	CurrentModuleDirty = state->dirty;
+	CurrentModuleOriginalText = state->originalText;
+	CurrentModuleKind = state->kind;
+	CurrentModuleStandalone = state->standalone;
+	CurrentStandaloneModuleDocument = state->standaloneDocument;
+	CurrentModuleLocation = state->location;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::PagesEditChange(TObject *Sender)
+{
+	if (SwitchingModuleTab)
+		return;
+	ModuleEditorTabState* state = GetActiveModuleTabState();
+	SyncCurrentModuleFromTab(state);
+}
+//---------------------------------------------------------------------------
+
+bool __fastcall TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePrompt)
+{
+	if ((!state.metadataObject && !state.standalone) || !state.dirty || !state.memo)
+		return true;
+
+	const String newText = state.memo->Lines->Text;
+
+	if (forcePrompt)
+	{
+		const String tabName = state.title.IsEmpty() ? L"модуль" : state.title;
+		int answer = Application->MessageBox(
+			(L"Текст \"" + tabName + L"\" изменен. Сохранить изменения в SourceCF?").c_str(),
+			L"Сохранение модуля",
+			MB_YESNOCANCEL | MB_ICONQUESTION);
+		if (answer == IDCANCEL)
+			return false;
+		if (answer == IDNO)
+		{
+			state.dirty = false;
+			if (state.node)
+			{
+				VirtualTreeData* data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(state.node);
+				if (data)
+					data->moduleDirty = false;
+			}
+			return true;
+		}
+	}
+
+	String errorText;
+	const bool saved = state.standalone
+		? ModuleTextStorage::SaveDocument(state.standaloneDocument, newText, errorText)
+		: (state.kind == ModuleTextKind::Unknown
+			? state.metadataObject->SaveEditableModuleText(newText, errorText)
+			: state.metadataObject->SaveEditableModuleText(state.kind, newText, errorText));
+	if (!saved)
+	{
+		Application->MessageBox((L"Не удалось сохранить модуль:\r\n" + errorText).c_str(),
+			L"Ошибка сохранения", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	state.originalText = newText;
+	state.dirty = false;
+	if (state.node)
+	{
+		VirtualTreeData* data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(state.node);
+		if (data)
+		{
+			data->text_module = newText;
+			data->moduleDirty = false;
+		}
+	}
+	if (mess)
+		mess->Status(L"Модуль сохранен: " + ModuleTextStorage::DescribeLocation(state.location));
+	return true;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::MemoObjectChange(TObject *Sender)
+{
+	ModuleEditorTabState* state = GetModuleTabStateByMemo(Sender);
+	if (LoadingModuleText || !state || (!state->metadataObject && !state->standalone) || !state->memo)
+		return;
+
+	state->dirty = state->memo->Lines->Text != state->originalText;
+
+	if (state->node)
+	{
+		VirtualTreeData* data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(state->node);
+		if (data)
+			data->moduleDirty = state->dirty;
+	}
+
+	if (state->dirty && mess)
+		mess->Status(L"Модуль изменен: " + ModuleTextStorage::DescribeLocation(state->location));
+	SyncCurrentModuleFromTab(GetActiveModuleTabState());
 }
 //---------------------------------------------------------------------------
 
@@ -3130,7 +3379,15 @@ void __fastcall TMainForm::ActionSaveModuleExecute(TObject *Sender)
 
 void __fastcall TMainForm::FormCloseQuery(TObject *Sender, bool &CanClose)
 {
-	CanClose = SaveCurrentModuleTextIfNeeded(true);
+	CanClose = true;
+	for (auto& it : ModuleTabs)
+	{
+		if (!SaveModuleTabIfNeeded(it.second, true))
+		{
+			CanClose = false;
+			break;
+		}
+	}
 }
 //---------------------------------------------------------------------------
 
@@ -3160,73 +3417,40 @@ void __fastcall TMainForm::SetModuleEditorState(BaseMetadataObject* metadataObje
 
 bool __fastcall TMainForm::SaveCurrentModuleTextIfNeeded(bool forcePrompt)
 {
-	if ((!CurrentModuleObject && !CurrentModuleStandalone) || !CurrentModuleDirty)
+	ModuleEditorTabState* state = GetActiveModuleTabState();
+	if (!state)
 		return true;
-
-	const String newText = MemoObject ? MemoObject->Lines->Text : L"";
-
-	if (forcePrompt)
-	{
-		int answer = Application->MessageBox(
-			L"Текст текущего модуля изменен. Сохранить изменения в SourceCF?",
-			L"Сохранение модуля",
-			MB_YESNOCANCEL | MB_ICONQUESTION);
-
-		if (answer == IDCANCEL)
-			return false;
-
-		if (answer == IDNO)
-		{
-			CurrentModuleDirty = false;
-			if (CurrentModuleNode)
-			{
-				VirtualTreeData* data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(CurrentModuleNode);
-				if (data)
-					data->moduleDirty = false;
-			}
-			return true;
-		}
-	}
-
-	String errorText;
-	const bool saved = CurrentModuleStandalone
-		? ModuleTextStorage::SaveDocument(CurrentStandaloneModuleDocument, newText, errorText)
-		: (CurrentModuleKind == ModuleTextKind::Unknown
-			? CurrentModuleObject->SaveEditableModuleText(newText, errorText)
-			: CurrentModuleObject->SaveEditableModuleText(CurrentModuleKind, newText, errorText));
-
-	if (!saved)
-	{
-		Application->MessageBox(
-			(L"Не удалось сохранить модуль:\r\n" + errorText).c_str(),
-			L"Ошибка сохранения",
-			MB_OK | MB_ICONERROR);
-		return false;
-	}
-
-	CurrentModuleOriginalText = newText;
-	CurrentModuleDirty = false;
-
-	if (CurrentModuleNode)
-	{
-		VirtualTreeData* data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(CurrentModuleNode);
-		if (data)
-		{
-			data->text_module = newText;
-			data->moduleDirty = false;
-		}
-	}
-
-	if (mess)
-		mess->Status(L"Модуль сохранен: " + ModuleTextStorage::DescribeLocation(CurrentModuleLocation));
-
-	return true;
+	const bool ok = SaveModuleTabIfNeeded(*state, forcePrompt);
+	SyncCurrentModuleFromTab(state);
+	return ok;
 }
 //---------------------------------------------------------------------------
 
 bool __fastcall TMainForm::FlushCurrentModuleBeforeBuild()
 {
-	return SaveCurrentModuleTextIfNeeded(false);
+	for (auto& it : ModuleTabs)
+	{
+		if (!SaveModuleTabIfNeeded(it.second, false))
+			return false;
+	}
+	return true;
+}
+//---------------------------------------------------------------------------
+
+bool __fastcall TMainForm::IsConstantsContextNode(PVirtualNode node) const
+{
+	if (!VirtualStringTreeValue1C || !node)
+		return false;
+
+	VirtualTreeData* data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(node);
+	if (data && data->Name == md_Constants)
+		return true;
+
+	PVirtualNode parent = VirtualStringTreeValue1C->NodeParent[node];
+	VirtualTreeData* parentData = parent
+		? (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(parent)
+		: nullptr;
+	return parentData && parentData->Name == md_Constants;
 }
 //---------------------------------------------------------------------------
 
@@ -3234,10 +3458,12 @@ void __fastcall TMainForm::ConfigurationPopupMenuPopup(TObject *Sender)
 {
 	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
 	const bool rootSelected = IsConfigurationRootNode(VirtualStringTreeValue1C, node);
+	const bool constantsSelected = IsConstantsContextNode(node);
 
 	OpenApplicationModuleMenuItem->Visible = rootSelected;
 	OpenSessionModuleMenuItem->Visible = rootSelected;
 	OpenExternalConnectionModuleMenuItem->Visible = rootSelected;
+	ConstantsModulesMenuItem->Visible = constantsSelected;
 }
 //---------------------------------------------------------------------------
 
@@ -3248,6 +3474,16 @@ void __fastcall TMainForm::OpenConfigurationModuleMenuItemClick(TObject *Sender)
 		return;
 
 	ShowConfigurationModule(static_cast<ModuleTextKind>(item->Tag), item->Caption);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::OpenConstantsModuleMenuItemClick(TObject *Sender)
+{
+	TMenuItem* item = dynamic_cast<TMenuItem*>(Sender);
+	if (!item)
+		return;
+
+	ShowConstantsModule(static_cast<ModuleTextKind>(item->Tag), item->Caption);
 }
 //---------------------------------------------------------------------------
 
@@ -3267,58 +3503,131 @@ void __fastcall TMainForm::VirtualStringTreeValue1CMouseDown(TObject *Sender,
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& caption)
+void __fastcall TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 {
-	if (!MemoObject)
+	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
+	if (!IsConstantsContextNode(node))
 		return;
 
+	String constantsMetadataGuid;
+	String constantsObjectName = md_Constants;
+
+	VirtualTreeData* nodeData = node
+		? (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(node)
+		: nullptr;
+	BaseMetadataObject* mdObject = nodeData
+		? dynamic_cast<BaseMetadataObject*>(nodeData->MetadataObject)
+		: nullptr;
+	if (mdObject)
+	{
+		constantsMetadataGuid = mdObject->guid;
+		constantsObjectName = mdObject->name;
+	}
+	else
+	{
+		PVirtualNode child = node ? VirtualStringTreeValue1C->GetFirstChild(node) : nullptr;
+		while (child)
+		{
+			VirtualTreeData* childData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(child);
+			BaseMetadataObject* childObject = childData
+				? dynamic_cast<BaseMetadataObject*>(childData->MetadataObject)
+				: nullptr;
+			if (childObject)
+			{
+				constantsMetadataGuid = childObject->guid;
+				constantsObjectName = childObject->name;
+				break;
+			}
+			child = VirtualStringTreeValue1C->GetNextSibling(child);
+		}
+	}
+
+	if (constantsMetadataGuid.IsEmpty())
+	{
+		if (mess)
+			mess->Status(caption + L": не найден GUID объекта констант");
+		return;
+	}
+
+	const String normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(constantsMetadataGuid);
+	const String explicitModuleDataGuid = normalizedGuid
+		+ (kind == ModuleTextKind::ManagerModule ? L".1" : L".0");
+
+	const String moduleKey = L"constants:" + IntToStr(static_cast<int>(kind));
+	const String tabKey = BuildModuleTabKey(node, nullptr, moduleKey, kind);
+	TTabSheet* tab = FindModuleTabByKey(tabKey);
+	if (tab)
+	{
+		ActivateModuleTab(tab);
+		return;
+	}
+
+	ModuleTextDocument document = ModuleTextStorage::LoadBySourceCfModuleDataGuid(
+		constantsMetadataGuid, explicitModuleDataGuid, kind);
+	if (document.text.IsEmpty() && !document.location.editable)
+	{
+		document = ModuleTextStorage::LoadByMetadataObject(
+			GlobalCF.get(), constantsMetadataGuid, constantsObjectName, kind);
+	}
+	const String moduleText = document.text;
+	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(constantsObjectName, kind, caption));
+	ModuleEditorTabState* state = &ModuleTabs[tab];
+	state->node = node;
+	state->metadataObject = nullptr;
+	state->kind = kind;
+	state->standalone = true;
+	state->standaloneDocument = document;
+	state->location = document.location;
+	state->originalText = moduleText;
+	state->dirty = false;
+	PopulateModuleTab(*state, moduleText);
+	state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
+	ActivateModuleTab(tab);
+
+	if (mess)
+	{
+		const String location = ModuleTextStorage::DescribeLocation(state->location);
+		if (!location.IsEmpty())
+			mess->Status(caption + L": " + location);
+		else
+			mess->Status(caption + L": модуль не найден");
+	}
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& caption)
+{
 	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
 	if (!IsConfigurationRootNode(VirtualStringTreeValue1C, node))
 		return;
 
-	if (CurrentModuleNode && node != CurrentModuleNode)
+	const String tabKey = BuildModuleTabKey(node, nullptr, L"", kind);
+	TTabSheet* tab = FindModuleTabByKey(tabKey);
+	if (tab)
 	{
-		if (!SaveCurrentModuleTextIfNeeded(true))
-			return;
+		ActivateModuleTab(tab);
+		return;
 	}
 
-	CurrentStandaloneModuleDocument = ModuleTextStorage::LoadConfigurationModule(GlobalCF.get(), kind);
-	const String moduleText = CurrentStandaloneModuleDocument.text;
-
-	LoadingModuleText = true;
-	MemoObject->BeginUpdate();
-	try
-	{
-		MemoObject->Lines->Text = moduleText;
-	}
-	__finally
-	{
-		MemoObject->EndUpdate();
-		LoadingModuleText = false;
-	}
-
-	MemoObject->CaretX = 1;
-	MemoObject->CaretY = 1;
-	MemoObject->TopLine = 1;
-	MemoObject->LeftChar = 1;
-	MemoObject->Invalidate();
-	MemoObject->Refresh();
-
-	CurrentModuleNode = node;
-	CurrentModuleObject = nullptr;
-	CurrentModuleDirty = false;
-	CurrentModuleOriginalText = moduleText;
-	CurrentModuleKind = kind;
-	CurrentModuleStandalone = true;
-	CurrentModuleLocation = CurrentStandaloneModuleDocument.location;
-	MemoObject->ReadOnly = !(CurrentModuleLocation.editable && FileExists(CurrentModuleLocation.filePath));
-
-	if (pagesEdit && TabModuleObject)
-		pagesEdit->ActivePage = TabModuleObject;
+	ModuleTextDocument document = ModuleTextStorage::LoadConfigurationModule(GlobalCF.get(), kind);
+	const String moduleText = document.text;
+	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(L"Конфигурация", kind, caption));
+	ModuleEditorTabState* state = &ModuleTabs[tab];
+	state->node = node;
+	state->metadataObject = nullptr;
+	state->kind = kind;
+	state->standalone = true;
+	state->standaloneDocument = document;
+	state->location = document.location;
+	state->originalText = moduleText;
+	state->dirty = false;
+	PopulateModuleTab(*state, moduleText);
+	state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
+	ActivateModuleTab(tab);
 
 	if (mess)
 	{
-		const String location = ModuleTextStorage::DescribeLocation(CurrentModuleLocation);
+		const String location = ModuleTextStorage::DescribeLocation(state->location);
 		if (!location.IsEmpty())
 			mess->Status(caption + L": " + location);
 		else
@@ -3329,18 +3638,9 @@ void __fastcall TMainForm::ShowConfigurationModule(ModuleTextKind kind, const St
 
 void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 {
-	if (!MemoObject)
-		return;
-
 	Node = GetActiveTreeNode(VirtualStringTreeValue1C, Node);
 	if (!Node)
 		return;
-
-	if (CurrentModuleNode && Node != CurrentModuleNode)
-	{
-		if (!SaveCurrentModuleTextIfNeeded(true))
-			return;
-	}
 
 	VirtualTreeData* Data = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(Node);
 	bool moduleTextSelected = false;
@@ -3351,13 +3651,26 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 	{
 		ModuleTextKind requestedKind = Data->moduleLocation.kind;
 		BaseMetadataObject* metadataObject = dynamic_cast<BaseMetadataObject*>(Data->MetadataObject);
+		TEnums* enumObject = dynamic_cast<TEnums*>(Data->MetadataObject);
 		bool nestedModuleRequested = metadataObject && !Data->moduleItemGuid.IsEmpty()
 			&& (requestedKind == ModuleTextKind::FormModule || requestedKind == ModuleTextKind::CommandModule);
+		if (!nestedModuleRequested && enumObject && requestedKind == ModuleTextKind::ManagerModule)
+			nestedModuleRequested = true;
 
 		if (nestedModuleRequested)
 		{
+			String targetGuid = Data->moduleItemGuid;
+			String targetName = Data->Name;
+			v8catalog* targetParent = metadataObject ? metadataObject->parent : nullptr;
+			if (enumObject && requestedKind == ModuleTextKind::ManagerModule)
+			{
+				targetGuid = enumObject->guid;
+				targetName = enumObject->name;
+				targetParent = enumObject->parent;
+			}
+
 			CurrentStandaloneModuleDocument = ModuleTextStorage::LoadByMetadataObject(
-				metadataObject->parent, Data->moduleItemGuid, Data->Name, requestedKind);
+				targetParent, targetGuid, targetName, requestedKind);
 			moduleText = CurrentStandaloneModuleDocument.text;
 			moduleTextSelected = !moduleText.IsEmpty() || CurrentStandaloneModuleDocument.location.editable;
 			Data->moduleLocation = CurrentStandaloneModuleDocument.location;
@@ -3367,6 +3680,19 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 		{
 			moduleText = Data->text_module;
 			moduleTextSelected = true;
+		}
+		else if (requestedKind == ModuleTextKind::ManagerModule)
+		{
+			TEnums* enumObject = dynamic_cast<TEnums*>(Data->MetadataObject);
+			if (enumObject && enumObject->parent && !enumObject->guid.IsEmpty())
+			{
+				CurrentStandaloneModuleDocument = ModuleTextStorage::LoadByMetadataObject(
+					enumObject->parent, enumObject->guid, enumObject->name, requestedKind);
+				moduleText = CurrentStandaloneModuleDocument.text;
+				moduleTextSelected = !moduleText.IsEmpty() || CurrentStandaloneModuleDocument.location.editable;
+				Data->moduleLocation = CurrentStandaloneModuleDocument.location;
+				Data->moduleEditable = Data->moduleLocation.editable;
+			}
 		}
 		else if (metadataObject && requestedKind != ModuleTextKind::Unknown &&
 			metadataObject->HasEditableModuleText(requestedKind))
@@ -3395,24 +3721,6 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 
 	}
 
-	LoadingModuleText = true;
-	MemoObject->BeginUpdate();
-	try
-	{
-		MemoObject->Lines->Text = moduleText;
-	}
-	__finally
-	{
-		MemoObject->EndUpdate();
-		LoadingModuleText = false;
-	}
-	MemoObject->CaretX = 1;
-	MemoObject->CaretY = 1;
-	MemoObject->TopLine = 1;
-	MemoObject->LeftChar = 1;
-	MemoObject->Invalidate();
-	MemoObject->Refresh();
-
 	if (moduleTextSelected && mess)
 	{
 		String nodeName = Data ? Data->Name : L"";
@@ -3421,10 +3729,13 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 
 	BaseMetadataObject* editableObject = Data ? dynamic_cast<BaseMetadataObject*>(Data->MetadataObject) : nullptr;
 	ModuleTextKind editableKind = Data ? Data->moduleLocation.kind : ModuleTextKind::Unknown;
+	TEnums* enumEditableObject = Data ? dynamic_cast<TEnums*>(Data->MetadataObject) : nullptr;
 	bool editableExists = false;
 	bool standaloneExists = Data && !Data->moduleItemGuid.IsEmpty()
 		&& (editableKind == ModuleTextKind::FormModule || editableKind == ModuleTextKind::CommandModule)
 		&& moduleTextSelected;
+	if (!standaloneExists && enumEditableObject && editableKind == ModuleTextKind::ManagerModule && moduleTextSelected)
+		standaloneExists = true;
 	if (editableObject && !standaloneExists)
 	{
 		editableExists = editableKind == ModuleTextKind::Unknown
@@ -3432,39 +3743,63 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 			: editableObject->HasEditableModuleText(editableKind);
 	}
 
+	if (!moduleTextSelected)
+		return;
+
+	const String moduleItemGuid = Data ? Data->moduleItemGuid : L"";
+	const String tabKey = BuildModuleTabKey(Node, editableObject, moduleItemGuid, editableKind);
+	TTabSheet* tab = FindModuleTabByKey(tabKey);
+	if (tab)
+	{
+		ActivateModuleTab(tab);
+		return;
+	}
+
+	String objectName = editableObject ? editableObject->GetName() : L"";
+	String moduleName = Data ? Data->Name : L"Модуль";
+	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(objectName, editableKind, moduleName));
+	ModuleEditorTabState* state = &ModuleTabs[tab];
+	state->node = Node;
+	state->metadataObject = editableObject;
+	state->kind = editableKind;
+	state->originalText = moduleText;
+	state->dirty = false;
+
 	if (editableObject && standaloneExists)
 	{
-		CurrentModuleNode = Node;
-		CurrentModuleObject = editableObject;
-		CurrentModuleDirty = false;
-		CurrentModuleOriginalText = moduleText;
-		CurrentModuleKind = editableKind;
-		CurrentModuleStandalone = true;
-		CurrentModuleLocation = CurrentStandaloneModuleDocument.location;
-		Data->moduleLocation = CurrentModuleLocation;
-		Data->moduleEditable = CurrentModuleLocation.editable;
-		if (MemoObject)
-			MemoObject->ReadOnly = !(CurrentModuleLocation.editable && FileExists(CurrentModuleLocation.filePath));
+		state->standalone = true;
+		state->standaloneDocument = CurrentStandaloneModuleDocument;
+		state->location = CurrentStandaloneModuleDocument.location;
+		Data->moduleLocation = state->location;
+		Data->moduleEditable = state->location.editable;
+		state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
 		if (mess && Data->moduleEditable)
 			mess->Status(L"Модуль открыт для редактирования: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
 	}
 	else if (editableObject && editableExists)
 	{
-		SetModuleEditorState(editableObject, Node, moduleText, editableKind);
+		state->standalone = false;
+		state->location = editableKind == ModuleTextKind::Unknown
+			? editableObject->GetEditableModuleLocation()
+			: editableObject->GetEditableModuleLocation(editableKind);
 		Data->moduleLocation = editableKind == ModuleTextKind::Unknown
 			? editableObject->GetEditableModuleLocation()
 			: editableObject->GetEditableModuleLocation(editableKind);
 		Data->moduleEditable = Data->moduleLocation.editable;
+		state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
 		if (mess && Data->moduleEditable)
 			mess->Status(L"Модуль открыт для редактирования: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
 	}
 	else
 	{
-		SetModuleEditorState(nullptr, nullptr, L"", ModuleTextKind::Unknown);
+		state->standalone = false;
+		state->metadataObject = nullptr;
+		state->location = ModuleTextLocation();
+		state->memo->ReadOnly = true;
 	}
 
-	if (moduleTextSelected && pagesEdit && TabModuleObject)
-		pagesEdit->ActivePage = TabModuleObject;
+	PopulateModuleTab(*state, moduleText);
+	ActivateModuleTab(tab);
 }
 
 void __fastcall TMainForm::ScheduleMetadataNodeText(PVirtualNode Node)
@@ -3543,8 +3878,8 @@ void __fastcall TMainForm::ActionSaveCFExecute(TObject *Sender)
 	const std::string sourceCfDirStd = AnsiString(sourceCfDir).c_str();
 	const std::string outFileNameStd = AnsiString(outFileName).c_str();
 
-	int result = v8unpack::BuildCfFile(sourceCfDirStd, outFileNameStd, false);
-	if (result == v8unpack::V8UNPACK_OK)
+	const auto result = v8reader::core::build_cf_file(sourceCfDirStd, outFileNameStd, false);
+	if (result.ok())
 	{
 		if (mess)
 			mess->AddMessage(L"Файл конфигурации собран: " + outFileName, msSuccesfull);
@@ -3552,7 +3887,7 @@ void __fastcall TMainForm::ActionSaveCFExecute(TObject *Sender)
 	else
 	{
 		Application->MessageBox(
-			(L"Ошибка сборки cf. Код: " + IntToStr(result)).c_str(),
+			(L"Ошибка сборки cf. Код: " + IntToStr(result.code)).c_str(),
 			L"Сборка cf",
 			MB_OK | MB_ICONERROR);
 	}

@@ -1,0 +1,48 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{5B581F57-8576-4F9D-9C14-0D02055E0D36}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="core\v8reader_core.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="src\v8reader.cbproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="v8reader_core">
+        <MSBuild Projects="core\v8reader_core.cbproj"/>
+    </Target>
+    <Target Name="v8reader_core:Clean">
+        <MSBuild Projects="core\v8reader_core.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="v8reader_core:Make">
+        <MSBuild Projects="core\v8reader_core.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="v8reader">
+        <MSBuild Projects="src\v8reader.cbproj"/>
+    </Target>
+    <Target Name="v8reader:Clean">
+        <MSBuild Projects="src\v8reader.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="v8reader:Make">
+        <MSBuild Projects="src\v8reader.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="v8reader_core;v8reader"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="v8reader:Clean;v8reader_core:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="v8reader_core:Make;v8reader:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

@@ -328,6 +328,7 @@ int UnpackToFolder(const std::string &filename, const std::string &dirname, cons
 int Parse(const std::string &filename, const std::string &dirname, const std::vector< std::string > &filter);
 
 int ListFiles(const std::string &filename);
+int ListFileNames(const std::string &filename, std::vector<std::string> &names);
 bool IsV8File(std::basic_istream<char> &file);
 bool IsV8File16(std::basic_istream<char>& file);
 

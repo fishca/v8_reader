@@ -64,6 +64,7 @@ namespace ModuleTextStorage
 	ModuleTextDocument __fastcall LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
 	ModuleTextDocument __fastcall LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
 	ModuleTextDocument __fastcall LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind);
+	ModuleTextDocument __fastcall LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind);
 	ModuleTextDocument __fastcall LoadConfigurationModule(v8catalog* parent, ModuleTextKind kind);
 
 	bool __fastcall SaveDocument(ModuleTextDocument& document, const String& newText, String& errorText);

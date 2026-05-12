@@ -15,6 +15,8 @@
 
 namespace
 {
+	bool __fastcall LooksLikeStrictModuleBody(const String& value);
+
 	bool __fastcall LooksLikeUtf16Le(const TBytes& bytes, int sourceSize)
 	{
 		int limit = sourceSize < 200 ? sourceSize : 200;
@@ -127,12 +129,21 @@ namespace
 
 		if (kind == ModuleTextKind::ManagerModule)
 		{
-			AddUniqueString(candidates, baseGuid + L".3");
 			AddUniqueString(candidates, baseGuid + L".1");
+			AddUniqueString(candidates, baseGuid + L".3");
 			AddUniqueString(candidates, baseGuid + L".2");
 			AddUniqueString(candidates, baseGuid + L".4");
 			AddUniqueString(candidates, baseGuid + L".5");
 			AddUniqueString(candidates, baseGuid + L".0");
+		}
+		else if (kind == ModuleTextKind::ObjectModule)
+		{
+			AddUniqueString(candidates, baseGuid + L".0");
+			AddUniqueString(candidates, baseGuid + L".2");
+			AddUniqueString(candidates, baseGuid + L".1");
+			AddUniqueString(candidates, baseGuid + L".3");
+			AddUniqueString(candidates, baseGuid + L".4");
+			AddUniqueString(candidates, baseGuid + L".5");
 		}
 		else
 		{
@@ -144,7 +155,10 @@ namespace
 			AddUniqueString(candidates, baseGuid + L".5");
 		}
 
-		AddUniqueString(candidates, baseGuid);
+		// Bare metadata file (<guid>) often contains object structure, not module text.
+		// Keep it only for unknown mode; for object/manager modules it causes false positives.
+		if (kind == ModuleTextKind::Unknown)
+			AddUniqueString(candidates, baseGuid);
 		return candidates;
 	}
 
@@ -174,8 +188,16 @@ namespace
 		if (!FileExists(filePath))
 			return false;
 
-		if (!text.IsEmpty() && !ModuleTextStorage::LooksLike1CModuleText(text))
-			return false;
+		if (!text.IsEmpty())
+		{
+			const bool objectLikeModuleKind = kind == ModuleTextKind::ObjectModule
+				|| kind == ModuleTextKind::ManagerModule;
+			const bool looksValid = objectLikeModuleKind
+				? LooksLikeStrictModuleBody(text)
+				: ModuleTextStorage::LooksLike1CModuleText(text);
+			if (!looksValid)
+				return false;
+		}
 
 		document.text = text;
 		document.loaded = true;
@@ -378,6 +400,30 @@ namespace
 		}
 	}
 
+	bool __fastcall LooksLikeStrictModuleBody(const String& value)
+	{
+		String text = Trim(value);
+		if (text.IsEmpty())
+			return false;
+
+		if (text[1] == L'{')
+			return false;
+
+		const String upper = UpperCase(text);
+		if (upper.Pos(L"ПРОЦЕДУРА") > 0 || upper.Pos(L"ФУНКЦИЯ") > 0
+			|| upper.Pos(L"PROCEDURE") > 0 || upper.Pos(L"FUNCTION") > 0)
+			return true;
+
+		if (text.Pos(L";") > 0 && (text.Pos(L"=") > 0 || text.Pos(L"(") > 0 || text.Pos(L")") > 0))
+			return true;
+
+		// Allow short comment-only modules.
+		if ((text.Pos(L"//") == 1 || text.Pos(L"//") == 2) && text.Length() < 4096)
+			return true;
+
+		return false;
+	}
+
 	String __fastcall ExtractConfigurationObjectGuid(const String& metadataText)
 	{
 		const String marker = L"{1,0,";
@@ -429,7 +475,7 @@ namespace
 		return ModuleTextStorage::LooksLike1CModuleText(text) ? text : L"";
 	}
 
-	String __fastcall TryReadModuleContainer(v8file* file)
+	String __fastcall TryReadModuleContainer(v8file* file, bool strictContainerOnly = false)
 	{
 		if (!file)
 			return L"";
@@ -470,6 +516,13 @@ namespace
 		}
 
 		String directText = ReadV8FileAsText(file);
+		if (strictContainerOnly)
+		{
+			if (LooksLikeStrictModuleBody(directText))
+				return directText;
+			return L"";
+		}
+
 		if (ModuleTextStorage::LooksLike1CModuleText(directText))
 			return directText;
 
@@ -623,7 +676,7 @@ namespace ModuleTextStorage
 			for (size_t i = 0; i < candidates.size(); i++)
 			{
 				v8file* dataModule = parent->GetFile(candidates[i]);
-				String text = TryReadModuleContainer(dataModule);
+				String text = TryReadModuleContainer(dataModule, true);
 				if (!text.IsEmpty())
 				{
 					document.text = text;
@@ -651,7 +704,7 @@ namespace ModuleTextStorage
 		if (parent && !metadataGuid.IsEmpty())
 		{
 			v8file* dataForm = parent->GetFile(metadataGuid + L".0");
-			String text = TryReadModuleContainer(dataForm);
+			String text = TryReadModuleContainer(dataForm, true);
 			if (!text.IsEmpty())
 			{
 				document.text = text;
@@ -703,7 +756,7 @@ namespace ModuleTextStorage
 			for (size_t i = 0; i < candidates.size(); i++)
 			{
 				v8file* file = parent->GetFile(candidates[i]);
-				String text = TryReadModuleContainer(file);
+				String text = TryReadModuleContainer(file, true);
 				if (!text.IsEmpty())
 				{
 					document.text = text;
@@ -713,6 +766,54 @@ namespace ModuleTextStorage
 					return document;
 				}
 			}
+		}
+
+		return document;
+	}
+
+	ModuleTextDocument __fastcall LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind)
+	{
+		ModuleTextDocument document;
+		document.loaded = true;
+		document.location.kind = kind;
+		document.location.metadataGuid = metadataGuid;
+
+		if (moduleDataGuid.IsEmpty())
+			return document;
+
+		for (const auto& sourceRoot : GetSourceCfRoots())
+		{
+			if (!TDirectory::Exists(sourceRoot))
+				continue;
+
+			const String containerPath = TPath::Combine(sourceRoot, moduleDataGuid);
+			const String textPath = TPath::Combine(containerPath, L"text");
+			const String modulePath = TPath::Combine(containerPath, L"module");
+
+			auto loadExactTextFile = [&](const String& filePath) -> bool
+			{
+				if (!FileExists(filePath))
+					return false;
+
+				ModuleTextEncodingKind encoding = ModuleTextEncodingKind::Unknown;
+				document.text = ReadDiskFileRawText(filePath, encoding);
+				document.location.moduleDataGuid = moduleDataGuid;
+				document.location.filePath = filePath;
+				document.location.fileName = ExtractFileName(filePath);
+				document.location.containerPath = ExtractFileDir(filePath);
+				document.location.sourceRoot = ExtractFileDir(document.location.containerPath);
+				document.location.encoding = encoding;
+				document.location.editable = true;
+				document.location.foundInSourceCF = true;
+				document.dirty = false;
+				document.loaded = true;
+				return true;
+			};
+
+			if (loadExactTextFile(textPath))
+				return document;
+			if (loadExactTextFile(modulePath))
+				return document;
 		}
 
 		return document;
@@ -738,7 +839,7 @@ namespace ModuleTextStorage
 				const std::vector<String> candidates = GetModuleContainerCandidates(normalizedGuid, kind);
 				for (const auto& candidate : candidates)
 				{
-					String text = TryReadModuleContainer(parent->GetFile(candidate));
+					String text = TryReadModuleContainer(parent->GetFile(candidate), true);
 					if (!text.IsEmpty())
 					{
 						document.text = text;
