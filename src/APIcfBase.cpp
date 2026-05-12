@@ -1,6 +1,7 @@
 ﻿#include "APIcfBase.h"
 #include "../core/include/v8reader_core/io/IByteStream.h"
 #include "../core/include/v8reader_core/io/MemoryByteStream.h"
+#include "../core/include/v8reader_core/io/StdFileStream.h"
 
 
 #include "UZlib.h"
@@ -21,6 +22,8 @@ const char _empty_catalog_template8316[8] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 using v8reader::core::io::IByteStream;
 using v8reader::core::io::MemoryByteStream;
 using v8reader::core::io::SeekOrigin;
+using v8reader::core::io::FileOpenMode;
+using v8reader::core::io::StdFileStream;
 
 namespace
 {
@@ -76,6 +79,99 @@ class TStreamByteStreamAdapter final : public IByteStream
   private:
 	TStream* stream_;
 };
+
+static std::filesystem::path StringToPath(const String& value)
+{
+#ifndef _DELPHI_STRING_UNICODE
+	const int ws = value.WideCharBufSize();
+	std::vector<wchar_t> buffer(ws);
+	value.WideChar(buffer.data(), ws);
+	return std::filesystem::path(buffer.data());
+#else
+	return std::filesystem::path(reinterpret_cast<const wchar_t*>(value.c_str()));
+#endif
+}
+
+static SeekOrigin ToSeekOrigin(TSeekOrigin origin)
+{
+	switch(origin)
+	{
+		case soBeginning:
+			return SeekOrigin::Begin;
+		case soCurrent:
+			return SeekOrigin::Current;
+		case soEnd:
+			return SeekOrigin::End;
+	}
+
+	return SeekOrigin::Begin;
+}
+
+static SeekOrigin ToSeekOrigin(System::Word origin)
+{
+	switch(origin)
+	{
+		case soFromBeginning:
+			return SeekOrigin::Begin;
+		case soFromCurrent:
+			return SeekOrigin::Current;
+		case soFromEnd:
+			return SeekOrigin::End;
+	}
+
+	return SeekOrigin::Begin;
+}
+
+class StdFileTStream final : public TStream
+{
+  public:
+	__fastcall StdFileTStream(const String& fileName, FileOpenMode mode)
+		: stream_(StringToPath(fileName), mode) {}
+
+	virtual int __fastcall Read(void* Buffer, int Count) override
+	{
+		if(Count <= 0)
+			return 0;
+		return static_cast<int>(stream_.Read(Buffer, static_cast<std::size_t>(Count)));
+	}
+
+	virtual int __fastcall Write(const void* Buffer, int Count) override
+	{
+		if(Count <= 0)
+			return 0;
+		return static_cast<int>(stream_.Write(Buffer, static_cast<std::size_t>(Count)));
+	}
+
+	virtual int __fastcall Seek(int Offset, System::Word Origin) override
+	{
+		return static_cast<int>(stream_.Seek(static_cast<std::int64_t>(Offset), ToSeekOrigin(Origin)));
+	}
+
+	virtual __int64 __fastcall Seek(const __int64 Offset, TSeekOrigin Origin) override
+	{
+		return static_cast<__int64>(stream_.Seek(Offset, ToSeekOrigin(Origin)));
+	}
+
+  private:
+	StdFileStream stream_;
+};
+
+static void SetFileTimesByPath(const String& fileName, const FILETIME* createTime, const FILETIME* accessTime, const FILETIME* writeTime)
+{
+	const std::filesystem::path path = StringToPath(fileName);
+	HANDLE file = CreateFileW(path.c_str(),
+		FILE_WRITE_ATTRIBUTES,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
+	if(file == INVALID_HANDLE_VALUE)
+		return;
+
+	SetFileTime(file, createTime, accessTime, writeTime);
+	CloseHandle(file);
+}
 
 } // namespace
 
@@ -416,14 +512,14 @@ void v8file::SaveToFile(const String& FileName)
 		if(!Open())
 			return;
 
-	TFileStream* fs = new TFileStream(FileName, fmCreate);
+	StdFileTStream* fs = new StdFileTStream(FileName, FileOpenMode::CreateTruncate);
 	{
 		V8ScopedLock guard(Lock);
 		fs->CopyFrom(data, 0);
 	}
 	GetTimeCreate(&create);
 	GetTimeModify(&modify);
-	SetFileTime((HANDLE)fs->Handle, &create, &modify, &modify);
+	SetFileTimesByPath(FileName, &create, &modify, &modify);
 	delete fs;
 }
 
@@ -1143,11 +1239,11 @@ v8catalog::v8catalog(String name)
 		if(!FileExists(name))
 		{
 			data->WriteBuffer(_empty_catalog_template, 16);
-			cfu = new TFileStream(name, fmCreate);
+			cfu = new StdFileTStream(name, FileOpenMode::CreateTruncate);
 		}
 		else
 		{
-			cfu = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
+			cfu = new StdFileTStream(name, FileOpenMode::ReadWrite);
 			ZInflateStream(cfu, data);
 		}
 	}
@@ -1158,11 +1254,11 @@ v8catalog::v8catalog(String name)
 
 		if(!FileExists(name))
 		{
-			data = new TFileStream(name, fmCreate);
+			data = new StdFileTStream(name, FileOpenMode::CreateTruncate);
 			data->WriteBuffer(_empty_catalog_template, 16);
 			delete data;
 		}
-		data = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
+		data = new StdFileTStream(name, FileOpenMode::ReadWrite);
 	}
 
 	file = NULL;
@@ -1197,12 +1293,12 @@ v8catalog::v8catalog(String name, bool _zipped)
 
 	if(!FileExists(name))
 	{
-		data = new TFileStream(name, fmCreate);
+		data = new StdFileTStream(name, FileOpenMode::CreateTruncate);
 		data->WriteBuffer(_empty_catalog_template, 16);
 		delete data;
 	}
 
-	data = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
+	data = new StdFileTStream(name, FileOpenMode::ReadWrite);
 
 	file = NULL;
 
@@ -2068,9 +2164,9 @@ void v8catalog::HalfOpen(const String& name)
 	V8ScopedLock guard(Lock);
 
 	if(is_cfu)
-    	cfu = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
+    	cfu = new StdFileTStream(name, FileOpenMode::ReadWrite);
 	else
-    	data = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
+    	data = new StdFileTStream(name, FileOpenMode::ReadWrite);
 }
 
 void v8catalog::ClearIs8316()
