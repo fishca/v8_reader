@@ -146,8 +146,8 @@ ConfigFile* __fastcall ConfigStorageCFFile::readfile(const String& path)
     	return NULL;
 
 	cf = new ConfigFile;
-	//cf->str = f->get_data();
-	cf->str = f->get_stream();
+	cf->str = new TMemoryStream();
+	f->SaveToStream(cf->str);
 	cf->str->Seek(0l, soBeginning);
 	cf->addin = f;
 	return cf;
@@ -188,6 +188,7 @@ void __fastcall ConfigStorageCFFile::close(ConfigFile* cf)
 
 	f = (v8file*)cf->addin;
 	f->Close();
+	delete cf->str;
 	delete cf;
 }
 
@@ -501,8 +502,8 @@ ConfigFile* __fastcall ConfigStorageTable::readfile(const String& path)
 		cfa = new ConfigStorageTable_addin;
 		cfa->variant = cstav_v8file;
 		cfa->f = f;
-		//cf->str = f->get_data();
-		cf->str = f->get_stream();
+		cf->str = new TMemoryStream();
+		f->SaveToStream(cf->str);
 		cf->str->Seek(0l, soBeginning);
 		cf->addin = cfa;
 	}
@@ -540,6 +541,7 @@ void __fastcall ConfigStorageTable::close(ConfigFile* cf)
 	else if(cfa->variant == cstav_v8file)
 	{
 		cfa->f->Close();
+		delete cf->str;
 	}
 	delete cfa;
 	delete cf;

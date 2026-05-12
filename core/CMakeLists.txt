@@ -4,6 +4,8 @@ project(v8reader_core LANGUAGES CXX)
 
 add_library(v8reader_core STATIC
 	src/V8ReaderCore.cpp
+	src/io/MemoryByteStream.cpp
+	src/io/StdFileStream.cpp
 	../src/V8File.cpp
 	../src/utils.cpp
 	../src/VersionFile.cpp

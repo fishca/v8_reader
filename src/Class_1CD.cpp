@@ -211,7 +211,7 @@ tree* __fastcall get_treeFromV8file(v8file* f)
 	}
 
 	sourceBytes.Length = fileSize;
-	if(f->Read(sourceBytes, 0, fileSize) != fileSize)
+	if(f->Read(&sourceBytes[0], 0, fileSize) != fileSize)
 	{
 		error("Ошибка чтения файла контейнера",
 			"Файл", f->GetFullName());
@@ -9139,8 +9139,11 @@ bool __fastcall T_1CD::recursive_test_stream_format(v8catalog* cat, String path)
 				fname = v8f->GetFileName();
 				if(fname != L"module" && fname != L"text")
 				{
-					//result = recursive_test_stream_format(v8f->get_data(), path + L"/" + v8f->GetFileName());
-					result = recursive_test_stream_format(v8f->get_stream(), path + L"/" + v8f->GetFileName());
+					TMemoryStream* file_stream = new TMemoryStream();
+					v8f->SaveToStream(file_stream);
+					file_stream->Seek(0l, soBeginning);
+					result = recursive_test_stream_format(file_stream, path + L"/" + v8f->GetFileName());
+					delete file_stream;
 				}
 			}
 		}

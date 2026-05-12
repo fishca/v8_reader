@@ -1,7 +1,12 @@
 ﻿#include "APIcfBase.h"
+#include "../core/include/v8reader_core/io/IByteStream.h"
+#include "../core/include/v8reader_core/io/MemoryByteStream.h"
+
 
 #include "UZlib.h"
 #pragma comment (lib, "zlibstatic.lib")
+
+#include <memory>
 
 #define CHUNK 65536
 
@@ -12,6 +17,67 @@ const char _bufhex[] = "0123456789abcdef";
 const char _block_header_template[]    = "\r\n00000000 00000000 00000000 \r\n";
 const char _empty_catalog_template[16] = {0xff,0xff,0xff,0x7f,0,2,0,0,0,0,0,0,0,0,0,0};
 const char _empty_catalog_template8316[8] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
+
+using v8reader::core::io::IByteStream;
+using v8reader::core::io::MemoryByteStream;
+using v8reader::core::io::SeekOrigin;
+
+namespace
+{
+class TStreamByteStreamAdapter final : public IByteStream
+{
+  public:
+	explicit TStreamByteStreamAdapter(TStream* stream) : stream_(stream) {}
+
+	std::size_t Read(void* buffer, std::size_t count) override
+	{
+		return static_cast<std::size_t>(stream_->Read(buffer, static_cast<int>(count)));
+	}
+
+	std::size_t Write(const void* buffer, std::size_t count) override
+	{
+		return static_cast<std::size_t>(stream_->Write(buffer, static_cast<int>(count)));
+	}
+
+	std::uint64_t Seek(std::int64_t offset, SeekOrigin origin) override
+	{
+		TSeekOrigin vclOrigin = soBeginning;
+		switch(origin)
+		{
+			case SeekOrigin::Begin:
+				vclOrigin = soBeginning;
+				break;
+			case SeekOrigin::Current:
+				vclOrigin = soCurrent;
+				break;
+			case SeekOrigin::End:
+				vclOrigin = soEnd;
+				break;
+		}
+
+		return static_cast<std::uint64_t>(stream_->Seek(offset, vclOrigin));
+	}
+
+	std::uint64_t Position() const override
+	{
+		return static_cast<std::uint64_t>(stream_->Position);
+	}
+
+	std::uint64_t Size() const override
+	{
+		return static_cast<std::uint64_t>(stream_->Size);
+	}
+
+	void SetSize(std::uint64_t size) override
+	{
+		stream_->Size = static_cast<__int64>(size);
+	}
+
+  private:
+	TStream* stream_;
+};
+
+} // namespace
 
 #ifdef __cplusplus
 int max(int value1, int value2)
@@ -27,7 +93,7 @@ int min(int value1, int value2)
 
 //===========================================================================
 // преобразует шестнадцатиричную восьмисимвольную строку в число
-int __fastcall hex_to_int(char* hexstr)
+int hex_to_int(char* hexstr)
 {
 	int res = 0;
 	int sym;
@@ -44,7 +110,7 @@ int __fastcall hex_to_int(char* hexstr)
 	return res;
 }
 
-int __fastcall hex_to_int16(char* hexstr)
+int hex_to_int16(char* hexstr)
 {
 	int res = 0;
 	int sym;
@@ -64,7 +130,7 @@ int __fastcall hex_to_int16(char* hexstr)
 
 //===========================================================================
 // преобразует число в шестнадцатиричную восьмисимвольную строку
-char* __fastcall int_to_hex(char* hexstr, int dec)
+char* int_to_hex(char* hexstr, int dec)
 {
 	int _t1 = dec;
 	int _t2;
@@ -77,102 +143,158 @@ char* __fastcall int_to_hex(char* hexstr, int dec)
 	return hexstr;
 }
 
-//===========================================================================
-// читает блок из потока каталога stream_from, собирая его по страницам
-TStream* __fastcall read_block(TStream* stream_from, int start, TStream* stream_to = NULL)
+static std::unique_ptr<MemoryByteStream> read_block_core(IByteStream& stream_from, int start)
 {
 	char temp_buf[32];
 	int len, curlen, pos, readlen;
+	auto out = std::make_unique<MemoryByteStream>();
 
-	if(!stream_to)
-		stream_to = new TMemoryStream;
+	out->Seek(0, SeekOrigin::Begin);
+	out->SetSize(0);
 
-	stream_to->Seek(0, soFromBeginning);
-	stream_to->Size = 0;
+	if(start < 0 || start == V8_FF_SIGNATURE || static_cast<std::uint64_t>(start) > stream_from.Size())
+		return out;
 
-	if(start < 0 || start == V8_FF_SIGNATURE || start > stream_from->Size)
-		return stream_to;
-
-	stream_from->Seek(start, soFromBeginning);
-	stream_from->Read(temp_buf, 31);
+	stream_from.Seek(start, SeekOrigin::Begin);
+	stream_from.Read(temp_buf, 31);
 
 	len = hex_to_int(&temp_buf[2]);
 	if(!len)
-		return stream_to;
+		return out;
 	curlen = hex_to_int(&temp_buf[11]);
 	start  = hex_to_int(&temp_buf[20]);
 
 	readlen = min(len, curlen);
-	stream_to->CopyFrom(stream_from, readlen);
+	if(readlen > 0)
+	{
+		ByteVector chunk(readlen);
+		const std::size_t bytes = stream_from.Read(chunk.data(), static_cast<std::size_t>(readlen));
+		out->Write(chunk.data(), bytes);
+	}
 
 	pos = readlen;
 
 	while(start != V8_FF_SIGNATURE)
-    {
-		stream_from->Seek(start, soFromBeginning);
-		stream_from->Read(temp_buf, 31);
+	{
+		stream_from.Seek(start, SeekOrigin::Begin);
+		stream_from.Read(temp_buf, 31);
 
 		curlen = hex_to_int(&temp_buf[11]);
 		start = hex_to_int(&temp_buf[20]);
 
 		readlen = min(len - pos, curlen);
-		stream_to->CopyFrom(stream_from, readlen);
+		if(readlen > 0)
+		{
+			ByteVector chunk(readlen);
+			const std::size_t bytes = stream_from.Read(chunk.data(), static_cast<std::size_t>(readlen));
+			out->Write(chunk.data(), bytes);
+		}
 		pos += readlen;
 	}
 
-	return stream_to;
+	out->Seek(0, SeekOrigin::Begin);
+	return out;
+}
+
+static std::unique_ptr<MemoryByteStream> read_block_16_core(IByteStream& stream_from, __int64 start)
+{
+	char temp_buf[55];
+	int len, curlen, pos, readlen;
+	auto out = std::make_unique<MemoryByteStream>();
+
+	out->Seek(0, SeekOrigin::Begin);
+	out->SetSize(0);
+
+	if(start < 0 || start == V8_FF64_SIGNATURE || static_cast<std::uint64_t>(start) > stream_from.Size())
+		return out;
+
+	stream_from.Seek(start, SeekOrigin::Begin);
+	stream_from.Read(temp_buf, 55);
+
+	len = hex_to_int16(&temp_buf[2]);
+	if(!len)
+		return out;
+	curlen = hex_to_int16(&temp_buf[19]);
+	start = hex_to_int16(&temp_buf[36]);
+
+	readlen = min(len, curlen);
+	if(readlen > 0)
+	{
+		ByteVector chunk(readlen);
+		const std::size_t bytes = stream_from.Read(chunk.data(), static_cast<std::size_t>(readlen));
+		out->Write(chunk.data(), bytes);
+	}
+
+	pos = readlen;
+
+	while(start != V8_FF64_SIGNATURE)
+	{
+		stream_from.Seek(start + V8_OFFSET_8316, SeekOrigin::Begin);
+		stream_from.Read(temp_buf, 55);
+
+		curlen = hex_to_int16(&temp_buf[19]);
+		start  = hex_to_int16(&temp_buf[36]);
+
+		readlen = min(len - pos, curlen);
+		if(readlen > 0)
+		{
+			ByteVector chunk(readlen);
+			const std::size_t bytes = stream_from.Read(chunk.data(), static_cast<std::size_t>(readlen));
+			out->Write(chunk.data(), bytes);
+		}
+		pos += readlen;
+	}
+
+	out->Seek(0, SeekOrigin::Begin);
+	return out;
 }
 
 //===========================================================================
 // читает блок из потока каталога stream_from, собирая его по страницам
-TStream* __fastcall read_block_16(TStream* stream_from, __int64 start, TStream* stream_to = NULL)
+TStream* read_block(TStream* stream_from, int start, TStream* stream_to = NULL)
 {
-	char temp_buf[55];
-	int len, curlen, pos, readlen;
-
 	if(!stream_to)
 		stream_to = new TMemoryStream;
 
 	stream_to->Seek(0, soFromBeginning);
 	stream_to->Size = 0;
 
-	if(start < 0 || start == V8_FF64_SIGNATURE || start > stream_from->Size)
-		return stream_to;
-
-	stream_from->Seek(start, soFromBeginning);
-	stream_from->Read(temp_buf, 55);
-
-	len = hex_to_int16(&temp_buf[2]);
-	if(!len)
-		return stream_to;
-	curlen = hex_to_int16(&temp_buf[19]);
-	start = hex_to_int16(&temp_buf[36]);
-
-	readlen = min(len, curlen);
-	stream_to->CopyFrom(stream_from, readlen);
-
-	pos = readlen;
-
-	while(start != V8_FF64_SIGNATURE)
-    {
-		stream_from->Seek(start + V8_OFFSET_8316, soFromBeginning);
-		stream_from->Read(temp_buf, 55);
-
-		curlen = hex_to_int16(&temp_buf[19]);
-		start  = hex_to_int16(&temp_buf[36]);
-
-		readlen = min(len - pos, curlen);
-		stream_to->CopyFrom(stream_from, readlen);
-		pos += readlen;
+	TStreamByteStreamAdapter source(stream_from);
+	std::unique_ptr<MemoryByteStream> block = read_block_core(source, start);
+	if(block->Size() > 0)
+	{
+		const std::vector<std::uint8_t>& data = block->Data();
+		stream_to->Write(data.data(), static_cast<int>(data.size()));
 	}
+	stream_to->Seek(0, soFromBeginning);
+	return stream_to;
+}
 
+//===========================================================================
+// читает блок из потока каталога stream_from, собирая его по страницам
+TStream* read_block_16(TStream* stream_from, __int64 start, TStream* stream_to = NULL)
+{
+	if(!stream_to)
+		stream_to = new TMemoryStream;
+
+	stream_to->Seek(0, soFromBeginning);
+	stream_to->Size = 0;
+
+	TStreamByteStreamAdapter source(stream_from);
+	std::unique_ptr<MemoryByteStream> block = read_block_16_core(source, start);
+	if(block->Size() > 0)
+	{
+		const std::vector<std::uint8_t>& data = block->Data();
+		stream_to->Write(data.data(), static_cast<int>(data.size()));
+	}
+	stream_to->Seek(0, soFromBeginning);
 	return stream_to;
 }
 
 
 //===========================================================================
 //преобразование времени
-void __fastcall V8timeToFileTime(const __int64* v8t, FILETIME* ft)
+void V8timeToFileTime(const __int64* v8t, FILETIME* ft)
 {
 	FILETIME lft;
 	__int64 t = *v8t;
@@ -183,7 +305,7 @@ void __fastcall V8timeToFileTime(const __int64* v8t, FILETIME* ft)
 }
 
 //===========================================================================
-void __fastcall FileTimeToV8time(const FILETIME* ft, __int64* v8t)
+void FileTimeToV8time(const FILETIME* ft, __int64* v8t)
 {
 	FILETIME lft;
 	FileTimeToLocalFileTime(ft, &lft);
@@ -194,7 +316,7 @@ void __fastcall FileTimeToV8time(const FILETIME* ft, __int64* v8t)
 }
 
 //===========================================================================
-void __fastcall setCurrentTime(__int64* v8t)
+void setCurrentTime(__int64* v8t)
 {
 	SYSTEMTIME st;
 	FILETIME ft;
@@ -203,17 +325,39 @@ void __fastcall setCurrentTime(__int64* v8t)
 	FileTimeToV8time(&ft, v8t);
 }
 
+static Utf16String StringToUtf16(const String& value)
+{
+#ifndef _DELPHI_STRING_UNICODE
+	const int ws = value.WideCharBufSize();
+	std::vector<wchar_t> buffer(ws);
+	value.WideChar(buffer.data(), ws);
+	return Utf16String(reinterpret_cast<const char16_t*>(buffer.data()));
+#else
+	const wchar_t* w = value.c_str();
+	return Utf16String(reinterpret_cast<const char16_t*>(w), value.Length());
+#endif
+}
+
+static String Utf16ToString(const Utf16String& value)
+{
+#ifndef _DELPHI_STRING_UNICODE
+	return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+#else
+	return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+#endif
+}
+
 //===========================================================================
 
 //********************************************************
 // Класс v8file
 
 //===========================================================================
-__fastcall v8file::v8file(v8catalog* _parent, const String& _name, v8file* _previous,
+v8file::v8file(v8catalog* _parent, const String& _name, v8file* _previous,
                           int _start_data, int _start_header,
                           __int64* _time_create, __int64* _time_modify)
 {
-	Lock = new TCriticalSection();
+	Lock = new V8RecursiveMutex();
 	is_destructed = false;
 	flushed = false;
 	parent = _parent;
@@ -240,31 +384,31 @@ __fastcall v8file::v8file(v8catalog* _parent, const String& _name, v8file* _prev
 }
 
 //===========================================================================
-void __fastcall v8file::GetTimeCreate(FILETIME* ft)
+void v8file::GetTimeCreate(FILETIME* ft)
 {
 	V8timeToFileTime(&time_create, ft);
 }
 
 //===========================================================================
-void __fastcall v8file::GetTimeModify(FILETIME* ft)
+void v8file::GetTimeModify(FILETIME* ft)
 {
 	V8timeToFileTime(&time_modify, ft);
 }
 
 //===========================================================================
-void __fastcall v8file::SetTimeCreate(FILETIME* ft)
+void v8file::SetTimeCreate(FILETIME* ft)
 {
 	FileTimeToV8time(ft, &time_create);
 }
 
 //===========================================================================
-void __fastcall v8file::SetTimeModify(FILETIME* ft)
+void v8file::SetTimeModify(FILETIME* ft)
 {
 	FileTimeToV8time(ft, &time_modify);
 }
 
 //===========================================================================
-void __fastcall v8file::SaveToFile(const String& FileName)
+void v8file::SaveToFile(const String& FileName)
 {
 	FILETIME create, modify;
 
@@ -273,9 +417,10 @@ void __fastcall v8file::SaveToFile(const String& FileName)
 			return;
 
 	TFileStream* fs = new TFileStream(FileName, fmCreate);
-	Lock->Acquire();
-	fs->CopyFrom(data, 0);
-	Lock->Release();
+	{
+		V8ScopedLock guard(Lock);
+		fs->CopyFrom(data, 0);
+	}
 	GetTimeCreate(&create);
 	GetTimeModify(&modify);
 	SetFileTime((HANDLE)fs->Handle, &create, &modify, &modify);
@@ -283,97 +428,82 @@ void __fastcall v8file::SaveToFile(const String& FileName)
 }
 
 //===========================================================================
-void __fastcall v8file::SaveToStream(TStream* stream)
+void v8file::SaveToStream(TStream* stream)
 {
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return;
 
 	stream->CopyFrom(data, 0);
-	Lock->Release();
 }
 
 //===========================================================================
-int __fastcall v8file::GetFileLength()
+int v8file::GetFileLength()
 {
-	int ret;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
 
-	ret = data->Size;
-	Lock->Release();
-	return ret;
+	return data->Size;
 }
 
 //===========================================================================
-__int64 __fastcall v8file::GetFileLength64()
+__int64 v8file::GetFileLength64()
 {
-	__int64 ret;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0l;
 
-	ret = data->Size;
-	Lock->Release();
-	return ret;
+	return data->Size;
 }
 
 //===========================================================================
-int __fastcall v8file::Read(void* Buffer, int Start, int Length)
+int v8file::Read(void* Buffer, int Start, int Length)
 {
-	int ret;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
 
 	data->Seek(Start, soFromBeginning);
-	ret = data->Read(Buffer, Length);
-	Lock->Release();
-
-	return ret;
+	return data->Read(Buffer, Length);
 }
 
 //===========================================================================
-int __fastcall v8file::Read(ByteArr Buffer, int Start, int Length)
+int v8file::Read(ByteVector& Buffer, int Start, int Length)
 {
-	int ret;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
 
-	data->Seek(Start, soFromBeginning);
-	ret = data->Read(Buffer, Length);
-	Lock->Release();
+	if(Length <= 0)
+		return 0;
 
-	return ret;
+	Buffer.resize(Length);
+	data->Seek(Start, soFromBeginning);
+	const int read = data->Read(Buffer.data(), Length);
+	if(read >= 0 && read < Length)
+		Buffer.resize(read);
+
+	return read;
 }
 
 ////---------------------------------------------------------------------------
 //// Потоконебезопасная функция!
-//TStream* __fastcall v8file::get_data()
+//TStream* v8file::get_data()
 //{
 //	return data;
 //}
 
-//===========================================================================
-TV8FileStream* __fastcall v8file::get_stream(bool own)
-{
-	return new TV8FileStream(this, own);
-}
-
-//===========================================================================
 // дозапись/перезапись частично
-int __fastcall v8file::Write(const void* Buffer, int Start, int Length)
+int v8file::Write(const void* Buffer, int Start, int Length)
 {
-	int ret;
 //	if(readonly) return 0;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
@@ -384,40 +514,37 @@ int __fastcall v8file::Write(const void* Buffer, int Start, int Length)
 	is_datamodified = true;
 
 	data->Seek(Start, soFromBeginning);
-	ret = data->Write(Buffer, Length);
-	Lock->Release();
-
-	return ret;
+	return data->Write(Buffer, Length);
 }
 
 //===========================================================================
 // дозапись/перезапись частично
-int __fastcall v8file::Write(ByteArr Buffer, int Start, int Length)
+int v8file::Write(const ByteVector& Buffer, int Start, int Length)
 {
-	int ret;
-//	if(readonly) return 0;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
+
+	if(Length < 0 || Length > static_cast<int>(Buffer.size()))
+		Length = static_cast<int>(Buffer.size());
 
 	setCurrentTime(&time_modify);
 	is_headermodified = true;
 	is_datamodified = true;
 	data->Seek(Start, soFromBeginning);
-	ret = data->Write(Buffer, Length);
-	Lock->Release();
+	if(Length == 0)
+		return 0;
 
-	return ret;
+	return data->Write(Buffer.data(), Length);
 }
 
 //===========================================================================
 // перезапись целиком
-int __fastcall v8file::Write(const void* Buffer, int Length)
+int v8file::Write(const void* Buffer, int Length)
 {
-	int ret;
 //	if(readonly) return 0;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
@@ -428,19 +555,15 @@ int __fastcall v8file::Write(const void* Buffer, int Length)
 	if(data->Size > Length)
 		data->Size = Length;
 	data->Seek(0, soFromBeginning);
-	ret = data->Write(Buffer, Length);
-	Lock->Release();
-
-	return ret;
+	return data->Write(Buffer, Length);
 }
 
 //===========================================================================
 // дозапись/перезапись частично
-int __fastcall v8file::Write(TStream* Stream, int Start, int Length)
+int v8file::Write(TStream* Stream, int Start, int Length)
 {
-	int ret;
 //	if(readonly) return 0;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
@@ -449,19 +572,15 @@ int __fastcall v8file::Write(TStream* Stream, int Start, int Length)
 	is_headermodified = true;
 	is_datamodified = true;
 	data->Seek(Start, soFromBeginning);
-	ret = data->CopyFrom(Stream, Length);
-	Lock->Release();
-
-	return ret;
+	return data->CopyFrom(Stream, Length);
 }
 
 //===========================================================================
 // перезапись целиком
-int __fastcall v8file::Write(TStream* Stream)
+int v8file::Write(TStream* Stream)
 {
-	int ret;
 //	if(readonly) return 0;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return 0;
@@ -472,20 +591,23 @@ int __fastcall v8file::Write(TStream* Stream)
 	if(data->Size > Stream->Size)
 		data->Size = Stream->Size;
 	data->Seek(0, soFromBeginning);
-	ret = data->CopyFrom(Stream, 0);
-	Lock->Release();
-
-	return ret;
+	return data->CopyFrom(Stream, 0);
 }
 
 //===========================================================================
-String __fastcall v8file::GetFileName()
+String v8file::GetFileName()
 {
 	return name;
 }
 
 //===========================================================================
-String __fastcall v8file::GetFullName()
+Utf16String v8file::GetFileName16()
+{
+	return StringToUtf16(name);
+}
+
+//===========================================================================
+String v8file::GetFullName()
 {
 	if(parent) if(parent->file)
 	{
@@ -502,14 +624,21 @@ String __fastcall v8file::GetFullName()
 }
 
 //===========================================================================
-void __fastcall v8file::SetFileName(const String& _name)
+void v8file::SetFileName(const String& _name)
 {
 	name = _name;
 	is_headermodified = true;
 }
 
 //===========================================================================
-bool __fastcall v8file::IsCatalog()
+void v8file::SetFileName16(const Utf16String& _name)
+{
+	name = Utf16ToString(_name);
+	is_headermodified = true;
+}
+
+//===========================================================================
+bool v8file::IsCatalog()
 {
 	int _filelen;
 	int _startempty = -1;
@@ -597,11 +726,11 @@ bool __fastcall v8file::IsCatalog()
 }
 
 //---------------------------------------------------------------------------
-v8catalog* __fastcall v8file::GetCatalog()
+v8catalog* v8file::GetCatalog()
 {
 	v8catalog* ret;
 
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(IsCatalog())
 	{
 		if(!self)
@@ -612,19 +741,18 @@ v8catalog* __fastcall v8file::GetCatalog()
 	}
 	else
     	ret = NULL;
-	Lock->Release();
 
 	return ret;
 }
 
 //===========================================================================
-v8catalog* __fastcall v8file::GetParentCatalog()
+v8catalog* v8file::GetParentCatalog()
 {
 	return parent;
 }
 
 //===========================================================================
-void __fastcall v8file::DeleteFile()
+void v8file::DeleteFile()
 {
 //	if(readonly) return;
 	Lock->Acquire();
@@ -680,25 +808,21 @@ void __fastcall v8file::DeleteFile()
 }
 
 //===========================================================================
-v8file* __fastcall v8file::GetNext()
+v8file* v8file::GetNext()
 {
 	return next;
 }
 
 //===========================================================================
-bool __fastcall v8file::Open()
+bool v8file::Open()
 {
 	if(!parent)
     	return false;
 
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 
 	if(is_opened)
-	{
-		Lock->Release();
-
 		return true;
-	}
 
     if (parent->is_8316)
     {
@@ -712,20 +836,18 @@ bool __fastcall v8file::Open()
 
 	is_opened = true;
 
-	Lock->Release();
-
 	return true;
 }
 
 //===========================================================================
-void __fastcall v8file::Close()
+void v8file::Close()
 {
 	int _t = 0;
 
 	if(!parent)
     	return;
 
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 
 	if(!is_opened)
     	return;
@@ -744,7 +866,7 @@ void __fastcall v8file::Close()
 	{
 		if(is_datamodified || is_headermodified)
 		{
-			parent->Lock->Acquire();
+			V8ScopedLock parent_guard(parent->Lock);
 			if(is_datamodified)
 			{
 				start_data = parent->write_datablock(data, start_data, selfzipped);
@@ -769,7 +891,6 @@ void __fastcall v8file::Close()
 				start_header = parent->write_block(hs, start_header, false);
 				delete hs;
 			}
-			parent->Lock->Release();
 		}
 	}
 	delete data;
@@ -778,27 +899,20 @@ void __fastcall v8file::Close()
 	is_opened = false;
 	is_datamodified = false;
 	is_headermodified = false;
-	Lock->Release();
 }
 
 //===========================================================================
-int __fastcall v8file::WriteAndClose(TStream* Stream, int Length)
+int v8file::WriteAndClose(TStream* Stream, int Length)
 {
 	int _t = 0;
 
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(!is_opened)
     	if(!Open())
-        {
-            Lock->Release();
             return 0;
-        }
 
 	if(!parent)
-	{
-		Lock->Release();
 		return 0;
-	}
 
 	if(self)
     	delete self;
@@ -810,7 +924,7 @@ int __fastcall v8file::WriteAndClose(TStream* Stream, int Length)
 
 	if(parent->data)
 	{
-		parent->Lock->Acquire();
+		V8ScopedLock parent_guard(parent->Lock);
 		start_data = parent->write_datablock(Stream, start_data, selfzipped, Length);
 		TMemoryStream* hs = new TMemoryStream();
 		hs->Write(&time_create, 8);
@@ -819,7 +933,6 @@ int __fastcall v8file::WriteAndClose(TStream* Stream, int Length)
 		hs->Write(name.c_str(), name.Length() * 2);
 		hs->Write(&_t, 4);
 		start_header = parent->write_block(hs, start_header, false);
-		parent->Lock->Release();
 		delete hs;
 
 	}
@@ -827,7 +940,6 @@ int __fastcall v8file::WriteAndClose(TStream* Stream, int Length)
 	is_opened = false;
 	is_datamodified = false;
 	is_headermodified = false;
-	Lock->Release();
 
 	if(Length == -1)
     	return Stream->Size;
@@ -836,17 +948,10 @@ int __fastcall v8file::WriteAndClose(TStream* Stream, int Length)
 }
 
 //===========================================================================
-__fastcall v8file::~v8file()
+v8file::~v8file()
 {
-	std::set<TV8FileStream*>::iterator istreams;
-
 	Lock->Acquire();
 	is_destructed = true;
-
-	for(istreams = streams.begin(); istreams != streams.end(); ++istreams)
-    	delete *istreams;
-
-	streams.clear();
 
 	Close();
 
@@ -881,26 +986,17 @@ __fastcall v8file::~v8file()
 }
 
 //===========================================================================
-void __fastcall v8file::Flush()
+void v8file::Flush()
 {
 	int _t = 0;
 
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	if(flushed)
-	{
-		Lock->Release();
 		return;
-	}
 	if(!parent)
-	{
-		Lock->Release();
 		return;
-	}
 	if(!is_opened)
-	{
-		Lock->Release();
 		return;
-	}
 
 	flushed = true;
 	if(self)
@@ -911,7 +1007,7 @@ void __fastcall v8file::Flush()
 	{
 		if(is_datamodified || is_headermodified)
 		{
-			parent->Lock->Acquire();
+			V8ScopedLock parent_guard(parent->Lock);
 			if(is_datamodified)
 			{
 				start_data = parent->write_datablock(data, start_data, selfzipped);
@@ -938,11 +1034,9 @@ void __fastcall v8file::Flush()
 				delete hs;
 				is_headermodified = false;
 			}
-			parent->Lock->Release();
 		}
 	}
 	flushed = false;
-	Lock->Release();
 }
 
 //===========================================================================
@@ -950,29 +1044,20 @@ void __fastcall v8file::Flush()
 //********************************************************
 // Класс v8catalog
 
-bool __fastcall v8catalog::Is8316()
+bool v8catalog::Is8316()
 {
     char _temp_data[8] = "";
 
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	data->Seek(V8_OFFSET_8316, soFromBeginning);
 	data->Read(_temp_data, 8);
-    if(memcmp(_temp_data, _empty_catalog_template8316, 8) != 0)
-    {
-        Lock->Release();
-        return false;
-    }
-    else
-    {
-	    Lock->Release();
-    	return true;
-    }
+    return memcmp(_temp_data, _empty_catalog_template8316, 8) == 0;
 
 
 }
 
 //===========================================================================
-bool __fastcall v8catalog::IsCatalog()
+bool v8catalog::IsCatalog()
 {
 	int _filelen;
 	int _startempty = -1;
@@ -1043,9 +1128,9 @@ bool __fastcall v8catalog::IsCatalog()
 
 //===========================================================================
 // создать каталог из физического файла .cf
-__fastcall v8catalog::v8catalog(String name)
+v8catalog::v8catalog(String name)
 {
-	Lock = new TCriticalSection();
+	Lock = new V8RecursiveMutex();
 	iscatalogdefined = false;
 
 	String ext = ExtractFileExt(name).LowerCase();
@@ -1103,9 +1188,9 @@ __fastcall v8catalog::v8catalog(String name)
 
 //===========================================================================
 // создать каталог из физического файла
-__fastcall v8catalog::v8catalog(String name, bool _zipped)
+v8catalog::v8catalog(String name, bool _zipped)
 {
-	Lock = new TCriticalSection();
+	Lock = new V8RecursiveMutex();
 	iscatalogdefined = false;
 	is_cfu = false;
 	zipped = _zipped;
@@ -1149,9 +1234,9 @@ __fastcall v8catalog::v8catalog(String name, bool _zipped)
 
 //===========================================================================
 // создать каталог из потока
-__fastcall v8catalog::v8catalog(TStream* stream, bool _zipped, bool leave_stream)
+v8catalog::v8catalog(TStream* stream, bool _zipped, bool leave_stream)
 {
-	Lock = new TCriticalSection();
+	Lock = new V8RecursiveMutex();
 	is_cfu = false;
 	iscatalogdefined = false;
 	zipped = _zipped;
@@ -1183,7 +1268,7 @@ __fastcall v8catalog::v8catalog(TStream* stream, bool _zipped, bool leave_stream
 
 //===========================================================================
 // создать каталог из файла
-__fastcall v8catalog::v8catalog(v8file* f)
+v8catalog::v8catalog(v8file* f)
 {
 	is_cfu = false;
 	iscatalogdefined = false;
@@ -1216,7 +1301,7 @@ __fastcall v8catalog::v8catalog(v8file* f)
 }
 
 //===========================================================================
-void __fastcall v8catalog::initialize(int Offset)
+void v8catalog::initialize(int Offset)
 {
 	is_destructed = false;
 	catalog_header     _ch;
@@ -1350,7 +1435,7 @@ void __fastcall v8catalog::initialize(int Offset)
 	leave_data       = false;
 }
 
-//void __fastcall v8catalog::initialize(int Offset = 0)
+//void v8catalog::initialize(int Offset = 0)
 //{
 //	is_destructed = false;
 //	catalog_header _ch;
@@ -1439,9 +1524,9 @@ void __fastcall v8catalog::initialize(int Offset)
 
 
 //===========================================================================
-void __fastcall v8catalog::DeleteFile(const String& FileName)
+void v8catalog::DeleteFile(const String& FileName)
 {
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	v8file* f = first;
 	while(f)
 	{
@@ -1452,44 +1537,34 @@ void __fastcall v8catalog::DeleteFile(const String& FileName)
 		}
 		f = f->next;
 	}
-	Lock->Release();
 }
 
 //===========================================================================
-v8file* __fastcall v8catalog::GetFile(const String& FileName)
+v8file* v8catalog::GetFile(const String& FileName)
 {
-	v8file* ret;
-
-	Lock->Acquire();
-
-	std::map<String, v8file*>::const_iterator it;
-
-	it = files.find(FileName.UpperCase());
-
+	V8ScopedLock guard(Lock);
+	std::map<String, v8file*>::const_iterator it = files.find(FileName.UpperCase());
 	if(it == files.end())
-		ret = NULL;
-	else
-		ret = it->second;
+		return NULL;
 
-	Lock->Release();
-
-	return ret;
+	return it->second;
 }
 
 //===========================================================================
-v8file* __fastcall v8catalog::GetFirst()
+v8file* v8catalog::GetFirst()
 {
 	return first;
 }
 
 //===========================================================================
-v8file* __fastcall v8catalog::createFile(const String& FileName, bool _selfzipped)
+v8file* v8catalog::createFile(const String& FileName, bool _selfzipped)
 {
 	__int64 v8t;
 	v8file* f;
 
-	Lock->Acquire();
-	f = GetFile(FileName);
+	V8ScopedLock guard(Lock);
+	std::map<String, v8file*>::const_iterator it = files.find(FileName.UpperCase());
+	f = it == files.end() ? NULL : it->second;
 	if(!f)
 	{
 		setCurrentTime(&v8t);
@@ -1498,12 +1573,11 @@ v8file* __fastcall v8catalog::createFile(const String& FileName, bool _selfzippe
 		last = f;
 		is_fatmodified = true;
 	}
-	Lock->Release();
 	return f;
 }
 
 //===========================================================================
-v8catalog* __fastcall v8catalog::GetParentCatalog()
+v8catalog* v8catalog::GetParentCatalog()
 {
 	if(!file)
     	return NULL;
@@ -1512,7 +1586,7 @@ v8catalog* __fastcall v8catalog::GetParentCatalog()
 }
 
 //===========================================================================
-TStream* __fastcall v8catalog::read_datablock(int start, int offset)
+TStream* v8catalog::read_datablock(int start, int offset)
 {
 	TStream* stream;
 	TStream* stream2;
@@ -1548,7 +1622,7 @@ TStream* __fastcall v8catalog::read_datablock(int start, int offset)
 }
 
 //===========================================================================
-void __fastcall v8catalog::free_block(int start)
+void v8catalog::free_block(int start)
 {
 	char temp_buf[32];
 	int nextstart;
@@ -1583,7 +1657,7 @@ void __fastcall v8catalog::free_block(int start)
 }
 
 //===========================================================================
-int __fastcall v8catalog::write_datablock(TStream* block, int start, bool _zipped, int len)
+int v8catalog::write_datablock(TStream* block, int start, bool _zipped, int len)
 {
 	TMemoryStream* stream2;
 	TMemoryStream* stream;
@@ -1629,7 +1703,7 @@ int __fastcall v8catalog::write_datablock(TStream* block, int start, bool _zippe
 }
 
 //===========================================================================
-int __fastcall v8catalog::get_nextblock(int start)
+int v8catalog::get_nextblock(int start)
 {
 	int ret;
 
@@ -1647,7 +1721,7 @@ int __fastcall v8catalog::get_nextblock(int start)
 }
 
 //===========================================================================
-int __fastcall v8catalog::write_block(TStream* block, int start, bool use_page_size, int len)
+int v8catalog::write_block(TStream* block, int start, bool use_page_size, int len)
 {
 	char temp_buf[32];
 	char* _t;
@@ -1743,7 +1817,7 @@ int __fastcall v8catalog::write_block(TStream* block, int start, bool use_page_s
 }
 
 //===========================================================================
-__fastcall v8catalog::~v8catalog()
+v8catalog::~v8catalog()
 {
 	fat_item fi;
 	v8file* f;
@@ -1839,16 +1913,16 @@ __fastcall v8catalog::~v8catalog()
 }
 
 //===========================================================================
-v8file* __fastcall v8catalog::GetSelfFile()
+v8file* v8catalog::GetSelfFile()
 {
 	return file;
 }
 
 //===========================================================================
-v8catalog* __fastcall v8catalog::CreateCatalog(const String& FileName, bool _selfzipped)
+v8catalog* v8catalog::CreateCatalog(const String& FileName, bool _selfzipped)
 {
 	v8catalog* ret;
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	v8file* f = createFile(FileName, _selfzipped);
 	if(f->GetFileLength())
 	{
@@ -1860,18 +1934,17 @@ v8catalog* __fastcall v8catalog::CreateCatalog(const String& FileName, bool _sel
 		f->Write(_empty_catalog_template, 16);
 		ret = f->GetCatalog();
 	}
-	Lock->Release();
 	return ret;
 }
 
 //===========================================================================
-void __fastcall v8catalog::SaveToDir(String DirName)
+void v8catalog::SaveToDir(String DirName)
 {
 	CreateDir(DirName);
 	if(DirName.SubString(DirName.Length(), 1) != str_backslash)
     	DirName += str_backslash;
 
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 	v8file* f = first;
 	while(f)
 	{
@@ -1883,17 +1956,16 @@ void __fastcall v8catalog::SaveToDir(String DirName)
 		f->Close();
 		f = f->next;
 	}
-	Lock->Release();
 }
 
 //===========================================================================
-bool __fastcall v8catalog::isOpen()
+bool v8catalog::isOpen()
 {
 	return IsCatalog();
 }
 
 //===========================================================================
-void __fastcall v8catalog::Flush()
+void v8catalog::Flush()
 {
 	fat_item fi;
 	v8file* f;
@@ -1973,7 +2045,7 @@ void __fastcall v8catalog::Flush()
 }
 
 //===========================================================================
-void __fastcall v8catalog::HalfClose()
+void v8catalog::HalfClose()
 {
 	Lock->Acquire();
 	Flush();
@@ -1991,137 +2063,26 @@ void __fastcall v8catalog::HalfClose()
 }
 
 //===========================================================================
-void __fastcall v8catalog::HalfOpen(const String& name)
+void v8catalog::HalfOpen(const String& name)
 {
-	Lock->Acquire();
+	V8ScopedLock guard(Lock);
 
 	if(is_cfu)
     	cfu = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
 	else
     	data = new TFileStream(name, fmOpenReadWrite | fmShareDenyNone);
-
-	Lock->Release();
 }
 
-void __fastcall v8catalog::ClearIs8316()
+void v8catalog::ClearIs8316()
 {
     is_8316 = false;
 }
 
-//void __fastcall v8catalog::set_leave_data(bool ld)
+//void v8catalog::set_leave_data(bool ld)
 //{
 //    leave_data = ld;
 //}
 
 //===========================================================================
 
-//********************************************************
-// Класс TV8FileStream
-
-//===========================================================================
-__fastcall TV8FileStream::TV8FileStream(v8file* f, bool ownfile) : TStream(), file(f), own(ownfile)
-{
-	pos = 0l;
-	file->streams.insert(this);
-}
-
-//===========================================================================
-__fastcall TV8FileStream::~TV8FileStream()
-{
-	if(own)
-		delete file;
-	else
-		file->streams.erase(this);
-}
-
-//===========================================================================
-int __fastcall TV8FileStream::Read(void *Buffer, int Count)
-{
-	int r = file->Read(Buffer, pos, Count);
-	pos += r;
-
-	return r;
-}
-
-//===========================================================================
-int __fastcall TV8FileStream::Read(ByteArr Buffer, int Offset, int Count)
-{
-	int r = file->Read(Buffer, pos, Count);
-	pos += r;
-	return r;
-}
-
-//===========================================================================
-int __fastcall TV8FileStream::Write(const void *Buffer, int Count)
-{
-	int r = file->Write(Buffer, pos, Count);
-	pos += r;
-	return r;
-}
-
-//===========================================================================
-int __fastcall TV8FileStream::Write(const ByteArr Buffer, int Offset, int Count)
-{
-	int r = file->Write(Buffer, pos, Count);
-	pos += r;
-	return r;
-}
-
-//===========================================================================
-int __fastcall TV8FileStream::Seek(int Offset, System::Word Origin)
-{
-	int l = file->GetFileLength();
-	switch(Origin)
-	{
-		case soFromBeginning:
-			if(Offset >= 0)
-			{
-				if(Offset <= l) pos = Offset;
-				else pos = l;
-			}
-			break;
-		case soFromCurrent:
-			if(pos + Offset < l) pos += Offset;
-			else pos = l;
-			break;
-		case soFromEnd:
-			if(Offset <= 0)
-			{
-				if(Offset <= l) pos = l - Offset;
-				else pos = 0;
-			}
-			break;
-	}
-	return pos;
-}
-
-//===========================================================================
-__int64 __fastcall TV8FileStream::Seek(const __int64 Offset, TSeekOrigin Origin)
-{
-	__int64 l = file->GetFileLength64();
-	switch(Origin)
-	{
-		case soBeginning:
-			if(Offset >= 0)
-			{
-				if(Offset <= l) pos = Offset;
-				else pos = l;
-			}
-			break;
-		case soCurrent:
-			if(pos + Offset < l) pos += Offset;
-			else pos = l;
-			break;
-		case soEnd:
-			if(Offset <= 0)
-			{
-				if(Offset <= l) pos = l - Offset;
-				else pos = 0;
-			}
-			break;
-	}
-	return pos;
-}
-
-//===========================================================================
 
