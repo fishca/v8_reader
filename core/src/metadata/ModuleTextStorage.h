@@ -3,9 +3,6 @@
 #ifndef ModuleTextStorageH
 #define ModuleTextStorageH
 
-#include <System.Classes.hpp>
-#include <System.SysUtils.hpp>
-
 #include "../APIcfBase.h"
 #include "Parse_tree.h"
 

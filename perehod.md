@@ -198,3 +198,177 @@
 2. Открытие/чтение/запись тестовых `cf/epf/erf/cfu`.
 3. Сравнение результатов извлечения файлов до/после (побайтно).
 4. Smoke-тест `CreateCatalog/CreateFile/DeleteFile/Flush/HalfClose/HalfOpen`.
+
+---
+
+# P4 — точный план добора миграции в core (без VCL), пофайлово
+
+## Принцип P4
+1. Не ломаем UI: `src/MainUnit*`, `src/SynHighlighter1C*`, `src/v8reader.cpp` остаются в `src`.
+2. Переводим только то, что может жить в `core` как доменная/утилитная логика.
+3. После каждой волны: `cmd /c Compile\build.bat` + smoke на `Compile/1Cv8_ssl.cf`.
+4. Если волна не проходит — откатить только текущую волну.
+
+## Волна P4.1 — Очистка артефактов и инвентаризация
+1. Удалить legacy-артефакт `src/HTTPServices` (без расширения) — не участвует в сборке.
+2. Зафиксировать список оставшихся VCL-зависимостей в `core` (файлы ниже).
+3. Checkpoint: полная сборка.
+
+## Волна P4.2 — UI-утечки из core обратно в src (самое безопасное)
+Цель: убрать из `core` все, что зависит от визуального дерева.
+1. Перенести из `core/src/metadata` обратно в `src`:
+   1. `MetadataTreeBuilder.h/.cpp`
+   2. `VirtualTreeData.h`
+2. Обновить include-пути:
+   1. `src/MainUnit.h/.cpp`
+   2. `src/v8reader.cbproj` (если нужно, только пути)
+3. Удалить из `core/include/v8reader_core/V8MetadataLegacy.h` включения UI-зависимых заголовков.
+4. Checkpoint: сборка + открытие дерева метаданных.
+
+## Волна P4.3 — Parse_tree: отделение core и VCL-адаптера
+Цель: убрать `<vcl.h>` из парсера.
+1. Ввести core-версию:
+   1. `core/src/metadata/ParseTreeCore.h/.cpp` (`std::u16string`, `IByteStream`).
+2. Оставить совместимый VCL-bridge:
+   1. `src/Parse_tree_vcl_adapter.h/.cpp` (обертки `String`/`TStream` -> core).
+3. Переключить потребителей:
+   1. `core/src/metadata/*` на core-API.
+   2. `src/Class_1CD.*`, `src/Common.*` через bridge.
+4. После стабилизации удалить VCL include из текущего `core/src/metadata/Parse_tree.h`.
+5. Checkpoint: сборка + разбор `Compile/1Cv8_ssl.cf`.
+
+## Волна P4.4 — ModuleTextStorage/CommonModules: вынос RTL I/O
+Цель: убрать `System.IOUtils`, `TEncoding`, `TBytes` из core-реализации.
+1. Добавить core-утилиты:
+   1. `core/src/io/TextDecodeCore.h/.cpp` (UTF-8/UTF-16/BOM)
+   2. `core/src/io/FileSystemCore.h/.cpp` (`std::filesystem` + std streams)
+2. Переписать:
+   1. `core/src/metadata/ModuleTextStorage.h/.cpp`
+   2. `core/src/metadata/CommonModules.cpp`
+3. VCL-границы оставить только в `src/VclByteStreamAdapter.h` и точечных wrapper-функциях.
+4. Checkpoint: сборка + открытие/сохранение модулей из SourceCF.
+
+## Волна P4.5 — APIcfBase: финальный отказ от VCL-сигнатур в core
+Цель: в core оставить только `IByteStream`, `std::u16string`, `std::vector<uint8_t>`.
+1. В `core/src/APIcfBase.h/.cpp`:
+   1. убрать `TStream` из публичной core-поверхности,
+   2. убрать `__fastcall` в реализациях,
+   3. оставить только переходные bridge-методы под `#ifdef` (если требуется совместимость).
+2. Перенести VCL-совместимые методы в отдельный слой:
+   1. `src/APIcfBase_vcl_adapter.h/.cpp` (или уже существующий bridge).
+3. Checkpoint: сборка + smoke CRUD контейнера (`Open/Read/Write/Flush/HalfOpen/HalfClose`).
+
+## Волна P4.6 — Core-модели (MetaObject/Property/Tabular) добивка
+Цель: убрать условные VCL include из "почти-core" файлов.
+1. `core/src/metadata/MetaObject.h`: удалить `System.*` include из ветки `__BORLANDC__`, заменить STL-типами/адаптерами.
+2. `core/src/metadata/Property.h`: убрать `Vcl.Graphics.hpp`, оставить платформенно-нейтральный тип (например enum/ARGB).
+3. `core/src/metadata/Tabular.h`: заменить `<vcl.h>` на минимальный набор core include.
+4. Checkpoint: сборка + метаданные (табличные части/свойства).
+
+## Волна P4.7 — Финальная полировка и критерий done
+1. В `core/src` и `core/include` не должно остаться:
+   1. `#include <vcl.h>`
+   2. `#include <Vcl.*>`
+   3. `#include <System.*>` (кроме явно оставленного bridge-слоя, если он физически в `src`)
+2. Обновить `List_no_vcl.md` и зафиксировать итоговый статус.
+3. Checkpoint: сборка + регрессионный прогон `-PARSE`/`-BUILD` на `Compile/1Cv8_ssl.cf`.
+
+## Порядок выполнения PR (рекомендуемый)
+1. PR-P4-1: P4.2 (UI-утечки)
+2. PR-P4-2: P4.3 (Parse_tree core + adapter)
+3. PR-P4-3: P4.4 (ModuleTextStorage/CommonModules)
+4. PR-P4-4: P4.5 (APIcfBase final split)
+5. PR-P4-5: P4.6 + P4.7 (добивка и финальный аудит)
+
+---
+
+# Статус P4 (2026-05-13)
+
+## Сделано
+1. Удален неиспользуемый legacy-файл `src/HTTPServices` (без расширения).
+2. UI-зависимые helper-файлы `MetadataTreeBuilder.*`/`VirtualTreeData.h` физически перенесены из `core/src/metadata` в `src`.
+3. Из `MetaDataManager` удалена UI-функция `populateTreeView(...)` и связанные include.
+4. В `core/include/v8reader_core/V8MetadataLegacy.h` убрана лишняя UI-экспозиция.
+5. В `Parse_tree` добавлены переходные UTF-16 обертки (`parse_1Ctext_u16`, `outtext_u16`, поиск по GUID на `std::u16string_view`).
+6. В `core/src/metadata` убрана прямая зависимость от `src/Class_1CD.h`:
+   1. декларация `get_treeFromV8file(v8file*)` перенесена в `Parse_tree.h`,
+   2. удалены лишние include `Class_1CD.h` из core-заголовков/реализаций.
+7. В `core/src/metadata/ModuleTextStorage.cpp` операции путей/каталогов/перемещения файлов переведены с `System.IOUtils` на `std::filesystem`.
+8. В `core/src/metadata/CommonModules.cpp` операции путей/каталогов переведены с `System.IOUtils` на `std::filesystem`.
+9. Из `core/src/metadata/CommonModules.cpp` удален неиспользуемый legacy-блок локальных helper-функций, оставлена только актуальная обертка над `ModuleTextStorage`.
+10. Код декодирования/кодирования текстов модулей вынесен из `ModuleTextStorage.cpp` в отдельный utility:
+   1. `core/src/metadata/ModuleTextEncodingUtils.h`
+11. Уменьшен прямой VCL-след в metadata-заголовках:
+   1. `Parse_tree.h` переключен на include `../APIcfBase.h` вместо `System.*`,
+   2. `ModuleTextStorage.h` убраны прямые include `System.*`,
+   3. `Tabular.h` убран `#include <System.hpp>`.
+12. Начато физическое разделение P4.3 для parser API:
+   1. добавлен core-friendly заголовок `core/include/v8reader_core/ParseTreeCore.h`,
+   2. реализации `parse_1Ctext_u16/outtext_u16/find_*_u16` вынесены из `Parse_tree.cpp` в `core/src/metadata/ParseTreeCore.cpp`,
+   3. `ParseTreeCore.cpp` подключен в `src/v8reader.cbproj`.
+13. В `ModuleTextEncodingUtils.h` убран прямой include `System.Classes.hpp`, переключено на `../APIcfBase.h`.
+14. Начат переход `APIcfBase` к core-ориентированному stream API без слома совместимости:
+   1. в `v8file` добавлен `SaveToByteStream(IByteStream&)`,
+   2. `SaveToFile(...)` переведен на `StdFileStream + SaveToByteStream(...)`,
+   3. `SaveToStream(TStream*)` переведен на `TStreamByteStreamAdapter + SaveToByteStream(...)`,
+   4. добавлены перегрузки `Write(IByteStream&, int, int)` и `Write(IByteStream&)`,
+   5. существующие `Write(TStream*, ...)` теперь работают через адаптер к `IByteStream`.
+15. Добавлена C++-friendly перегрузка в `v8file`:
+   1. `SaveToFile(const std::filesystem::path&)`,
+   2. существующий `SaveToFile(const String&)` делегирует на path-вариант.
+16. В `MetaObject.h` удален неиспользуемый `#include <System.SysUtils.hpp>` (сборка/поведение без изменений).
+17. Расширена C++-friendly поверхность `v8catalog`:
+   1. добавлены path-конструкторы `v8catalog(const std::filesystem::path&)` и `v8catalog(const std::filesystem::path&, bool)`,
+   2. `String`-конструкторы делегируют на path-варианты,
+   3. добавлены `SaveToDir(const std::filesystem::path&)` и `HalfOpen(const std::filesystem::path&)`,
+   4. `String`-варианты `SaveToDir/HalfOpen` делегируют на path-варианты.
+18. Расширен `v8file` для core-stream пути записи с закрытием:
+   1. добавлен `WriteAndClose(IByteStream&, int)`,
+   2. реализован переходный мост через временный `TMemoryStream` с последующим вызовом существующей VCL-ветки.
+19. В `src` добавлен явный adapter-слой для перехода границ:
+   1. `src/APIcfBase_vcl_adapter.h/.cpp`,
+   2. `src/Parse_tree_vcl_adapter.h/.cpp`,
+   3. src-файлы переключены с прямых include `../core/src/...` на adapter-заголовки.
+20. Заголовки метамодели очищены от прямых VCL include:
+   1. `MetaObject.h` использует forward declarations + `System.UITypes` (без `Vcl.*`),
+   2. `Property.h` использует forward declarations + `System.UITypes` (без `Vcl.*`).
+21. UI-реализации в `MetaObject.cpp` и `Property.cpp` переведены во временные нейтральные stub-методы
+   (без `cl*`, `TEdit`, `TStringList` зависимостей), чтобы отделить доменную core-логику от VCL UI.
+
+## Проверки после изменений
+1. Полная сборка `Compile\\build.bat` — успешно.
+2. Smoke: `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf ... root version` — `ok`.
+
+## Осталось в контуре P4
+1. Завершить P4.3: выделить полноценный `ParseTreeCore` + VCL-адаптер, чтобы убрать `System.*` из core-публичной части парсера.
+2. Продолжить P4.4: вынести декодирование текста (`TEncoding/TBytes`) в core-утилиты без VCL.
+3. P4.5: финальный split `APIcfBase` (core API без `TStream`/VCL, совместимость через adapter в `src`).
+4. P4.6/P4.7: убрать `Vcl.Graphics.hpp` и остаточные `System.*` include из `core` (кроме строго переходного bridge-слоя).
+
+## Текущий остаток direct VCL/System include в core
+1. `core/src/APIcfBase.h`
+2. `core/src/metadata/MetaObject.h`
+3. `core/src/metadata/Property.h`
+
+Примечание:
+1. прямых `Vcl.*` include в `core/src` и `core/include` больше нет;
+2. остаются `System.*` include в переходных местах, пока `String`/`TStream` окончательно не вынесены в `src`-adapter.
+
+---
+
+# Финальный дожим P4 (2026-05-13, доп.фикс)
+
+## Подтверждено по коду
+1. В `core` больше нет UI/VCL-типов (`TColor`, `TStringList`, `TVirtualStringTree`, `Vcl.Graphics`, `System.UITypes`).
+2. Прямые include `System.*` в `core` остались только в двух файлах:
+   1. `core/src/APIcfBase.h` (`System.Classes.hpp`) — переходный слой из-за `String/TStream`.
+   2. `core/src/metadata/MetaObject.h` (`System.hpp`) — из-за поля/сигнатур на `String`.
+3. `__fastcall` в `core` остался только в `core/src/APIcfBase.cpp` внутри `StdFileTStream : TStream` (override VCL-сигнатур).
+
+## Проверка после финального дожима
+1. `Compile\\build.bat` — успешно.
+2. `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf Compile\\_probe_ssl root version` — `ok`.
+
+## Что осталось (и почему это уже не «простой перенос»)
+1. Полное удаление `System.Classes.hpp` из `APIcfBase` потребует финального вывода `String/TStream` из публичной поверхности `v8file/v8catalog` в отдельный `src`-facade.
+2. Полное удаление `System.hpp` из `MetaObject` потребует перевода всей ветки `MetaObject/MetaDataManager` на STL-строки (`std::u16string/std::string`) с адаптерами на границе UI.

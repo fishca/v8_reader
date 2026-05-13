@@ -6,7 +6,7 @@
 #include "vector"
 
 #include "../core/src/MessageRegistration.h"
-#include "../core/src/APIcfBase.h"
+#include "APIcfBase_vcl_adapter.h"
 #ifndef getcfname
 //#include "ICU.h"
 #endif

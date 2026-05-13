@@ -14,13 +14,6 @@
 #include <typeindex>
 #include <chrono>
 
-// Для совместимости с C++ Builder VCL
-#ifdef __BORLANDC__
-#include <System.Classes.hpp>
-#include <System.SysUtils.hpp>
-#include <Vcl.Graphics.hpp>
-#endif
-
 // Forward declarations
 
 class MetaObject;
@@ -573,55 +566,6 @@ public:
      * @return true, если десериализация успешна
      */
     virtual bool fromJSON(const std::string& json);
-
-    // ========== Работа с UI (C++ Builder VCL) ==========
-
-#ifdef __BORLANDC__
-    /**
-     * @brief Заполнить TreeView узлами свойства
-     * @param parent Родительский узел TreeView
-     * @param treeView Указатель на TreeView
-     */
-    virtual void populateTreeView(TTreeNode* parent, TTreeView* treeView) const;
-
-    /**
-     * @brief Получить свойства для отображения в PropertyGrid
-     * @return StringList с парами "ключ-значение"
-     */
-    virtual TStringList* getDisplayProperties() const;
-
-    /**
-     * @brief Получить иконку для TreeView
-     * @return Индекс иконки в ImageList
-     */
-    virtual int getTreeViewIconIndex() const;
-
-    /**
-     * @brief Получить цвет текста для TreeView
-     * @return Цвет текста
-     */
-    virtual TColor getTreeViewTextColor() const;
-
-    /**
-     * @brief Создать компонент для редактирования свойства
-     * @param parent Родительский компонент
-     * @return Указатель на созданный компонент
-     */
-	virtual TWinControl* createEditor(TWinControl* parent) const;
-
-    /**
-     * @brief Загрузить значение из компонента редактора
-     * @param editor Компонент редактора
-     * @return true, если значение успешно загружено
-     */
-    virtual bool loadFromEditor(TWinControl* editor);
-
-    /**
-     * @brief Сохранить значение в компонент редактора
-     * @param editor Компонент редактора
-     */
-    virtual void saveToEditor(TWinControl* editor) const;
-#endif
 
     // ========== Сравнение свойств ==========
 

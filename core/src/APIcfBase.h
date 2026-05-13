@@ -10,6 +10,7 @@
 
 #include <System.Classes.hpp>
 #include <cstdint>
+#include <filesystem>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -40,6 +41,11 @@
 typedef System::DynamicArray<System::Byte> ByteArr;
 using ByteVector = std::vector<std::uint8_t>;
 using Utf16String = std::u16string;
+
+namespace v8reader::core::io
+{
+	class IByteStream;
+}
 
 class V8RecursiveMutex
 {
@@ -192,6 +198,10 @@ class v8file
 	int Write(TStream* Stream, int Start, int Length);
     // перезапись целиком
 	int Write(TStream* Stream);
+    // дозапись/перезапись частично
+	int Write(v8reader::core::io::IByteStream& Stream, int Start, int Length);
+    // перезапись целиком
+	int Write(v8reader::core::io::IByteStream& Stream);
 
 	String GetFileName();
 	Utf16String GetFileName16();
@@ -211,6 +221,8 @@ class v8file
 
     // перезапись целиком и закрытие файла (для экономии памяти не используется data файла)
 	int WriteAndClose(TStream* Stream, int Length = -1);
+    // перезапись целиком и закрытие файла через core-stream API
+	int WriteAndClose(v8reader::core::io::IByteStream& Stream, int Length = -1);
 
 	void GetTimeCreate(FILETIME* ft);
 	void GetTimeModify(FILETIME* ft);
@@ -218,7 +230,9 @@ class v8file
 	void SetTimeModify(FILETIME* ft);
 
 	void SaveToFile(const String& FileName);
+	void SaveToFile(const std::filesystem::path& filePath);
 	void SaveToStream(TStream* stream);
+	void SaveToByteStream(v8reader::core::io::IByteStream& stream);
 	//TStream* get_data();
 
 	void Flush();
@@ -284,6 +298,8 @@ class v8catalog
 	v8catalog(v8file* f);   // создать каталог из файла
 	v8catalog(String name); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
 	v8catalog(String name, bool _zipped); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
+	v8catalog(const std::filesystem::path& path); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
+	v8catalog(const std::filesystem::path& path, bool _zipped); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
 	v8catalog(TStream* stream, bool _zipped, bool leave_stream = false); // создать каталог из потока
 
 	~v8catalog();
@@ -301,10 +317,12 @@ class v8catalog
 	//void Defrag(bool Recursively);
 	v8file* GetSelfFile();
 	void SaveToDir(String DirName);
+	void SaveToDir(const std::filesystem::path& dirPath);
 	bool isOpen();
 	void Flush();
 	void HalfClose();
 	void HalfOpen(const String& name);
+	void HalfOpen(const std::filesystem::path& path);
 	//void set_leave_data(bool ld);
     void ClearIs8316();
 };

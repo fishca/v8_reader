@@ -13,12 +13,7 @@
 #include <map>
 #include <optional>
 #include <variant>
-
-// Для совместимости с C++ Builder VCL
-#ifdef __BORLANDC__
-#include <System.Classes.hpp>
-#include <System.SysUtils.hpp>
-#endif
+#include <System.hpp>
 
 // Forward declarations
 class Visitor;
@@ -139,35 +134,6 @@ public:
 	 * @return Уникальный указатель на копию
 	 */
 	virtual std::unique_ptr<MetaObject> cloneWithName(const std::string& newName) const;
-	// ========== Работа с UI (C++ Builder VCL) ==========
-
-#ifdef __BORLANDC__
-	/**
-	 * @brief Заполнить TreeView узлами объекта
-	 * @param parent Родительский узел TreeView
-	 * @param treeView Указатель на TreeView
-	 */
-	virtual void populateTreeView(TTreeNode* parent, TTreeView* treeView) const;
-
-	/**
-	 * @brief Получить свойства для отображения в PropertyGrid
-	 * @return Список пар "ключ-значение"
-	 */
-	virtual TStringList* getPropertiesForDisplay() const;
-
-	/**
-	 * @brief Получить иконку для TreeView
-	 * @return Индекс иконки в ImageList
-	 */
-	virtual int getTreeViewIconIndex() const;
-
-	/**
-	 * @brief Получить цвет текста для TreeView
-	 * @return Цвет текста
-	 */
-	virtual TColor getTreeViewTextColor() const;
-#endif
-
 	// ========== Сравнение объектов ==========
 
 	/**

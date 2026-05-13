@@ -3,9 +3,11 @@
 #ifndef Parse_treeH
 #define Parse_treeH
 
-#include <vcl.h>
+#include "../APIcfBase.h"
 #pragma hdrstop
 #include <memory>
+#include <string>
+#include <string_view>
 
 #include "NodeTypes.h"
 #include "../MessageRegistration.h"
@@ -46,6 +48,7 @@ public:
 };
 
 typedef tree* treeptr;
+class v8file;
 
 typedef std::unique_ptr<tree> tree_unique_ptr;
 typedef std::shared_ptr<tree> tree_shared_ptr;
@@ -59,6 +62,13 @@ bool test_parse_1Ctext(TStream* str, const String& path);
 String outtext(tree* t);
 tree* find_node_by_guid(tree* root, const String& target_guid);
 tree* find_metadata_node_by_guid(tree* root, const String& target_guid);
+tree* get_treeFromV8file(v8file* f);
+
+// Transitional core-friendly wrappers (UTF-16 std strings on public boundary).
+tree* parse_1Ctext_u16(std::u16string_view text, std::u16string_view path);
+std::u16string outtext_u16(tree* t);
+tree* find_node_by_guid_u16(tree* root, std::u16string_view target_guid);
+tree* find_metadata_node_by_guid_u16(tree* root, std::u16string_view target_guid);
 
 #endif
 

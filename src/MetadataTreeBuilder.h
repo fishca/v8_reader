@@ -18,7 +18,7 @@
 #include "Enums.h"
 #include "ExternalDataSources.h"
 #include "Subsystem.h"
-#include "../core/src/APIcfBase.h"
+#include "APIcfBase_vcl_adapter.h"
 
 //---------------------------------------------------------------------------
 // Индексы иконок дерева метаданных

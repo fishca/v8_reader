@@ -17,7 +17,7 @@
 
 #include <System.SysUtils.hpp>
 
-#include "../core/src/APIcfBase.h"
+#include "APIcfBase_vcl_adapter.h"
 #include "../core/src/Base64.h"
 #include <Vcl.Imaging.jpeg.hpp>
 #include <Vcl.Imaging.GIFImg.hpp>

@@ -8,6 +8,8 @@
 #pragma comment (lib, "zlibstatic.lib")
 
 #include <memory>
+#include <algorithm>
+#include <cwctype>
 
 #define CHUNK 65536
 
@@ -112,6 +114,15 @@ static std::filesystem::path StringToPath(const String& value)
 #endif
 }
 
+static String PathToString(const std::filesystem::path& path)
+{
+#ifndef _DELPHI_STRING_UNICODE
+	return String(path.string().c_str());
+#else
+	return String(path.c_str());
+#endif
+}
+
 static SeekOrigin ToSeekOrigin(TSeekOrigin origin)
 {
 	switch(origin)
@@ -147,6 +158,8 @@ class StdFileTStream final : public TStream
   public:
 	StdFileTStream(const String& fileName, FileOpenMode mode)
 		: stream_(StringToPath(fileName), mode) {}
+	StdFileTStream(const std::filesystem::path& filePath, FileOpenMode mode)
+		: stream_(filePath, mode) {}
 
 	virtual int __fastcall Read(void* Buffer, int Count) override
 	{
@@ -176,9 +189,8 @@ class StdFileTStream final : public TStream
 	StdFileStream stream_;
 };
 
-static void SetFileTimesByPath(const String& fileName, const FILETIME* createTime, const FILETIME* accessTime, const FILETIME* writeTime)
+static void SetFileTimesByPath(const std::filesystem::path& path, const FILETIME* createTime, const FILETIME* accessTime, const FILETIME* writeTime)
 {
-	const std::filesystem::path path = StringToPath(fileName);
 	HANDLE file = CreateFileW(path.c_str(),
 		FILE_WRITE_ATTRIBUTES,
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -191,6 +203,11 @@ static void SetFileTimesByPath(const String& fileName, const FILETIME* createTim
 
 	SetFileTime(file, createTime, accessTime, writeTime);
 	CloseHandle(file);
+}
+
+static void SetFileTimesByPath(const String& fileName, const FILETIME* createTime, const FILETIME* accessTime, const FILETIME* writeTime)
+{
+	SetFileTimesByPath(StringToPath(fileName), createTime, accessTime, writeTime);
 }
 
 } // namespace
@@ -526,32 +543,53 @@ void v8file::SetTimeModify(FILETIME* ft)
 //===========================================================================
 void v8file::SaveToFile(const String& FileName)
 {
+	SaveToFile(StringToPath(FileName));
+}
+
+//===========================================================================
+void v8file::SaveToFile(const std::filesystem::path& filePath)
+{
 	FILETIME create, modify;
 
-	if(!is_opened)
-		if(!Open())
-			return;
-
-	StdFileTStream* fs = new StdFileTStream(FileName, FileOpenMode::CreateTruncate);
-	{
-		V8ScopedLock guard(Lock);
-		fs->CopyFrom(data, 0);
-	}
+	StdFileStream fs(filePath, FileOpenMode::CreateTruncate);
+	SaveToByteStream(fs);
 	GetTimeCreate(&create);
 	GetTimeModify(&modify);
-	SetFileTimesByPath(FileName, &create, &modify, &modify);
-	delete fs;
+	SetFileTimesByPath(filePath, &create, &modify, &modify);
 }
 
 //===========================================================================
 void v8file::SaveToStream(TStream* stream)
+{
+	if(!stream)
+		return;
+
+	TStreamByteStreamAdapter streamAdapter(stream);
+	SaveToByteStream(streamAdapter);
+}
+
+//===========================================================================
+void v8file::SaveToByteStream(IByteStream& stream)
 {
 	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
 			return;
 
-	stream->CopyFrom(data, 0);
+	const __int64 sourcePosition = data->Position;
+	data->Seek(0, soFromBeginning);
+
+	ByteVector buffer(CHUNK);
+	while(true)
+	{
+		const int bytesRead = data->Read(buffer.data(), static_cast<int>(buffer.size()));
+		if(bytesRead <= 0)
+			break;
+
+		stream.Write(buffer.data(), static_cast<std::size_t>(bytesRead));
+	}
+
+	data->Seek(sourcePosition, soFromBeginning);
 }
 
 //===========================================================================
@@ -678,7 +716,28 @@ int v8file::Write(const void* Buffer, int Length)
 // дозапись/перезапись частично
 int v8file::Write(TStream* Stream, int Start, int Length)
 {
-//	if(readonly) return 0;
+	if(!Stream)
+		return 0;
+
+	TStreamByteStreamAdapter streamAdapter(Stream);
+	return Write(streamAdapter, Start, Length);
+}
+
+//===========================================================================
+// перезапись целиком
+int v8file::Write(TStream* Stream)
+{
+	if(!Stream)
+		return 0;
+
+	TStreamByteStreamAdapter streamAdapter(Stream);
+	return Write(streamAdapter);
+}
+
+//===========================================================================
+// дозапись/перезапись частично
+int v8file::Write(IByteStream& Stream, int Start, int Length)
+{
 	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
@@ -688,14 +747,37 @@ int v8file::Write(TStream* Stream, int Start, int Length)
 	is_headermodified = true;
 	is_datamodified = true;
 	data->Seek(Start, soFromBeginning);
-	return data->CopyFrom(Stream, Length);
+
+	if(Length == 0)
+		return 0;
+
+	if(Length < 0)
+	{
+		const std::uint64_t sourcePos = Stream.Position();
+		const std::uint64_t sourceSize = Stream.Size();
+		Length = static_cast<int>(sourceSize > sourcePos ? sourceSize - sourcePos : 0);
+	}
+
+	int totalWritten = 0;
+	ByteVector buffer(CHUNK);
+	while(totalWritten < Length)
+	{
+		const int toRead = min(Length - totalWritten, static_cast<int>(buffer.size()));
+		const std::size_t bytesRead = Stream.Read(buffer.data(), static_cast<std::size_t>(toRead));
+		if(bytesRead == 0)
+			break;
+
+		data->Write(buffer.data(), static_cast<int>(bytesRead));
+		totalWritten += static_cast<int>(bytesRead);
+	}
+
+	return totalWritten;
 }
 
 //===========================================================================
 // перезапись целиком
-int v8file::Write(TStream* Stream)
+int v8file::Write(IByteStream& Stream)
 {
-//	if(readonly) return 0;
 	V8ScopedLock guard(Lock);
 	if(!is_opened)
 		if(!Open())
@@ -704,10 +786,30 @@ int v8file::Write(TStream* Stream)
 	setCurrentTime(&time_modify);
 	is_headermodified = true;
 	is_datamodified = true;
-	if(data->Size > Stream->Size)
-		data->Size = Stream->Size;
+
+	const std::uint64_t sourceSize = Stream.Size();
+	const std::uint64_t sourcePosition = Stream.Position();
+	const std::uint64_t remaining = sourceSize > sourcePosition ? sourceSize - sourcePosition : 0;
+
+	if(data->Size > static_cast<__int64>(sourceSize))
+		data->Size = static_cast<__int64>(sourceSize);
 	data->Seek(0, soFromBeginning);
-	return data->CopyFrom(Stream, 0);
+
+	int totalWritten = 0;
+	ByteVector buffer(CHUNK);
+	while(static_cast<std::uint64_t>(totalWritten) < remaining)
+	{
+		const int toRead = min(static_cast<int>(remaining - static_cast<std::uint64_t>(totalWritten)),
+							   static_cast<int>(buffer.size()));
+		const std::size_t bytesRead = Stream.Read(buffer.data(), static_cast<std::size_t>(toRead));
+		if(bytesRead == 0)
+			break;
+
+		data->Write(buffer.data(), static_cast<int>(bytesRead));
+		totalWritten += static_cast<int>(bytesRead);
+	}
+
+	return totalWritten;
 }
 
 //===========================================================================
@@ -1064,6 +1166,36 @@ int v8file::WriteAndClose(TStream* Stream, int Length)
 }
 
 //===========================================================================
+int v8file::WriteAndClose(IByteStream& Stream, int Length)
+{
+	std::unique_ptr<TMemoryStream> temp(new TMemoryStream());
+
+	int bytesToCopy = Length;
+	if(bytesToCopy < 0)
+	{
+		const std::uint64_t sourcePos = Stream.Position();
+		const std::uint64_t sourceSize = Stream.Size();
+		bytesToCopy = static_cast<int>(sourceSize > sourcePos ? sourceSize - sourcePos : 0);
+	}
+
+	int totalCopied = 0;
+	ByteVector buffer(CHUNK);
+	while(totalCopied < bytesToCopy)
+	{
+		const int toRead = min(bytesToCopy - totalCopied, static_cast<int>(buffer.size()));
+		const std::size_t bytesRead = Stream.Read(buffer.data(), static_cast<std::size_t>(toRead));
+		if(bytesRead == 0)
+			break;
+
+		temp->WriteBuffer(buffer.data(), static_cast<int>(bytesRead));
+		totalCopied += static_cast<int>(bytesRead);
+	}
+
+	temp->Seek(0, soFromBeginning);
+	return WriteAndClose(temp.get(), totalCopied);
+}
+
+//===========================================================================
 v8file::~v8file()
 {
 	Lock->Acquire();
@@ -1244,41 +1376,50 @@ bool v8catalog::IsCatalog()
 
 //===========================================================================
 // создать каталог из физического файла .cf
-v8catalog::v8catalog(String name)
+v8catalog::v8catalog(String name) : v8catalog(StringToPath(name))
+{
+}
+
+//===========================================================================
+// создать каталог из физического файла .cf
+v8catalog::v8catalog(const std::filesystem::path& path)
 {
 	Lock = new V8RecursiveMutex();
 	iscatalogdefined = false;
 
-	String ext = ExtractFileExt(name).LowerCase();
-	if(ext == str_cfu)
+	std::wstring ext = path.extension().wstring();
+	std::transform(ext.begin(), ext.end(), ext.begin(), towlower);
+	const bool isCfuExt = ext == L".cfu";
+
+	if(isCfuExt)
 	{
 		is_cfu = true;
 		zipped = false;
 		data = new TMemoryStream();
 
-		if(!FileExists(name))
+		if(!std::filesystem::exists(path))
 		{
 			data->WriteBuffer(_empty_catalog_template, 16);
-			cfu = new StdFileTStream(name, FileOpenMode::CreateTruncate);
+			cfu = new StdFileTStream(path, FileOpenMode::CreateTruncate);
 		}
 		else
 		{
-			cfu = new StdFileTStream(name, FileOpenMode::ReadWrite);
+			cfu = new StdFileTStream(path, FileOpenMode::ReadWrite);
 			ZInflateStream(cfu, data);
 		}
 	}
 	else
 	{
-		zipped = ext == str_cf || ext == str_epf || ext == str_erf || ext == str_cfe;
+		zipped = ext == L".cf" || ext == L".epf" || ext == L".erf" || ext == L".cfe";
 		is_cfu = false;
 
-		if(!FileExists(name))
+		if(!std::filesystem::exists(path))
 		{
-			data = new StdFileTStream(name, FileOpenMode::CreateTruncate);
+			data = new StdFileTStream(path, FileOpenMode::CreateTruncate);
 			data->WriteBuffer(_empty_catalog_template, 16);
 			delete data;
 		}
-		data = new StdFileTStream(name, FileOpenMode::ReadWrite);
+		data = new StdFileTStream(path, FileOpenMode::ReadWrite);
 	}
 
 	file = NULL;
@@ -1304,21 +1445,27 @@ v8catalog::v8catalog(String name)
 
 //===========================================================================
 // создать каталог из физического файла
-v8catalog::v8catalog(String name, bool _zipped)
+v8catalog::v8catalog(String name, bool _zipped) : v8catalog(StringToPath(name), _zipped)
+{
+}
+
+//===========================================================================
+// создать каталог из физического файла
+v8catalog::v8catalog(const std::filesystem::path& path, bool _zipped)
 {
 	Lock = new V8RecursiveMutex();
 	iscatalogdefined = false;
 	is_cfu = false;
 	zipped = _zipped;
 
-	if(!FileExists(name))
+	if(!std::filesystem::exists(path))
 	{
-		data = new StdFileTStream(name, FileOpenMode::CreateTruncate);
+		data = new StdFileTStream(path, FileOpenMode::CreateTruncate);
 		data->WriteBuffer(_empty_catalog_template, 16);
 		delete data;
 	}
 
-	data = new StdFileTStream(name, FileOpenMode::ReadWrite);
+	data = new StdFileTStream(path, FileOpenMode::ReadWrite);
 
 	file = NULL;
 
@@ -2056,18 +2203,24 @@ v8catalog* v8catalog::CreateCatalog(const String& FileName, bool _selfzipped)
 //===========================================================================
 void v8catalog::SaveToDir(String DirName)
 {
-	CreateDir(DirName);
-	if(DirName.SubString(DirName.Length(), 1) != str_backslash)
-    	DirName += str_backslash;
+	SaveToDir(StringToPath(DirName));
+}
+
+//===========================================================================
+void v8catalog::SaveToDir(const std::filesystem::path& dirPath)
+{
+	std::error_code ec;
+	std::filesystem::create_directories(dirPath, ec);
 
 	V8ScopedLock guard(Lock);
 	v8file* f = first;
 	while(f)
 	{
+		const std::filesystem::path targetPath = dirPath / StringToPath(f->name);
 		if(f->IsCatalog())
-        	f->GetCatalog()->SaveToDir(DirName + f->name);
+        	f->GetCatalog()->SaveToDir(targetPath);
 		else
-        	f->SaveToFile(DirName + f->name);
+        	f->SaveToFile(targetPath);
 
 		f->Close();
 		f = f->next;
@@ -2181,12 +2334,17 @@ void v8catalog::HalfClose()
 //===========================================================================
 void v8catalog::HalfOpen(const String& name)
 {
+	HalfOpen(StringToPath(name));
+}
+
+void v8catalog::HalfOpen(const std::filesystem::path& path)
+{
 	V8ScopedLock guard(Lock);
 
 	if(is_cfu)
-    	cfu = new StdFileTStream(name, FileOpenMode::ReadWrite);
+    	cfu = new StdFileTStream(path, FileOpenMode::ReadWrite);
 	else
-    	data = new StdFileTStream(name, FileOpenMode::ReadWrite);
+    	data = new StdFileTStream(path, FileOpenMode::ReadWrite);
 }
 
 void v8catalog::ClearIs8316()

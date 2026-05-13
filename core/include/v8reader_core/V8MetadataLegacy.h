@@ -32,7 +32,6 @@
 #include "NodeTypes.h"
 #include "Parse_tree.h"
 #include "ModuleTextStorage.h"
-#include "MetaDataManager.h"
 #include "guids.h"
 
 #include "Bots.h"

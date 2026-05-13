@@ -8,7 +8,7 @@
 #include <map>
 #include <set>
 
-#include "../core/src/APIcfBase.h"
+#include "APIcfBase_vcl_adapter.h"
 #include "Class_1CD.h"
 //---------------------------------------------------------------------------
 

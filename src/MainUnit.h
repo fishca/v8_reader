@@ -47,7 +47,7 @@
 #include "guids.h"
 #include "../core/src/MessageRegistration.h"
 #include "MetaDataManager.h"
-#include "Parse_tree.h"
+#include "Parse_tree_vcl_adapter.h"
 #include "SmartPointers.h"
 #include "SynEdit.hpp"
 #include "SynMemo.hpp"

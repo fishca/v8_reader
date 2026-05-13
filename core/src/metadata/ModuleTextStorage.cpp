@@ -2,88 +2,90 @@
 
 #pragma hdrstop
 
-#include <System.IOUtils.hpp>
-
+#include <filesystem>
 #include <memory>
 #include <vector>
 
 #include "ModuleTextStorage.h"
-#include "Class_1CD.h"
+#include "ModuleTextEncodingUtils.h"
 
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
 namespace
 {
+	namespace fs = std::filesystem;
+
+	fs::path ToFsPath(const String& path)
+	{
+		return fs::path(path.c_str());
+	}
+
+	String FromFsPath(const fs::path& path)
+	{
+		return String(path.wstring().c_str());
+	}
+
+	String CombinePath(const String& left, const String& right)
+	{
+		return FromFsPath(ToFsPath(left) / ToFsPath(right));
+	}
+
+	bool DirectoryExistsFs(const String& path)
+	{
+		std::error_code ec;
+		return fs::is_directory(ToFsPath(path), ec);
+	}
+
+	bool FileExistsFs(const String& path)
+	{
+		std::error_code ec;
+		return fs::is_regular_file(ToFsPath(path), ec);
+	}
+
+	std::vector<String> GetFilesInDirectory(const String& directoryPath)
+	{
+		std::vector<String> files;
+		std::error_code ec;
+		for (const auto& entry : fs::directory_iterator(ToFsPath(directoryPath), ec))
+		{
+			if (ec)
+				break;
+
+			std::error_code fileEc;
+			if (fs::is_regular_file(entry.path(), fileEc) && !fileEc)
+				files.push_back(FromFsPath(entry.path()));
+		}
+		return files;
+	}
+
+	bool DeleteFileFs(const String& path)
+	{
+		std::error_code ec;
+		return fs::remove(ToFsPath(path), ec);
+	}
+
+	bool MoveFileFs(const String& fromPath, const String& toPath)
+	{
+		std::error_code ec;
+		fs::rename(ToFsPath(fromPath), ToFsPath(toPath), ec);
+		return !ec;
+	}
+
 	bool LooksLikeStrictModuleBody(const String& value);
-
-	bool LooksLikeUtf16Le(const TBytes& bytes, int sourceSize)
-	{
-		int limit = sourceSize < 200 ? sourceSize : 200;
-		int checked = 0;
-		int zeroOdd = 0;
-
-		for (int i = 1; i < limit; i += 2)
-		{
-			++checked;
-			if (bytes[i] == 0)
-				++zeroOdd;
-		}
-
-		return checked > 0 && zeroOdd * 2 >= checked;
-	}
-
-	String DecodeModuleText(const TBytes& sourceBytes, int sourceSize, ModuleTextEncodingKind& encoding)
-	{
-		encoding = ModuleTextEncodingKind::Unknown;
-
-		if (sourceSize <= 0 || sourceBytes.empty())
-			return L"";
-
-		TBytes bytes = sourceBytes;
-		sourceSize = sourceSize < bytes.Length ? sourceSize : bytes.Length;
-
-		TEncoding* enc = nullptr;
-		int off = TEncoding::GetBufferEncoding(bytes, enc);
-		if (off > 0)
-		{
-			if (enc == TEncoding::UTF8)
-				encoding = ModuleTextEncodingKind::Utf8Bom;
-			else if (enc == TEncoding::Unicode)
-				encoding = ModuleTextEncodingKind::Utf16LeBom;
-
-			TBytes unicodeBytes = TEncoding::Convert(enc, TEncoding::Unicode, bytes, off, sourceSize - off);
-			if (!unicodeBytes.empty())
-				return String((wchar_t*)&unicodeBytes[0], unicodeBytes.Length / 2);
-		}
-
-		if (LooksLikeUtf16Le(bytes, sourceSize))
-		{
-			encoding = ModuleTextEncodingKind::Utf16Le;
-			return String((wchar_t*)&bytes[0], sourceSize / 2);
-		}
-
-		try
-		{
-			encoding = ModuleTextEncodingKind::Utf8;
-			return TEncoding::UTF8->GetString(bytes, 0, sourceSize);
-		}
-		catch (...)
-		{
-			encoding = ModuleTextEncodingKind::Ansi;
-			return String((char*)&bytes[0], sourceSize);
-		}
-	}
 
 	void AddUniquePath(std::vector<String>& values, const String& value)
 	{
 		if (value.IsEmpty())
 			return;
 
-		String normalized = ExcludeTrailingPathDelimiter(value).UpperCase();
+		const String normalized = FromFsPath(ToFsPath(value).lexically_normal()).UpperCase();
 		for (const auto& existing : values)
-			if (ExcludeTrailingPathDelimiter(existing).UpperCase() == normalized)
+		{
+			const String existingNormalized = FromFsPath(ToFsPath(existing).lexically_normal()).UpperCase();
+			if (existingNormalized == normalized)
 				return;
+		}
 
 		values.push_back(value);
 	}
@@ -91,8 +93,8 @@ namespace
 	std::vector<String> GetSourceCfRoots()
 	{
 		std::vector<String> roots;
-		AddUniquePath(roots, TPath::Combine(GetCurrentDir(), L"SourceCF"));
-		AddUniquePath(roots, TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF"));
+		AddUniquePath(roots, CombinePath(GetCurrentDir(), L"SourceCF"));
+		AddUniquePath(roots, CombinePath(ExtractFilePath(ParamStr(0)), L"SourceCF"));
 		return roots;
 	}
 
@@ -164,7 +166,7 @@ namespace
 
 	String ReadDiskFileRawText(const String& filePath, ModuleTextEncodingKind& encoding)
 	{
-		if (!FileExists(filePath))
+		if (!FileExistsFs(filePath))
 		{
 			encoding = ModuleTextEncodingKind::Unknown;
 			return L"";
@@ -174,7 +176,7 @@ namespace
 		TBytes bytes;
 		std::unique_ptr<TBytesStream> sb(new TBytesStream(bytes));
 		sb->CopyFrom(fs.get(), 0);
-		return DecodeModuleText(sb->Bytes, sb->Size, encoding);
+		return ModuleTextEncodingUtils::DecodeModuleText(sb->Bytes, sb->Size, encoding);
 	}
 
 	bool TryReadDiskModuleFile(const String& filePath,
@@ -185,7 +187,7 @@ namespace
 	{
 		ModuleTextEncodingKind encoding;
 		String text = ReadDiskFileRawText(filePath, encoding);
-		if (!FileExists(filePath))
+		if (!FileExistsFs(filePath))
 			return false;
 
 		if (!text.IsEmpty())
@@ -228,14 +230,14 @@ namespace
 
 		for (const auto& sourceRoot : GetSourceCfRoots())
 		{
-			if (!TDirectory::Exists(sourceRoot))
+			if (!DirectoryExistsFs(sourceRoot))
 				continue;
 
 			for (const auto& containerName : GetModuleContainerCandidates(normalizedGuid, kind))
 			{
 				ModuleTextDocument candidate;
-				const String containerPath = TPath::Combine(sourceRoot, containerName);
-				const String textPath = TPath::Combine(containerPath, L"text");
+				const String containerPath = CombinePath(sourceRoot, containerName);
+				const String textPath = CombinePath(containerPath, L"text");
 				if (TryReadDiskModuleFile(textPath, kind, metadataGuid, containerName, candidate))
 				{
 					if (kind != ModuleTextKind::ManagerModule || !candidate.text.IsEmpty())
@@ -251,7 +253,7 @@ namespace
 					}
 				}
 
-				const String modulePath = TPath::Combine(containerPath, L"module");
+				const String modulePath = CombinePath(containerPath, L"module");
 				if (TryReadDiskModuleFile(modulePath, kind, metadataGuid, containerName, candidate))
 				{
 					if (kind != ModuleTextKind::ManagerModule || !candidate.text.IsEmpty())
@@ -267,7 +269,7 @@ namespace
 					}
 				}
 
-				const String directPath = TPath::Combine(sourceRoot, containerName);
+				const String directPath = CombinePath(sourceRoot, containerName);
 				if (TryReadDiskModuleFile(directPath, kind, metadataGuid, containerName, candidate))
 				{
 					if (kind != ModuleTextKind::ManagerModule || !candidate.text.IsEmpty())
@@ -303,13 +305,12 @@ namespace
 
 		for (const auto& sourceRoot : GetSourceCfRoots())
 		{
-			if (!TDirectory::Exists(sourceRoot))
+			if (!DirectoryExistsFs(sourceRoot))
 				continue;
 
-			TStringDynArray files = TDirectory::GetFiles(sourceRoot);
-			for (int i = 0; i < files.Length; ++i)
+			const std::vector<String> files = GetFilesInDirectory(sourceRoot);
+			for (const auto& metadataFile : files)
 			{
-				const String metadataFile = files[i];
 				const String objectGuid = ExtractFileName(metadataFile);
 				if (!ModuleTextStorage::IsGuidLike(objectGuid))
 					continue;
@@ -389,7 +390,7 @@ namespace
 		{
 			file->SaveToStream(sb);
 			ModuleTextEncodingKind encoding;
-			String text = DecodeModuleText(sb->Bytes, sb->Size, encoding);
+			String text = ModuleTextEncodingUtils::DecodeModuleText(sb->Bytes, sb->Size, encoding);
 			delete sb;
 			return text;
 		}
@@ -537,48 +538,6 @@ namespace
 		}
 	}
 
-	void WriteTextWithEncoding(TStream* stream, const String& text, ModuleTextEncodingKind encoding)
-	{
-		TBytes bytes;
-
-		switch (encoding)
-		{
-			case ModuleTextEncodingKind::Utf16LeBom:
-			{
-				const unsigned char bom[] = {0xFF, 0xFE};
-				stream->WriteBuffer((void*)bom, 2);
-				bytes = TEncoding::Unicode->GetBytes(text);
-				break;
-			}
-			case ModuleTextEncodingKind::Utf16Le:
-			{
-				bytes = TEncoding::Unicode->GetBytes(text);
-				break;
-			}
-			case ModuleTextEncodingKind::Utf8Bom:
-			{
-				const unsigned char bom[] = {0xEF, 0xBB, 0xBF};
-				stream->WriteBuffer((void*)bom, 3);
-				bytes = TEncoding::UTF8->GetBytes(text);
-				break;
-			}
-			case ModuleTextEncodingKind::Ansi:
-			{
-				bytes = TEncoding::Default->GetBytes(text);
-				break;
-			}
-			case ModuleTextEncodingKind::Utf8:
-			case ModuleTextEncodingKind::Unknown:
-			default:
-			{
-				bytes = TEncoding::UTF8->GetBytes(text);
-				break;
-			}
-		}
-
-		if (!bytes.empty())
-			stream->WriteBuffer(&bytes[0], bytes.Length);
-	}
 }
 
 namespace ModuleTextStorage
@@ -783,16 +742,16 @@ namespace ModuleTextStorage
 
 		for (const auto& sourceRoot : GetSourceCfRoots())
 		{
-			if (!TDirectory::Exists(sourceRoot))
+			if (!DirectoryExistsFs(sourceRoot))
 				continue;
 
-			const String containerPath = TPath::Combine(sourceRoot, moduleDataGuid);
-			const String textPath = TPath::Combine(containerPath, L"text");
-			const String modulePath = TPath::Combine(containerPath, L"module");
+			const String containerPath = CombinePath(sourceRoot, moduleDataGuid);
+			const String textPath = CombinePath(containerPath, L"text");
+			const String modulePath = CombinePath(containerPath, L"module");
 
 			auto loadExactTextFile = [&](const String& filePath) -> bool
 			{
-				if (!FileExists(filePath))
+				if (!FileExistsFs(filePath))
 					return false;
 
 				ModuleTextEncodingKind encoding = ModuleTextEncodingKind::Unknown;
@@ -867,23 +826,30 @@ namespace ModuleTextStorage
 
 		const String target = document.location.filePath;
 		const String dir = ExtractFileDir(target);
-		if (!TDirectory::Exists(dir))
+		if (!DirectoryExistsFs(dir))
 		{
 			errorText = L"РљР°С‚Р°Р»РѕРі РјРѕРґСѓР»СЏ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚: " + dir;
 			return false;
 		}
 
-		const String tmp = TPath::Combine(dir, ExtractFileName(target) + L".codex.tmp");
+		const String tmp = CombinePath(dir, ExtractFileName(target) + L".codex.tmp");
 		try
 		{
 			{
 				std::unique_ptr<TFileStream> out(new TFileStream(tmp, fmCreate));
-				WriteTextWithEncoding(out.get(), newText, document.location.encoding);
+				ModuleTextEncodingUtils::WriteTextWithEncoding(out.get(), newText, document.location.encoding);
 			}
 
-			if (FileExists(target))
-				TFile::Delete(target);
-			TFile::Move(tmp, target);
+			if (FileExistsFs(target) && !DeleteFileFs(target))
+			{
+				errorText = L"Не удалось удалить исходный файл модуля: " + target;
+				return false;
+			}
+			if (!MoveFileFs(tmp, target))
+			{
+				errorText = L"Не удалось переместить временный файл модуля: " + tmp;
+				return false;
+			}
 
 			document.text = newText;
 			document.dirty = false;
@@ -892,8 +858,8 @@ namespace ModuleTextStorage
 		}
 		catch (const Exception& e)
 		{
-			if (FileExists(tmp))
-				TFile::Delete(tmp);
+			if (FileExistsFs(tmp))
+				DeleteFileFs(tmp);
 			errorText = e.Message;
 			return false;
 		}

@@ -4,8 +4,6 @@
 #define MetaDataManagerH
 //---------------------------------------------------------------------------
 
-#include "VirtualTrees.hpp"
-
 #include <string>
 #include <memory>
 #include <vector>
@@ -63,7 +61,6 @@ public:
 	v8catalog* loadFromFile(const String& filename);
 	bool Initialize(v8catalog* cf);
     void fill_md(v8catalog *cf, tree* tr, String guid_md);
-	void populateTreeView(TVirtualStringTree* tvSringTree);
 	std::shared_ptr<MetaObject> getObject(const String& type, const String& name);
 	std::vector<std::shared_ptr<TSessionParameters>>& getSessionParameters();
 	std::vector<std::shared_ptr<TRoles>>& getRoles();

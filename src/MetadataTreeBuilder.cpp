@@ -2,7 +2,7 @@
 #pragma hdrstop
 
 #include "MetadataTreeBuilder.h"
-#include "Parse_tree.h"
+#include "Parse_tree_vcl_adapter.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 

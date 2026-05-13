@@ -4,7 +4,6 @@
 
 #include "MetadataObjectInformationRegister.h"
 #include "Common.h"
-#include "Class_1CD.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 

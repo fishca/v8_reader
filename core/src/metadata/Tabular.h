@@ -3,7 +3,6 @@
 #ifndef TabularH
 #define TabularH
 
-#include <vcl.h>
 #include <memory>
 #include <vector>
 

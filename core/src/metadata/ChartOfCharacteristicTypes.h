@@ -4,7 +4,6 @@
 #define ChartOfCharacteristicTypesH
 //---------------------------------------------------------------------------
 #include <vector>
-#include "Class_1CD.h"
 #include "../APIcfBase.h"
 #include "Parse_tree.h"
 #include "BaseMetadataObject.h"
