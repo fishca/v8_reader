@@ -23,30 +23,31 @@ static MetadataTreePaths GetTasksPaths()
 	return paths;
 }
 
-__fastcall TTasks::TTasks()
+TTasks::TTasks()
 	: MetadataObjectWithSections()
 {
 }
 
-__fastcall TTasks::TTasks(v8catalog *_parent, const String& _guid)
+TTasks::TTasks(v8catalog *_parent, const String& _guid)
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TTasks::TTasks(v8catalog *_parent, const String& _guid, const String& _name)
+TTasks::TTasks(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TTasks::~TTasks()
+TTasks::~TTasks()
 {
 }
 
-void __fastcall TTasks::initializeFromTree()
+void TTasks::initializeFromTree()
 {
 	MetadataObjectWithSections::initializeFromTreeWithPaths(GetTasksPaths());
 }
+

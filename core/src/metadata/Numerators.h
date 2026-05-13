@@ -26,10 +26,11 @@ public:
 	std::vector<String> tabulars;    // список табличных частей
 	std::vector<String> forms;       // список форм
 	/* TODO : Реализовать класс */
-	__fastcall TNumerators();
-	__fastcall TNumerators(v8catalog *_parent, const String& _guid);
-	__fastcall TNumerators(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TNumerators();
+	TNumerators();
+	TNumerators(v8catalog *_parent, const String& _guid);
+	TNumerators(v8catalog *_parent, const String& _guid, const String& _name);
+	~TNumerators();
 };
 
 #endif
+

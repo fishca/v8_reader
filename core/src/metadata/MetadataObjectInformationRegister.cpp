@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -30,22 +30,22 @@ namespace
     }
 }
 
-__fastcall MetadataObjectInformationRegister::MetadataObjectInformationRegister()
+MetadataObjectInformationRegister::MetadataObjectInformationRegister()
     : BaseMetadataObject()
 {
 }
 
-__fastcall MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid)
+MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid)
     : BaseMetadataObject(_parent, _guid)
 {
 }
 
-__fastcall MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid, const String& _name)
+MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid, const String& _name)
     : BaseMetadataObject(_parent, _guid, _name)
 {
 }
 
-__fastcall MetadataObjectInformationRegister::~MetadataObjectInformationRegister()
+MetadataObjectInformationRegister::~MetadataObjectInformationRegister()
 {
 }
 
@@ -53,7 +53,7 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
 {
     if (!root_data || !paths.getFormNameFunc) return;
 
-    // Реквизиты
+    // Р РµРєРІРёР·РёС‚С‹
     attributes.clear();
     tree* node_att = root_data.get();
     node_att = &(*node_att)[0][paths.attIdx][1];
@@ -71,7 +71,7 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         }
     }
 
-    // Измерения
+    // РР·РјРµСЂРµРЅРёСЏ
     dimensions.clear();
     tree* node_dim = root_data.get();
     node_dim = &(*node_dim)[0][paths.dimIdx][1];
@@ -89,7 +89,7 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         }
     }
 
-    // Ресурсы
+    // Р РµСЃСѓСЂСЃС‹
     resources.clear();
     tree* node_res = root_data.get();
     node_res = &(*node_res)[0][paths.resIdx][1];
@@ -107,7 +107,7 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         }
     }
 
-    // Формы
+    // Р¤РѕСЂРјС‹
     forms.clear();
     tree* node = root_data.get();
     node = &(*node)[0][paths.formsIdx][0];
@@ -124,7 +124,7 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         }
     }
 
-    // Команды
+    // РљРѕРјР°РЅРґС‹
     comands.clear();
     tree* node_att_c = root_data.get();
     node_att_c = &(*node_att_c)[0][paths.cmdIdx][1];
@@ -141,7 +141,7 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
     }
 
-    // Макеты
+    // РњР°РєРµС‚С‹
     moxels.clear();
     tree* node_mox = root_data.get();
     node_mox = &(*node_mox)[0][paths.moxIdx][0];
@@ -157,3 +157,4 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         }
     }
 }
+

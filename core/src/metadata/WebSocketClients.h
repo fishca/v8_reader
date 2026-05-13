@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef WebSocketClientsH
 #define WebSocketClientsH
@@ -12,13 +12,13 @@ private:
     String clientName;
 
 public:
-    __fastcall TWebSocketClients();
-    __fastcall TWebSocketClients(v8catalog* _parent, const String& _guid);
-    __fastcall TWebSocketClients(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TWebSocketClients();
+    TWebSocketClients();
+    TWebSocketClients(v8catalog* _parent, const String& _guid);
+    TWebSocketClients(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TWebSocketClients();
 
-    String __fastcall GetClientName();
-    void __fastcall SetClientName(String _name);
+    String GetClientName();
+    void SetClientName(String _name);
 
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
@@ -26,7 +26,7 @@ public:
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
     std::vector<std::unique_ptr<TRequisite>> attributes;
@@ -37,3 +37,4 @@ private:
 };
 
 #endif
+

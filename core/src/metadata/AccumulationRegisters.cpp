@@ -31,30 +31,31 @@ static InfoRegisterTreePaths GetAccumulationRegistersPaths()
 	return paths;
 }
 
-__fastcall TAccumulationRegisters::TAccumulationRegisters()
+TAccumulationRegisters::TAccumulationRegisters()
 	: MetadataObjectInformationRegister()
 {
 }
 
-__fastcall TAccumulationRegisters::TAccumulationRegisters(v8catalog *_parent, const String& _guid)
+TAccumulationRegisters::TAccumulationRegisters(v8catalog *_parent, const String& _guid)
 	: MetadataObjectInformationRegister(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TAccumulationRegisters::TAccumulationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
+TAccumulationRegisters::TAccumulationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectInformationRegister(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TAccumulationRegisters::~TAccumulationRegisters()
+TAccumulationRegisters::~TAccumulationRegisters()
 {
 }
 
-void __fastcall TAccumulationRegisters::initializeFromTree()
+void TAccumulationRegisters::initializeFromTree()
 {
 	MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetAccumulationRegistersPaths());
 }
+

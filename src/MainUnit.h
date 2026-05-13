@@ -20,6 +20,7 @@
 #include <Vcl.Menus.hpp>
 #include <Vcl.ExtCtrls.hpp>
 #include <Vcl.Graphics.hpp>
+#include <Vcl.Skia.hpp>
 #include "SynEdit.hpp"
 #include "SynEditHighlighter.hpp"
 #include "SynHighlighterCpp.hpp"
@@ -28,6 +29,7 @@
 #include "SynMemo.hpp"
 #include "SynHighlighter1C.h"
 #include "ModuleTextStorage.h"
+#include "VirtualTreeData.h"
 
 #include <memory>
 #include <unordered_map>
@@ -43,7 +45,7 @@
 
 
 #include "guids.h"
-#include "MessageRegistration.h"
+#include "../core/src/MessageRegistration.h"
 #include "MetaDataManager.h"
 #include "Parse_tree.h"
 #include "SmartPointers.h"
@@ -62,19 +64,6 @@ struct SubSys
 {
 	String              name;
 	std::vector<String> children;
-};
-
-struct VirtualTreeData
-{
-	String Name;
-	String text_module;
-	String moduleItemGuid;
-	TObject* MetadataObject = nullptr;
-	ModuleTextLocation moduleLocation;
-	bool moduleEditable = false;
-	bool moduleDirty = false;
-	int Age = 0;
-	int ImgIndex = 0;
 };
 
 struct ModuleEditorTabState
@@ -175,6 +164,10 @@ private:	// User declarations
 	TCheckBox *HighlightKeywordBoldCheckBox;
 	TCheckBox *HighlightCommentItalicCheckBox;
 	TCheckBox *UnpackCheckBox;
+	TImage *CommonPicturePreviewImage;
+	TSkSvg *CommonPicturePreviewSvg;
+	TScrollBox *CommonPicturePreviewScrollBox;
+	TLabel *CommonPicturePreviewInfoLabel;
 
 	TSynMemo *HighlightPreviewMemo;
 	TPopupMenu *ConfigurationPopupMenu;
@@ -200,45 +193,50 @@ private:	// User declarations
 	bool SwitchingModuleTab;
 	std::unordered_map<TTabSheet*, ModuleEditorTabState> ModuleTabs;
     std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
-	void __fastcall CreateHighlightSettingsTab();
-	void __fastcall ApplyHighlightSettings();
-	void __fastcall LoadHighlightSettings();
-	void __fastcall SaveHighlightSettings();
-	void __fastcall SetDefaultHighlightSettingsControls();
+	void CreateHighlightSettingsTab();
+	void ApplyHighlightSettings();
+	void LoadHighlightSettings();
+	void SaveHighlightSettings();
+	void SetDefaultHighlightSettingsControls();
 	void __fastcall HighlightSettingsChanged(TObject *Sender);
 	void __fastcall ResetHighlightSettingsClick(TObject *Sender);
-	void __fastcall ScheduleMetadataNodeText(PVirtualNode Node);
-	void __fastcall ShowMetadataNodeText(PVirtualNode Node);
-	void __fastcall ShowConfigurationModule(ModuleTextKind kind, const String& caption);
-	void __fastcall ShowConstantsModule(ModuleTextKind kind, const String& caption);
+	void ScheduleMetadataNodeText(PVirtualNode Node);
+	void ShowMetadataNodeText(PVirtualNode Node);
+	void EnsureCommonPicturePreviewControls();
+	void CenterCommonPicturePreviewContent();
+	void ClearCommonPicturePreview(const String& statusText);
+	bool ShowCommonPicturePreviewForNode(VirtualTreeData* data);
+	void __fastcall CommonPicturePreviewScrollBoxResize(TObject *Sender);
+	void ShowConfigurationModule(ModuleTextKind kind, const String& caption);
+	void ShowConstantsModule(ModuleTextKind kind, const String& caption);
 	void __fastcall ConfigurationPopupMenuPopup(TObject *Sender);
 	void __fastcall OpenConfigurationModuleMenuItemClick(TObject *Sender);
 	void __fastcall OpenConstantsModuleMenuItemClick(TObject *Sender);
 	void __fastcall VirtualStringTreeValue1CMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
-	bool __fastcall SaveCurrentModuleTextIfNeeded(bool forcePrompt);
-	bool __fastcall FlushCurrentModuleBeforeBuild();
-	void __fastcall SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text, ModuleTextKind kind);
-	String __fastcall BuildModuleTabKey(PVirtualNode node, BaseMetadataObject* metadataObject, const String& moduleItemGuid, ModuleTextKind kind) const;
-	TTabSheet* __fastcall FindModuleTabByKey(const String& key) const;
-	TTabSheet* __fastcall CreateModuleTab(const String& key, const String& title);
-	String __fastcall BuildModuleTabTitle(const String& objectName, ModuleTextKind kind, const String& fallbackTitle) const;
-	ModuleEditorTabState* __fastcall GetModuleTabStateByMemo(TObject* sender);
-	ModuleEditorTabState* __fastcall GetActiveModuleTabState();
-	void __fastcall ActivateModuleTab(TTabSheet* tab);
-	void __fastcall PopulateModuleTab(ModuleEditorTabState& state, const String& text);
-	bool __fastcall SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePrompt);
-	void __fastcall SyncCurrentModuleFromTab(const ModuleEditorTabState* state);
+	bool SaveCurrentModuleTextIfNeeded(bool forcePrompt);
+	bool FlushCurrentModuleBeforeBuild();
+	void SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text, ModuleTextKind kind);
+	String BuildModuleTabKey(PVirtualNode node, BaseMetadataObject* metadataObject, const String& moduleItemGuid, ModuleTextKind kind) const;
+	TTabSheet* FindModuleTabByKey(const String& key) const;
+	TTabSheet* CreateModuleTab(const String& key, const String& title);
+	String BuildModuleTabTitle(const String& objectName, ModuleTextKind kind, const String& fallbackTitle) const;
+	ModuleEditorTabState* GetModuleTabStateByMemo(TObject* sender);
+	ModuleEditorTabState* GetActiveModuleTabState();
+	void ActivateModuleTab(TTabSheet* tab);
+	void PopulateModuleTab(ModuleEditorTabState& state, const String& text);
+	bool SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePrompt);
+	void SyncCurrentModuleFromTab(const ModuleEditorTabState* state);
 	void __fastcall PagesEditChange(TObject *Sender);
-	bool __fastcall IsConstantsContextNode(PVirtualNode node) const;
+	bool IsConstantsContextNode(PVirtualNode node) const;
 public:		// User declarations
 	__fastcall TMainForm(TComponent* Owner);
-	void __fastcall ResetLoadProgress(int maxValue, const String& statusText = L"");
-	void __fastcall AdvanceLoadProgress(const String& statusText);
-	void __fastcall CompleteLoadProgress(const String& statusText);
-	void __fastcall TreeInit();
-	void __fastcall	FillVirtualTree();
-	void __fastcall FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
-	void __fastcall FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
+	void ResetLoadProgress(int maxValue, const String& statusText = L"");
+	void AdvanceLoadProgress(const String& statusText);
+	void CompleteLoadProgress(const String& statusText);
+	void TreeInit();
+	void FillVirtualTree();
+	void FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
+	void FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
 
 
 	String ConfigName;
@@ -310,15 +308,17 @@ private:
 	bool uiMessagesEnabled;
 	bool fileLoggingEnabled;
 public:
-	__fastcall Messager(TListView* lv, TStatusBar* sb);
-	void __fastcall setUiMessagesEnabled(bool enabled);
-	bool __fastcall getUiMessagesEnabled() const;
-	void __fastcall setFileLoggingEnabled(bool enabled);
-	bool __fastcall getFileLoggingEnabled() const;
-	void __fastcall setlogfile(String _logfile);
-	String __fastcall getlogfile() const;
-	virtual void __fastcall AddMessage(const String& message, const MessageState mstate, TStringList* param = NULL);
-	virtual void __fastcall Status(const String& message);
+	Messager(TListView* lv, TStatusBar* sb);
+	using MessageRegistrator::AddMessage;
+	using MessageRegistrator::Status;
+	void setUiMessagesEnabled(bool enabled);
+	bool getUiMessagesEnabled() const;
+	void setFileLoggingEnabled(bool enabled);
+	bool getFileLoggingEnabled() const;
+	void setlogfile(String _logfile);
+	String getlogfile() const;
+	virtual void AddMessageCore(const Utf16String& message, const MessageState mstate, const MessageParams* param = nullptr) override;
+	virtual void StatusCore(const Utf16String& message) override;
 };
 
 #endif

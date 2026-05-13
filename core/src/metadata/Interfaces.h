@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef InterfacesH
 #define InterfacesH
@@ -8,37 +8,37 @@
 
 /**
  * @class TInterfaces
- * @brief Класс для хранения интерфейсов (md_Interfaces)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РёРЅС‚РµСЂС„РµР№СЃРѕРІ (md_Interfaces)
  *
- * Интерфейсы - это объекты метаданных, которые содержат
- * интерфейсы конфигурации 1С:Предприятие.
+ * РРЅС‚РµСЂС„РµР№СЃС‹ - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * РёРЅС‚РµСЂС„РµР№СЃС‹ РєРѕРЅС„РёРіСѓСЂР°С†РёРё 1РЎ:РџСЂРµРґРїСЂРёСЏС‚РёРµ.
  */
 class TInterfaces : public BaseMetadataObject
 {
 private:
-    // interfaceName хранится в унаследованном поле name из BaseMetadataObject
+    // interfaceName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TInterfaces();
-    __fastcall TInterfaces(v8catalog* _parent, const String& _guid);
-    __fastcall TInterfaces(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TInterfaces();
+    TInterfaces();
+    TInterfaces(v8catalog* _parent, const String& _guid);
+    TInterfaces(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TInterfaces();
 
-    // Методы для получения имени интерфейса
-    String __fastcall GetInterfaceName();
-    void __fastcall SetInterfaceName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РёРЅС‚РµСЂС„РµР№СЃР°
+    String GetInterfaceName();
+    void SetInterfaceName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

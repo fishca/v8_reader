@@ -8,8 +8,9 @@
 class TMoxel : public TMDO
 {
 public:
-	__fastcall TMoxel();
-	__fastcall TMoxel(String _name, String _guid);
-	__fastcall ~TMoxel();
+	TMoxel();
+	TMoxel(String _name, String _guid);
+	~TMoxel();
 };
 #endif
+

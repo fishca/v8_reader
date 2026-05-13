@@ -10,13 +10,14 @@
 class TCalculationRegisters : public MetadataObjectInformationRegister
 {
 public:
-	__fastcall TCalculationRegisters();
-	__fastcall TCalculationRegisters(v8catalog *_parent, const String& _guid);
-	__fastcall TCalculationRegisters(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TCalculationRegisters();
+	TCalculationRegisters();
+	TCalculationRegisters(v8catalog *_parent, const String& _guid);
+	TCalculationRegisters(v8catalog *_parent, const String& _guid, const String& _name);
+	~TCalculationRegisters();
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 };
 
 //---------------------------------------------------------------------------
 #endif
+

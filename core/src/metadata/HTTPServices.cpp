@@ -1,47 +1,47 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #pragma hdrstop
 
 #include "HTTPServices.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-__fastcall THTTPServices::THTTPServices() : BaseMetadataObject()
+THTTPServices::THTTPServices() : BaseMetadataObject()
 {
     name = "";
     root_data = nullptr;
     parent = nullptr;
 }
 
-__fastcall THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     parent = _parent;
     root_data.reset();
 }
 
-__fastcall THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     parent = _parent;
     root_data.reset();
 }
 
-__fastcall THTTPServices::~THTTPServices()
+THTTPServices::~THTTPServices()
 {
-    // root_data будет освобожден в базовом классе
+    // root_data Р±СѓРґРµС‚ РѕСЃРІРѕР±РѕР¶РґРµРЅ РІ Р±Р°Р·РѕРІРѕРј РєР»Р°СЃСЃРµ
 }
 
-String __fastcall THTTPServices::GetHTTPServicesName()
+String THTTPServices::GetHTTPServicesName()
 {
     return name;
 }
 
-void __fastcall THTTPServices::SetHTTPServicesName(String _name)
+void THTTPServices::SetHTTPServicesName(String _name)
 {
     name = _name;
 }
 
-// Реализация виртуальных методов BaseMetadataObject
+// Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
 
 std::vector<std::unique_ptr<TRequisite>>& THTTPServices::getAttributes()
 {
@@ -68,9 +68,10 @@ std::vector<std::unique_ptr<TForm1C>>& THTTPServices::getForms()
     return forms;
 }
 
-void __fastcall THTTPServices::initializeFromTree()
+void THTTPServices::initializeFromTree()
 {
-    // HTTP-сервисы могут не иметь стандартной структуры реквизитов/команд
-    // Оставляем пустыми vectors - это нормально для данного типа метаданных
+    // HTTP-СЃРµСЂРІРёСЃС‹ РјРѕРіСѓС‚ РЅРµ РёРјРµС‚СЊ СЃС‚Р°РЅРґР°СЂС‚РЅРѕР№ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЂРµРєРІРёР·РёС‚РѕРІ/РєРѕРјР°РЅРґ
+    // РћСЃС‚Р°РІР»СЏРµРј РїСѓСЃС‚С‹РјРё vectors - СЌС‚Рѕ РЅРѕСЂРјР°Р»СЊРЅРѕ РґР»СЏ РґР°РЅРЅРѕРіРѕ С‚РёРїР° РјРµС‚Р°РґР°РЅРЅС‹С…
 }
 //---------------------------------------------------------------------------
+

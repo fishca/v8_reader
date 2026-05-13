@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef CommandGroupsH
 #define CommandGroupsH
@@ -8,37 +8,37 @@
 
 /**
  * @class TCommandGroups
- * @brief Класс для хранения групп команд (md_CommandGroups)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РіСЂСѓРїРї РєРѕРјР°РЅРґ (md_CommandGroups)
  *
- * Группы команд - это объекты метаданных, которые содержат
- * группы команд для организации интерфейса.
+ * Р“СЂСѓРїРїС‹ РєРѕРјР°РЅРґ - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ РґР»СЏ РѕСЂРіР°РЅРёР·Р°С†РёРё РёРЅС‚РµСЂС„РµР№СЃР°.
  */
 class TCommandGroups : public BaseMetadataObject
 {
 private:
-    // groupName хранится в унаследованном поле name из BaseMetadataObject
+    // groupName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TCommandGroups();
-    __fastcall TCommandGroups(v8catalog* _parent, const String& _guid);
-    __fastcall TCommandGroups(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TCommandGroups();
+    TCommandGroups();
+    TCommandGroups(v8catalog* _parent, const String& _guid);
+    TCommandGroups(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TCommandGroups();
 
-    // Методы для получения имени группы команд
-    String __fastcall GetCommandName();
-    void __fastcall SetCommandName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ
+    String GetCommandName();
+    void SetCommandName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

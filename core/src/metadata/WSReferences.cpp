@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -54,13 +54,13 @@ namespace
     }
 }
 
-__fastcall TWSReferences::TWSReferences() : BaseMetadataObject()
+TWSReferences::TWSReferences() : BaseMetadataObject()
 {
 	referenceName = "";
 	root_data.reset();
 }
 
-__fastcall TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid)
+TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid)
 	: BaseMetadataObject(_parent, _guid)
 {
 	referenceName = "";
@@ -68,7 +68,7 @@ __fastcall TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid)
 	root_data.reset();
 }
 
-__fastcall TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid, const String& _name)
+TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid, const String& _name)
 	: BaseMetadataObject(_parent, _guid, _name)
 {
 	referenceName = _name;
@@ -76,16 +76,16 @@ __fastcall TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid,
 	root_data.reset();
 }
 
-__fastcall TWSReferences::~TWSReferences()
+TWSReferences::~TWSReferences()
 {
 }
 
-String __fastcall TWSReferences::GetReferenceName()
+String TWSReferences::GetReferenceName()
 {
 	return referenceName;
 }
 
-void __fastcall TWSReferences::SetReferenceName(String _name)
+void TWSReferences::SetReferenceName(String _name)
 {
 	referenceName = _name;
 	name = _name;
@@ -116,7 +116,7 @@ std::vector<std::unique_ptr<TForm1C>>& TWSReferences::getForms()
 	return forms;
 }
 
-void __fastcall TWSReferences::initializeFromTree()
+void TWSReferences::initializeFromTree()
 {
 	tree* nameNode = GetNodeByPath(root_data.get(), {1, 2, 2});
 	if (nameNode && !nameNode->get_value().IsEmpty())
@@ -137,3 +137,4 @@ void __fastcall TWSReferences::initializeFromTree()
 	if (referenceName.IsEmpty())
 		referenceName = name;
 }
+

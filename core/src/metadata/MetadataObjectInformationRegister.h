@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef MetadataObjectInformationRegisterH
 #define MetadataObjectInformationRegisterH
@@ -9,14 +9,14 @@
 #include <functional>
 
 //---------------------------------------------------------------------------
-// Конфигурация путей в дереве парсинга для регистров сведений
+// РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РїСѓС‚РµР№ РІ РґРµСЂРµРІРµ РїР°СЂСЃРёРЅРіР° РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ СЃРІРµРґРµРЅРёР№
 struct InfoRegisterTreePaths
 {
     int attIdx;
     std::vector<int> attItemPath;
-    int dimIdx;           // индекс для измерений
+    int dimIdx;           // РёРЅРґРµРєСЃ РґР»СЏ РёР·РјРµСЂРµРЅРёР№
     std::vector<int> dimItemPath;
-    int resIdx;           // индекс для ресурсов
+    int resIdx;           // РёРЅРґРµРєСЃ РґР»СЏ СЂРµСЃСѓСЂСЃРѕРІ
     std::vector<int> resItemPath;
     int formsIdx;
     int cmdIdx;
@@ -26,26 +26,26 @@ struct InfoRegisterTreePaths
 };
 
 //---------------------------------------------------------------------------
-// Базовый класс для регистров сведений: реквизиты, измерения, ресурсы, формы, команды, макеты
-// Табличных частей нет
+// Р‘Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ СЃРІРµРґРµРЅРёР№: СЂРµРєРІРёР·РёС‚С‹, РёР·РјРµСЂРµРЅРёСЏ, СЂРµСЃСѓСЂСЃС‹, С„РѕСЂРјС‹, РєРѕРјР°РЅРґС‹, РјР°РєРµС‚С‹
+// РўР°Р±Р»РёС‡РЅС‹С… С‡Р°СЃС‚РµР№ РЅРµС‚
 class MetadataObjectInformationRegister : public BaseMetadataObject
 {
 protected:
     std::vector<std::unique_ptr<TRequisite>> attributes;
-    std::vector<std::unique_ptr<TRequisite>> dimensions;   // измерения
-    std::vector<std::unique_ptr<TRequisite>> resources;    // ресурсы
+    std::vector<std::unique_ptr<TRequisite>> dimensions;   // РёР·РјРµСЂРµРЅРёСЏ
+    std::vector<std::unique_ptr<TRequisite>> resources;    // СЂРµСЃСѓСЂСЃС‹
     std::vector<std::unique_ptr<TComand>> comands;
     std::vector<std::unique_ptr<TMoxel>> moxels;
     std::vector<std::unique_ptr<TForm1C>> forms;
-    std::vector<std::unique_ptr<TTabular>> tabulars;       // пустой, для совместимости с BaseMetadataObject
+    std::vector<std::unique_ptr<TTabular>> tabulars;       // РїСѓСЃС‚РѕР№, РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ BaseMetadataObject
 
     void initializeFromTreeWithPaths(const InfoRegisterTreePaths& paths);
 
 public:
-    __fastcall MetadataObjectInformationRegister();
-    __fastcall MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid);
-    __fastcall MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~MetadataObjectInformationRegister();
+    MetadataObjectInformationRegister();
+    MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid);
+    MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~MetadataObjectInformationRegister();
 
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override { return attributes; }
     std::vector<std::unique_ptr<TComand>>& getCommands() override { return comands; }
@@ -59,3 +59,4 @@ public:
 
 //---------------------------------------------------------------------------
 #endif
+

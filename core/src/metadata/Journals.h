@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef JournalsH
 #define JournalsH
@@ -10,12 +10,13 @@
 class TJournals : public MetadataObjectWithSections
 {
 public:
-	__fastcall TJournals();
-	__fastcall TJournals(v8catalog *_parent, const String& _guid);
-	__fastcall TJournals(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TJournals();
+	TJournals();
+	TJournals(v8catalog *_parent, const String& _guid);
+	TJournals(v8catalog *_parent, const String& _guid, const String& _name);
+	~TJournals();
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 };
 
 #endif
+

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TCommandGroups::TCommandGroups() : BaseMetadataObject()
+TCommandGroups::TCommandGroups() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommandGroups::TCommandGroups(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommandGroups::TCommandGroups(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommandGroups::TCommandGroups(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommandGroups::TCommandGroups(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TCommandGroups::~TCommandGroups()
+TCommandGroups::~TCommandGroups()
 {
 }
 
-String __fastcall TCommandGroups::GetCommandName()
+String TCommandGroups::GetCommandName()
 {
     return name;
 }
 
-void __fastcall TCommandGroups::SetCommandName(String _name)
+void TCommandGroups::SetCommandName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TCommandGroups::getForms()
     return forms;
 }
 
-void __fastcall TCommandGroups::initializeFromTree()
+void TCommandGroups::initializeFromTree()
 {
-    // Инициализация группы команд из дерева метаданных
-    // Имя группы команд уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

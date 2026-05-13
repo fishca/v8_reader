@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TConstants::TConstants() : BaseMetadataObject()
+TConstants::TConstants() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TConstants::TConstants(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TConstants::TConstants(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TConstants::TConstants(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TConstants::TConstants(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TConstants::~TConstants()
+TConstants::~TConstants()
 {
 }
 
-String __fastcall TConstants::GetConstantsName()
+String TConstants::GetConstantsName()
 {
     return name;
 }
 
-void __fastcall TConstants::SetConstantsName(String _name)
+void TConstants::SetConstantsName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,8 @@ std::vector<std::unique_ptr<TForm1C>>& TConstants::getForms()
     return forms;
 }
 
-void __fastcall TConstants::initializeFromTree()
+void TConstants::initializeFromTree()
 {
-    // Инициализация константы из дерева метаданных
-    // Имя константы уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РєРѕРЅСЃС‚Р°РЅС‚С‹ РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РєРѕРЅСЃС‚Р°РЅС‚С‹ СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }

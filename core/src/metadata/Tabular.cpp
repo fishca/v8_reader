@@ -311,23 +311,23 @@ namespace
 }
 
 
-__fastcall TTabular::TTabular()
+TTabular::TTabular()
 {
 
 }
 
-__fastcall TTabular::TTabular(String _name, String _guid)
+TTabular::TTabular(String _name, String _guid)
 {
 	name = _name;
     guid = _guid;
 }
 
-__fastcall TTabular::~TTabular()
+TTabular::~TTabular()
 {
 
 }
 
-void __fastcall TTabular::initializeFromTree(tree* root)
+void TTabular::initializeFromTree(tree* root)
 {
 	attributes.clear();
 	if (!root)
@@ -385,3 +385,4 @@ void __fastcall TTabular::initializeFromTree(tree* root)
 		}
 	}
 }
+

@@ -1,57 +1,87 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
 #include "TempStream.h"
+
+#include "../core/include/v8reader_core/io/TempFileStream.h"
+
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-String TTempStream::tempcat;
-String TTempStream::tempname;
-long TTempStream::tempno = 0;
-TTempStreamStaticInit TempStreamStaticInit;
+using v8reader::core::io::SeekOrigin;
+using v8reader::core::io::TempFileStream;
 
-//---------------------------------------------------------------------------
-__fastcall TTempStreamStaticInit::TTempStreamStaticInit()
+namespace
 {
-	wchar_t temppath[MAX_PATH];
-	wchar_t tempfile[MAX_PATH];
-
-	if(TTempStream::tempcat.IsEmpty())
+SeekOrigin ToSeekOrigin(TSeekOrigin origin)
+{
+	switch(origin)
 	{
-		GetTempPath(MAX_PATH - 1, temppath);
-		GetTempFileName(temppath, L"awa", 0, tempfile);
-		TTempStream::tempcat = tempfile;
-		DeleteFile(TTempStream::tempcat);
-		CreateDir(TTempStream::tempcat);
-		TTempStream::tempname = TTempStream::tempcat + "\\t";
+		case soBeginning:
+			return SeekOrigin::Begin;
+		case soCurrent:
+			return SeekOrigin::Current;
+		case soEnd:
+			return SeekOrigin::End;
 	}
+
+	return SeekOrigin::Begin;
 }
 
-//---------------------------------------------------------------------------
-__fastcall TTempStreamStaticInit::~TTempStreamStaticInit()
+SeekOrigin ToSeekOrigin(System::Word origin)
 {
-	RemoveDir(TTempStream::tempcat);
+	switch(origin)
+	{
+		case soFromBeginning:
+			return SeekOrigin::Begin;
+		case soFromCurrent:
+			return SeekOrigin::Current;
+		case soFromEnd:
+			return SeekOrigin::End;
+	}
+
+	return SeekOrigin::Begin;
 }
+} // namespace
 
 //---------------------------------------------------------------------------
-__fastcall TTempStream::TTempStream() : THandleStream(0)
+TTempStream::TTempStream()
+	: stream_(std::make_unique<TempFileStream>())
 {
-	FHandle = (THandle)CreateFile(gettempname().c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, NULL);
 }
 
 //---------------------------------------------------------------------------
-__fastcall TTempStream::~TTempStream()
+TTempStream::~TTempStream() = default;
+
+//---------------------------------------------------------------------------
+int __fastcall TTempStream::Read(void* Buffer, int Count)
 {
-	CloseHandle((HANDLE)FHandle);
+	if(Count <= 0)
+		return 0;
+
+	return static_cast<int>(stream_->Read(Buffer, static_cast<std::size_t>(Count)));
 }
 
 //---------------------------------------------------------------------------
-
-String __fastcall TTempStream::gettempname()
+int __fastcall TTempStream::Write(const void* Buffer, int Count)
 {
-	return tempname + InterlockedIncrement(&tempno);
+	if(Count <= 0)
+		return 0;
+
+	return static_cast<int>(stream_->Write(Buffer, static_cast<std::size_t>(Count)));
 }
 
 //---------------------------------------------------------------------------
+int __fastcall TTempStream::Seek(int Offset, System::Word Origin)
+{
+	return static_cast<int>(stream_->Seek(static_cast<std::int64_t>(Offset), ToSeekOrigin(Origin)));
+}
 
+//---------------------------------------------------------------------------
+__int64 __fastcall TTempStream::Seek(const __int64 Offset, TSeekOrigin Origin)
+{
+	return static_cast<__int64>(stream_->Seek(Offset, ToSeekOrigin(Origin)));
+}
+
+//---------------------------------------------------------------------------

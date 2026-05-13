@@ -80,6 +80,26 @@ class TStreamByteStreamAdapter final : public IByteStream
 	TStream* stream_;
 };
 
+static void ZInflateStream(TStream* src, TStream* dst)
+{
+	if(!src || !dst)
+		return;
+
+	TStreamByteStreamAdapter srcAdapter(src);
+	TStreamByteStreamAdapter dstAdapter(dst);
+	::ZInflateStream(srcAdapter, dstAdapter);
+}
+
+static void ZDeflateStream(TStream* src, TStream* dst)
+{
+	if(!src || !dst)
+		return;
+
+	TStreamByteStreamAdapter srcAdapter(src);
+	TStreamByteStreamAdapter dstAdapter(dst);
+	::ZDeflateStream(srcAdapter, dstAdapter);
+}
+
 static std::filesystem::path StringToPath(const String& value)
 {
 #ifndef _DELPHI_STRING_UNICODE
@@ -125,7 +145,7 @@ static SeekOrigin ToSeekOrigin(System::Word origin)
 class StdFileTStream final : public TStream
 {
   public:
-	__fastcall StdFileTStream(const String& fileName, FileOpenMode mode)
+	StdFileTStream(const String& fileName, FileOpenMode mode)
 		: stream_(StringToPath(fileName), mode) {}
 
 	virtual int __fastcall Read(void* Buffer, int Count) override

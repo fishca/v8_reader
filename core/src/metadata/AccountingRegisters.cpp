@@ -32,30 +32,30 @@ static InfoRegisterTreePaths GetAccountingRegistersPaths()
     return paths;
 }
 
-__fastcall TAccountingRegisters::TAccountingRegisters()
+TAccountingRegisters::TAccountingRegisters()
     : MetadataObjectInformationRegister()
 {
 }
 
-__fastcall TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const String& _guid)
+TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const String& _guid)
     : MetadataObjectInformationRegister(_parent, _guid)
 {
     initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name)
+TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name)
     : MetadataObjectInformationRegister(_parent, _guid, _name)
 {
     initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TAccountingRegisters::~TAccountingRegisters()
+TAccountingRegisters::~TAccountingRegisters()
 {
 }
 
-void __fastcall TAccountingRegisters::initializeFromTree()
+void TAccountingRegisters::initializeFromTree()
 {
     // Инициализируем стандартные поля (реквизиты, измерения, ресурсы, формы, команды, макеты)
     // AccountingFlags и DimensionAccountingFlags будут загружены отдельно
@@ -64,3 +64,4 @@ void __fastcall TAccountingRegisters::initializeFromTree()
     // TODO: Загрузка AccountingFlags и DimensionAccountingFlags
     // При необходимости добавить дополнительную логику загрузки
 }
+

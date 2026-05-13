@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TCommonAttributes::TCommonAttributes() : BaseMetadataObject()
+TCommonAttributes::TCommonAttributes() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommonAttributes::TCommonAttributes(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommonAttributes::TCommonAttributes(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommonAttributes::TCommonAttributes(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommonAttributes::TCommonAttributes(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TCommonAttributes::~TCommonAttributes()
+TCommonAttributes::~TCommonAttributes()
 {
 }
 
-String __fastcall TCommonAttributes::GetAttributeName()
+String TCommonAttributes::GetAttributeName()
 {
     return name;
 }
 
-void __fastcall TCommonAttributes::SetAttributeName(String _name)
+void TCommonAttributes::SetAttributeName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TCommonAttributes::getForms()
     return forms;
 }
 
-void __fastcall TCommonAttributes::initializeFromTree()
+void TCommonAttributes::initializeFromTree()
 {
-    // Инициализация общего реквизита из дерева метаданных
-    // Имя общего реквизита уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РѕР±С‰РµРіРѕ СЂРµРєРІРёР·РёС‚Р° РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РѕР±С‰РµРіРѕ СЂРµРєРІРёР·РёС‚Р° СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

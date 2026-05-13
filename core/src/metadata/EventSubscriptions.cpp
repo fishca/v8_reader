@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TEventSubscriptions::TEventSubscriptions() : BaseMetadataObject()
+TEventSubscriptions::TEventSubscriptions() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TEventSubscriptions::~TEventSubscriptions()
+TEventSubscriptions::~TEventSubscriptions()
 {
 }
 
-String __fastcall TEventSubscriptions::GetEventSubscriptionName()
+String TEventSubscriptions::GetEventSubscriptionName()
 {
     return name;
 }
 
-void __fastcall TEventSubscriptions::SetEventSubscriptionName(String _name)
+void TEventSubscriptions::SetEventSubscriptionName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TEventSubscriptions::getForms()
     return forms;
 }
 
-void __fastcall TEventSubscriptions::initializeFromTree()
+void TEventSubscriptions::initializeFromTree()
 {
-    // Инициализация подписки на событие из дерева метаданных
-    // Имя подписки на событие уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёРµ РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РїРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёРµ СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TLangs::TLangs() : BaseMetadataObject()
+TLangs::TLangs() : BaseMetadataObject()
 {
 	name = "";
 	root_data.reset();
 }
 
-__fastcall TLangs::TLangs(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TLangs::TLangs(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
 	name = "";
 	root_data.reset();
 }
 
-__fastcall TLangs::TLangs(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TLangs::TLangs(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
 	name = _name;
 	root_data.reset();
 }
 
-__fastcall TLangs::~TLangs()
+TLangs::~TLangs()
 {
 }
 
-String __fastcall TLangs::GetLangName()
+String TLangs::GetLangName()
 {
 	return name;
 }
 
-void __fastcall TLangs::SetLangName(String _name)
+void TLangs::SetLangName(String _name)
 {
 	name = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TLangs::getForms()
 	return forms;
 }
 
-void __fastcall TLangs::initializeFromTree()
+void TLangs::initializeFromTree()
 {
 	// Инициализация интерфейса из дерева метаданных
 	// Имя интерфейса уже установлено в конструкторе
 }
+

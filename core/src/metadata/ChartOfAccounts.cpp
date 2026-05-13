@@ -30,31 +30,31 @@ namespace
 	}
 }
 
-__fastcall TChartOfAccounts::TChartOfAccounts()
+TChartOfAccounts::TChartOfAccounts()
 	: BaseMetadataObject()
 {
 	root_data.reset();
 }
 
-__fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid)
+TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid)
 	: BaseMetadataObject(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name)
+TChartOfAccounts::TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name)
 	: BaseMetadataObject(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TChartOfAccounts::~TChartOfAccounts()
+TChartOfAccounts::~TChartOfAccounts()
 {
 }
 
-void __fastcall TChartOfAccounts::initializeFromTree()
+void TChartOfAccounts::initializeFromTree()
 {
 	if (!root_data) return;
 
@@ -187,3 +187,4 @@ void __fastcall TChartOfAccounts::initializeFromTree()
 		}
 	}
 }
+

@@ -5,6 +5,8 @@
 
 #include <System.IniFiles.hpp>
 #include <System.IOUtils.hpp>
+#include <System.UITypes.hpp>
+#include <System.Zip.hpp>
 
 #include <windows.h>
 
@@ -16,6 +18,12 @@
 #include <System.SysUtils.hpp>
 
 #include "../core/src/APIcfBase.h"
+#include "../core/src/Base64.h"
+#include <Vcl.Imaging.jpeg.hpp>
+#include <Vcl.Imaging.GIFImg.hpp>
+#include <Vcl.Imaging.pngimage.hpp>
+#include <Vcl.Graphics.hpp>
+#include "VclByteStreamAdapter.h"
 #include "MetadataTreeBuilder.h"
 #include "Class_1CD.h"
 #include "CommonModules.h"
@@ -438,6 +446,498 @@ static String FindUnpackedModuleTextByNodeName(const String& nodeName)
 	return L"";
 }
 
+static void AddUniqueCandidate(std::vector<String>& values, const String& value)
+{
+	if (value.IsEmpty())
+		return;
+
+	String upper = value.UpperCase();
+	for (const auto& existing : values)
+	{
+		if (existing.UpperCase() == upper)
+			return;
+	}
+
+	values.push_back(value);
+}
+
+static bool ExtractBytesFromStream(TBytesStream* stream, TBytes& outBytes)
+{
+	if (!stream || stream->Size <= 0)
+		return false;
+
+	TBytes bytes = stream->Bytes;
+	bytes.Length = static_cast<int>(stream->Size);
+	outBytes = bytes;
+	return !outBytes.empty();
+}
+
+static bool TryLoadPictureFromBytes(const TBytes& bytes, TPicture* targetPicture = nullptr)
+{
+	if (bytes.empty())
+		return false;
+
+	try
+	{
+		std::unique_ptr<TBytesStream> stream(new TBytesStream(bytes));
+		stream->Position = 0;
+		if (targetPicture)
+		{
+			targetPicture->LoadFromStream(stream.get());
+			return targetPicture->Graphic && !targetPicture->Graphic->Empty;
+		}
+
+		std::unique_ptr<TPicture> probePicture(new TPicture());
+		probePicture->LoadFromStream(stream.get());
+		return probePicture->Graphic && !probePicture->Graphic->Empty;
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+static bool EndsWithIgnoreCase(const String& value, const String& suffix)
+{
+	if (value.Length() < suffix.Length())
+		return false;
+
+	const String rightPart = value.SubString(value.Length() - suffix.Length() + 1, suffix.Length());
+	return rightPart.LowerCase() == suffix.LowerCase();
+}
+
+static bool TryDecodeSvgTextFromBytes(const TBytes& bytes, String& svgText)
+{
+	svgText = L"";
+	if (bytes.empty())
+		return false;
+
+	String text;
+	try
+	{
+		TEncoding* enc = nullptr;
+		int offset = TEncoding::GetBufferEncoding(bytes, enc);
+		if (offset > 0 && enc)
+			text = enc->GetString(bytes, offset, bytes.Length - offset);
+		else
+			text = TEncoding::UTF8->GetString(bytes, 0, bytes.Length);
+	}
+	catch (...)
+	{
+		try
+		{
+			text = String((char*)&bytes[0], bytes.Length);
+		}
+		catch (...)
+		{
+			return false;
+		}
+	}
+
+	String lowered = text.LowerCase();
+	if (lowered.Pos(L"<svg") > 0 || (lowered.Pos(L"<?xml") > 0 && lowered.Pos(L"<svg") > 0))
+	{
+		svgText = text;
+		return true;
+	}
+
+	return false;
+}
+
+static bool LooksLikeBase64Payload(const String& value)
+{
+	const String trimmed = Trim(value);
+	if (trimmed.Length() < 64)
+		return false;
+
+	for (int i = 1; i <= trimmed.Length(); ++i)
+	{
+		const wchar_t ch = trimmed[i];
+		const bool base64Char =
+			(ch >= L'A' && ch <= L'Z')
+			|| (ch >= L'a' && ch <= L'z')
+			|| (ch >= L'0' && ch <= L'9')
+			|| ch == L'+'
+			|| ch == L'/'
+			|| ch == L'='
+			|| ch == L'\r'
+			|| ch == L'\n'
+			|| ch == L'\t'
+			|| ch == L' ';
+		if (!base64Char)
+			return false;
+	}
+
+	return true;
+}
+
+static bool TryExtractEmbeddedPictureBytes(const TBytes& sourceBytes, TBytes& outBytes)
+{
+	if (sourceBytes.Length < 8)
+		return false;
+
+	auto isPngAt = [&sourceBytes](int i) -> bool
+	{
+		return i + 8 <= sourceBytes.Length
+			&& sourceBytes[i] == 0x89 && sourceBytes[i + 1] == 0x50 && sourceBytes[i + 2] == 0x4E && sourceBytes[i + 3] == 0x47
+			&& sourceBytes[i + 4] == 0x0D && sourceBytes[i + 5] == 0x0A && sourceBytes[i + 6] == 0x1A && sourceBytes[i + 7] == 0x0A;
+	};
+
+	auto isJpegAt = [&sourceBytes](int i) -> bool
+	{
+		return i + 3 <= sourceBytes.Length
+			&& sourceBytes[i] == 0xFF && sourceBytes[i + 1] == 0xD8 && sourceBytes[i + 2] == 0xFF;
+	};
+
+	auto isGifAt = [&sourceBytes](int i) -> bool
+	{
+		return i + 6 <= sourceBytes.Length
+			&& sourceBytes[i] == 0x47 && sourceBytes[i + 1] == 0x49 && sourceBytes[i + 2] == 0x46
+			&& sourceBytes[i + 3] == 0x38 && (sourceBytes[i + 4] == 0x39 || sourceBytes[i + 4] == 0x37) && sourceBytes[i + 5] == 0x61;
+	};
+
+	auto isBmpAt = [&sourceBytes](int i) -> bool
+	{
+		return i + 2 <= sourceBytes.Length && sourceBytes[i] == 0x42 && sourceBytes[i + 1] == 0x4D;
+	};
+
+	auto isIcoAt = [&sourceBytes](int i) -> bool
+	{
+		return i + 4 <= sourceBytes.Length
+			&& sourceBytes[i] == 0x00 && sourceBytes[i + 1] == 0x00 && sourceBytes[i + 2] == 0x01 && sourceBytes[i + 3] == 0x00;
+	};
+
+	for (int i = 0; i < sourceBytes.Length - 2; ++i)
+	{
+		const bool isCandidate =
+			isPngAt(i) || isJpegAt(i) || isGifAt(i) || isBmpAt(i) || isIcoAt(i);
+		if (!isCandidate)
+			continue;
+
+		const int tailLen = sourceBytes.Length - i;
+		if (tailLen <= 0)
+			continue;
+
+		TBytes candidateBytes;
+		candidateBytes.Length = tailLen;
+		Move(&sourceBytes[i], &candidateBytes[0], tailLen);
+		if (TryLoadPictureFromBytes(candidateBytes))
+		{
+			outBytes = candidateBytes;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool TryExtractPictureFromZipBytes(const TBytes& sourceBytes, TBytes& outBytes)
+{
+	if (sourceBytes.Length < 4)
+		return false;
+
+	// PK\003\004
+	if (!(sourceBytes[0] == 0x50 && sourceBytes[1] == 0x4B && sourceBytes[2] == 0x03 && sourceBytes[3] == 0x04))
+		return false;
+
+	try
+	{
+		std::unique_ptr<TBytesStream> zipStream(new TBytesStream(sourceBytes));
+		std::unique_ptr<TZipFile> zipFile(new TZipFile());
+		zipFile->Open(zipStream.get(), zmRead);
+
+		System::DynamicArray<String> fileNames = zipFile->FileNames;
+		const int fileCount = zipFile->FileCount;
+
+		auto isPreferredImageExt = [](const String& name) -> bool
+		{
+			String lowerName = Trim(name).LowerCase();
+			return EndsWithIgnoreCase(lowerName, L".png")
+				|| EndsWithIgnoreCase(lowerName, L".jpg")
+				|| EndsWithIgnoreCase(lowerName, L".jpeg")
+				|| EndsWithIgnoreCase(lowerName, L".gif")
+				|| EndsWithIgnoreCase(lowerName, L".bmp")
+				|| EndsWithIgnoreCase(lowerName, L".ico")
+				|| EndsWithIgnoreCase(lowerName, L".tif")
+				|| EndsWithIgnoreCase(lowerName, L".tiff")
+				|| EndsWithIgnoreCase(lowerName, L".webp");
+		};
+
+		for (int pass = 0; pass < 2; ++pass)
+		{
+			for (int i = 0; i < fileCount; ++i)
+			{
+				if (i >= fileNames.Length)
+					continue;
+
+				const String entryName = fileNames[i];
+				if (pass == 0 && !isPreferredImageExt(entryName))
+					continue;
+
+				TBytes entryBytes;
+				zipFile->Read(i, entryBytes);
+
+				if (TryLoadPictureFromBytes(entryBytes))
+				{
+					outBytes = entryBytes;
+					zipFile->Close();
+					return true;
+				}
+
+				if (TryExtractEmbeddedPictureBytes(entryBytes, outBytes))
+				{
+					zipFile->Close();
+					return true;
+				}
+			}
+		}
+
+		zipFile->Close();
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	return false;
+}
+
+static bool DecodeBase64ValueToBytes(const String& rawValue, TBytes& outBytes)
+{
+	String value = Trim(rawValue);
+	if (value.IsEmpty())
+		return false;
+
+	std::size_t startIndex = 0;
+	if (value.Length() >= 8 && value.SubString(1, 8).LowerCase() == L"#base64:")
+		startIndex = 8;
+	else if (value.Length() >= 6 && value.SubString(1, 6).LowerCase() == L"#data:")
+		startIndex = 6;
+
+	try
+	{
+		TBytes decodeBuffer;
+		std::unique_ptr<TBytesStream> decoded(new TBytesStream(decodeBuffer));
+		v8reader::vcl_bridge::TStreamByteStreamAdapter adapter(decoded.get());
+		std::u16string encoded = v8reader::vcl_bridge::StringToUtf16(value);
+		v8reader::core::encoding::base64_decode(encoded, adapter, startIndex);
+		return ExtractBytesFromStream(decoded.get(), outBytes);
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+static bool TryExtractImageBytesFromTree(tree* node, TBytes& outBytes)
+{
+	if (!node)
+		return false;
+
+	const node_type nodeType = node->get_type();
+	const String value = node->get_value();
+	const bool isBinaryNode = nodeType == nd_binary || nodeType == nd_binary2 || nodeType == nd_binary_d;
+	const bool looksLikePrefixedBase64 = value.Length() >= 8 && value.SubString(1, 8).LowerCase() == L"#base64:";
+	const bool looksLikeDataPrefix = value.Length() >= 6 && value.SubString(1, 6).LowerCase() == L"#data:";
+	const bool looksLikeStringBase64 = nodeType == nd_string && LooksLikeBase64Payload(value);
+
+	if ((isBinaryNode || looksLikePrefixedBase64 || looksLikeDataPrefix || looksLikeStringBase64)
+		&& DecodeBase64ValueToBytes(value, outBytes))
+	{
+		if (TryLoadPictureFromBytes(outBytes))
+			return true;
+		String svgText;
+		if (TryDecodeSvgTextFromBytes(outBytes, svgText))
+			return true;
+		if (TryExtractPictureFromZipBytes(outBytes, outBytes))
+			return true;
+		if (TryExtractEmbeddedPictureBytes(outBytes, outBytes))
+			return true;
+	}
+
+	for (int i = 0; i < node->get_num_subnode(); ++i)
+	{
+		if (TryExtractImageBytesFromTree(node->get_subnode(i), outBytes))
+			return true;
+	}
+
+	return false;
+}
+
+static void CollectGuidReferences(tree* node, std::vector<String>& guids)
+{
+	if (!node)
+		return;
+
+	const String value = node->get_value();
+	if (ModuleTextStorage::IsGuidLike(value))
+		AddUniqueCandidate(guids, value);
+
+	for (int i = 0; i < node->get_num_subnode(); ++i)
+		CollectGuidReferences(node->get_subnode(i), guids);
+}
+
+static bool TryReadV8FileBytes(v8file* file, TBytes& outBytes)
+{
+	if (!file)
+		return false;
+
+	try
+	{
+		TBytes rawBuffer;
+		std::unique_ptr<TBytesStream> stream(new TBytesStream(rawBuffer));
+		file->SaveToStream(stream.get());
+		return ExtractBytesFromStream(stream.get(), outBytes);
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+static bool TryExtractImageBytesFromV8File(v8file* file, TBytes& outBytes)
+{
+	if (!file)
+		return false;
+
+	TBytes fileBytes;
+	if (TryReadV8FileBytes(file, fileBytes))
+	{
+		if (TryLoadPictureFromBytes(fileBytes))
+		{
+			outBytes = fileBytes;
+			return true;
+		}
+		String svgText;
+		if (TryDecodeSvgTextFromBytes(fileBytes, svgText))
+		{
+			outBytes = fileBytes;
+			return true;
+		}
+		if (TryExtractPictureFromZipBytes(fileBytes, outBytes))
+			return true;
+		if (TryExtractEmbeddedPictureBytes(fileBytes, outBytes))
+			return true;
+	}
+
+	try
+	{
+		std::unique_ptr<tree> objectTree(get_treeFromV8file(file));
+		if (objectTree && TryExtractImageBytesFromTree(objectTree.get(), outBytes))
+			return true;
+	}
+	catch (...)
+	{
+	}
+
+	if (file->IsCatalog())
+	{
+		try
+		{
+			std::unique_ptr<v8catalog> catalog(new v8catalog(file));
+			if (catalog)
+			{
+				catalog->ClearIs8316();
+				for (v8file* child = catalog->GetFirst(); child; child = child->GetNext())
+				{
+					if (TryExtractImageBytesFromV8File(child, outBytes))
+						return true;
+				}
+			}
+		}
+		catch (...)
+		{
+		}
+	}
+
+	return false;
+}
+
+static bool TryExtractImageBytesFromSourceCf(const String& guid, TBytes& outBytes)
+{
+	if (guid.IsEmpty())
+		return false;
+
+	std::vector<String> roots;
+	AddUniqueCandidate(roots, TPath::Combine(GetCurrentDir(), L"SourceCF"));
+	AddUniqueCandidate(roots, TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF"));
+
+	const String normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(guid);
+	std::vector<String> candidates;
+	AddUniqueCandidate(candidates, normalizedGuid);
+	for (int i = 0; i <= 7; ++i)
+		AddUniqueCandidate(candidates, normalizedGuid + L"." + IntToStr(i));
+
+	for (const auto& root : roots)
+	{
+		if (!TDirectory::Exists(root))
+			continue;
+
+		for (const auto& candidate : candidates)
+		{
+			const String directFile = TPath::Combine(root, candidate);
+			if (FileExists(directFile))
+			{
+				try
+				{
+					TBytes bytes = TFile::ReadAllBytes(directFile);
+					if (TryLoadPictureFromBytes(bytes))
+					{
+						outBytes = bytes;
+						return true;
+					}
+					String svgText;
+					if (TryDecodeSvgTextFromBytes(bytes, svgText))
+					{
+						outBytes = bytes;
+						return true;
+					}
+					if (TryExtractPictureFromZipBytes(bytes, outBytes))
+						return true;
+					if (TryExtractEmbeddedPictureBytes(bytes, outBytes))
+						return true;
+				}
+				catch (...)
+				{
+				}
+			}
+
+			const String candidateDir = TPath::Combine(root, candidate);
+			if (!TDirectory::Exists(candidateDir))
+				continue;
+
+			TStringDynArray files = TDirectory::GetFiles(candidateDir);
+			for (int i = 0; i < files.Length; ++i)
+			{
+				try
+				{
+					TBytes bytes = TFile::ReadAllBytes(files[i]);
+					if (TryLoadPictureFromBytes(bytes))
+					{
+						outBytes = bytes;
+						return true;
+					}
+					String svgText;
+					if (TryDecodeSvgTextFromBytes(bytes, svgText))
+					{
+						outBytes = bytes;
+						return true;
+					}
+					if (TryExtractPictureFromZipBytes(bytes, outBytes))
+						return true;
+					if (TryExtractEmbeddedPictureBytes(bytes, outBytes))
+						return true;
+				}
+				catch (...)
+				{
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 void __fastcall TMainForm::ModuleMemoScanForFoldRanges(TObject *Sender,
 	TSynFoldRanges *FoldRanges, TStrings *LinesToScan, int FromLine, int ToLine)
 {
@@ -608,20 +1108,21 @@ static void LogHeapStatus(const String& stage, const String& guid = L"", const S
 	Messager* activeMessager = dynamic_cast<Messager*>(msreg);
 	if(!msreg || (activeMessager && !activeMessager->getUiMessagesEnabled())) return;
 
-	TStringList* ts = new TStringList;
-	ts->Add(L"Heap = " + FormatHeapStatus());
+	MessageRegistrator::MessageParams params;
+	params.reserve(5);
+	params.emplace_back(u"Heap", v8reader::vcl_bridge::StringToUtf16(FormatHeapStatus()));
 	if(guid.Length())
-		ts->Add(L"GUID = " + guid);
+		params.emplace_back(u"GUID", v8reader::vcl_bridge::StringToUtf16(guid));
 	if(fileName.Length())
-		ts->Add(L"File = " + fileName);
+		params.emplace_back(u"File", v8reader::vcl_bridge::StringToUtf16(fileName));
 	if(currentIndex >= 0)
-		ts->Add(L"Item = " + IntToStr(currentIndex));
+		params.emplace_back(u"Item", v8reader::vcl_bridge::StringToUtf16(IntToStr(currentIndex)));
 	if(totalCount >= 0)
-		ts->Add(L"Total = " + IntToStr(totalCount));
-	msreg->AddMessage(stage, msInfo, ts);
+		params.emplace_back(u"Total", v8reader::vcl_bridge::StringToUtf16(IntToStr(totalCount)));
+	msreg->AddMessage(v8reader::vcl_bridge::StringToUtf16(stage), msInfo, &params);
 }
 
-void __fastcall TMainForm::SetDefaultHighlightSettingsControls()
+void TMainForm::SetDefaultHighlightSettingsControls()
 {
 	if (HighlightKeywordColorBox) HighlightKeywordColorBox->Selected = DefaultHighlightKeywordColor;
 	if (HighlightCommentColorBox) HighlightCommentColorBox->Selected = DefaultHighlightCommentColor;
@@ -635,7 +1136,7 @@ void __fastcall TMainForm::SetDefaultHighlightSettingsControls()
 	if (UnpackCheckBox) UnpackCheckBox->Checked = false;
 }
 
-void __fastcall TMainForm::ApplyHighlightSettings()
+void TMainForm::ApplyHighlightSettings()
 {
 	if (!Syn1CSyn && !ModuleGeneralSyn)
 		return;
@@ -677,7 +1178,7 @@ void __fastcall TMainForm::ApplyHighlightSettings()
 	if (HighlightPreviewMemo) HighlightPreviewMemo->Invalidate();
 }
 
-void __fastcall TMainForm::LoadHighlightSettings()
+void TMainForm::LoadHighlightSettings()
 {
 	HighlightSettingsLoading = true;
 	std::unique_ptr<TIniFile> ini(new TIniFile(GetHighlightSettingsFileName()));
@@ -696,7 +1197,7 @@ void __fastcall TMainForm::LoadHighlightSettings()
 	ApplyHighlightSettings();
 }
 
-void __fastcall TMainForm::SaveHighlightSettings()
+void TMainForm::SaveHighlightSettings()
 {
 	std::unique_ptr<TIniFile> ini(new TIniFile(GetHighlightSettingsFileName()));
 	ini->WriteInteger(L"Colors", L"Keyword", HighlightKeywordColorBox->Selected);
@@ -729,7 +1230,7 @@ void __fastcall TMainForm::ResetHighlightSettingsClick(TObject *Sender)
 	SaveHighlightSettings();
 }
 
-void __fastcall TMainForm::CreateHighlightSettingsTab()
+void TMainForm::CreateHighlightSettingsTab()
 {
 	TTabSheet* previousActivePage = pagesEdit ? pagesEdit->ActivePage : nullptr;
 	HighlightSettingsTab = new TTabSheet(this);
@@ -840,7 +1341,10 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 	ModuleGeneralSyn(nullptr), ModuleSelectionTimer(nullptr), LastModuleNodeShown(nullptr), PendingModuleNode(nullptr),
 	CurrentModuleNode(nullptr), CurrentModuleObject(nullptr), LoadingModuleText(false),
 	CurrentModuleDirty(false), CurrentModuleOriginalText(L""), CurrentModuleKind(ModuleTextKind::Unknown),
-	CurrentModuleStandalone(false), SwitchingModuleTab(false), MDManager(std::make_unique<MetaDataManager>())
+	CurrentModuleStandalone(false), SwitchingModuleTab(false), CommonPicturePreviewImage(nullptr),
+	CommonPicturePreviewSvg(nullptr),
+	CommonPicturePreviewScrollBox(nullptr),
+	CommonPicturePreviewInfoLabel(nullptr), MDManager(std::make_unique<MetaDataManager>())
 {
 	VirtualStringTreeValue1C->NodeDataSize = sizeof(VirtualTreeData);
 	Syn1CSyn = new TSyn1CSyn(this);
@@ -917,7 +1421,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 }
 
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::ResetLoadProgress(int maxValue, const String& statusText)
+void TMainForm::ResetLoadProgress(int maxValue, const String& statusText)
 {
 	if (maxValue < 1)
 		maxValue = 1;
@@ -935,7 +1439,7 @@ void __fastcall TMainForm::ResetLoadProgress(int maxValue, const String& statusT
 	Application->ProcessMessages();
 }
 
-void __fastcall TMainForm::AdvanceLoadProgress(const String& statusText)
+void TMainForm::AdvanceLoadProgress(const String& statusText)
 {
 	if (!LoadProgressBar->Visible)
 		LoadProgressBar->Visible = true;
@@ -950,7 +1454,7 @@ void __fastcall TMainForm::AdvanceLoadProgress(const String& statusText)
 	Application->ProcessMessages();
 }
 
-void __fastcall TMainForm::CompleteLoadProgress(const String& statusText)
+void TMainForm::CompleteLoadProgress(const String& statusText)
 {
 	LoadProgressBar->Position = LoadProgressBar->Max;
 	if (!statusText.IsEmpty())
@@ -1004,7 +1508,7 @@ void __fastcall TMainForm::VirtualStringTreeValue1CGetText(TBaseVirtualTree *Sen
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
+void TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
 {
 	for(size_t i = 0; i < mdData.size(); i++)
 	{
@@ -1031,7 +1535,7 @@ void __fastcall TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtu
 }
 
 
-void __fastcall TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
+void TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
 {
 static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Documents, md_Reports, md_DataProcessors, md_ChartsOfCharacteristicTypes, md_ChartOfCalculationTypes, md_BusinessProcesses, md_Tasks};
     static const std::unordered_set<String> journalTypes = {md_DocumentJournals};
@@ -1124,7 +1628,7 @@ static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Document
 	}
 }
 
-void __fastcall TMainForm::FillVirtualTree() {
+void TMainForm::FillVirtualTree() {
     // Добавление команд и форм плана обмена
     PVirtualNode exchangePlansNode = VirtualStringTreeValue1C->AddChild(nullptr);
     VirtualTreeData *exchangePlansData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(exchangePlansNode);
@@ -1389,7 +1893,7 @@ void __fastcall TMainForm::FillVirtualTree() {
 }
 
 
-void __fastcall TMainForm::TreeInit()
+void TMainForm::TreeInit()
 {
 	// Заготовка
 }
@@ -1571,7 +2075,7 @@ void __fastcall TMainForm::ActionOpenCFExecute(TObject *Sender)
 //---------------------------------------------------------------------------
 //                           Messager
 //---------------------------------------------------------------------------
-__fastcall Messager::Messager(TListView* lv, TStatusBar* sb)
+Messager::Messager(TListView* lv, TStatusBar* sb)
 {
 	ListView = lv;
 	StatusBar = sb;
@@ -1583,30 +2087,30 @@ __fastcall Messager::Messager(TListView* lv, TStatusBar* sb)
 	FormatSettings.LongTimeFormat = L"hh:mm:ss:zzz";
 }
 
-void __fastcall Messager::setUiMessagesEnabled(bool enabled)
+void Messager::setUiMessagesEnabled(bool enabled)
 {
 	uiMessagesEnabled = enabled;
 }
 
-bool __fastcall Messager::getUiMessagesEnabled() const
+bool Messager::getUiMessagesEnabled() const
 {
 	return uiMessagesEnabled;
 }
 
-void __fastcall Messager::setFileLoggingEnabled(bool enabled)
+void Messager::setFileLoggingEnabled(bool enabled)
 {
 	fileLoggingEnabled = enabled;
 	if (!fileLoggingEnabled)
 		logfile = L"";
 }
 
-bool __fastcall Messager::getFileLoggingEnabled() const
+bool Messager::getFileLoggingEnabled() const
 {
 	return fileLoggingEnabled;
 }
 
 //---------------------------------------------------------------------------
-void __fastcall Messager::setlogfile(String _logfile)
+void Messager::setlogfile(String _logfile)
 {
 	if(!fileLoggingEnabled)
 	{
@@ -1618,30 +2122,43 @@ void __fastcall Messager::setlogfile(String _logfile)
     	DeleteFile(logfile);
 }
 
-String __fastcall Messager::getlogfile() const
+String Messager::getlogfile() const
 {
 	return logfile;
 }
 
 
 //---------------------------------------------------------------------------
-void __fastcall Messager::Status(const String& message)
+void Messager::StatusCore(const Utf16String& message)
 {
-	StatusBar->SimpleText = message;
+	StatusBar->SimpleText = v8reader::vcl_bridge::Utf16ToString(message);
 	StatusBar->Update();
 }
 
 //---------------------------------------------------------------------------
-void __fastcall Messager::AddMessage(const String& message, const MessageState mstate, TStringList* param)
+void Messager::AddMessageCore(const Utf16String& message, const MessageState mstate, const MessageParams* param)
 {
 	TFileStream* log = NULL;
 	TStreamWriter* sw;
 	String s;
+	String messageText = v8reader::vcl_bridge::Utf16ToString(message);
 	const bool verboseInfo = (mstate == msInfo && !IsVerboseUiLoggingEnabled());
 
 	if (uiMessagesEnabled && !verboseInfo)
 	{
-		ListView->AddItem(message, param);
+		TStringList* listParams = nullptr;
+		if (param && !param->empty())
+		{
+			listParams = new TStringList;
+			for (const auto& entry : *param)
+			{
+				listParams->Add(
+					v8reader::vcl_bridge::Utf16ToString(entry.first) +
+					L" = " +
+					v8reader::vcl_bridge::Utf16ToString(entry.second));
+			}
+		}
+		ListView->AddItem(messageText, listParams);
 		TListItem* item = ListView->Items->Item[ListView->Items->Count - 1];
 		item->StateIndex = mstate;
 		ListView->Selected = item;
@@ -1681,14 +2198,17 @@ void __fastcall Messager::AddMessage(const String& message, const MessageState m
 		sw->Write(s);
 		s = L" ";
         sw->Write(s);
-		sw->Write(message);
+		sw->Write(messageText);
 		if(param)
         {
-            for(int i = 0; i < param->Count; i++)
+			for (const auto& entry : *param)
             {
                 s = L"\r\n\t";
                 sw->Write(s);
-                sw->Write((*param)[i]);
+				sw->Write(v8reader::vcl_bridge::Utf16ToString(entry.first));
+				s = L" = ";
+				sw->Write(s);
+				sw->Write(v8reader::vcl_bridge::Utf16ToString(entry.second));
             }
         }
 		s = L"\r\n\r\n";
@@ -3120,7 +3640,7 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-String __fastcall TMainForm::BuildModuleTabKey(PVirtualNode node, BaseMetadataObject* metadataObject,
+String TMainForm::BuildModuleTabKey(PVirtualNode node, BaseMetadataObject* metadataObject,
 	const String& moduleItemGuid, ModuleTextKind kind) const
 {
 	if (!moduleItemGuid.IsEmpty())
@@ -3133,7 +3653,7 @@ String __fastcall TMainForm::BuildModuleTabKey(PVirtualNode node, BaseMetadataOb
 }
 //---------------------------------------------------------------------------
 
-TTabSheet* __fastcall TMainForm::FindModuleTabByKey(const String& key) const
+TTabSheet* TMainForm::FindModuleTabByKey(const String& key) const
 {
 	for (const auto& it : ModuleTabs)
 	{
@@ -3144,7 +3664,7 @@ TTabSheet* __fastcall TMainForm::FindModuleTabByKey(const String& key) const
 }
 //---------------------------------------------------------------------------
 
-TTabSheet* __fastcall TMainForm::CreateModuleTab(const String& key, const String& title)
+TTabSheet* TMainForm::CreateModuleTab(const String& key, const String& title)
 {
 	TTabSheet* tab = new TTabSheet(pagesEdit);
 	tab->PageControl = pagesEdit;
@@ -3171,7 +3691,7 @@ TTabSheet* __fastcall TMainForm::CreateModuleTab(const String& key, const String
 }
 //---------------------------------------------------------------------------
 
-String __fastcall TMainForm::BuildModuleTabTitle(const String& objectName, ModuleTextKind kind, const String& fallbackTitle) const
+String TMainForm::BuildModuleTabTitle(const String& objectName, ModuleTextKind kind, const String& fallbackTitle) const
 {
 	String modulePart = fallbackTitle;
 	if (modulePart.IsEmpty())
@@ -3195,7 +3715,7 @@ String __fastcall TMainForm::BuildModuleTabTitle(const String& objectName, Modul
 }
 //---------------------------------------------------------------------------
 
-ModuleEditorTabState* __fastcall TMainForm::GetModuleTabStateByMemo(TObject* sender)
+ModuleEditorTabState* TMainForm::GetModuleTabStateByMemo(TObject* sender)
 {
 	TSynMemo* memo = dynamic_cast<TSynMemo*>(sender);
 	if (!memo)
@@ -3210,7 +3730,7 @@ ModuleEditorTabState* __fastcall TMainForm::GetModuleTabStateByMemo(TObject* sen
 }
 //---------------------------------------------------------------------------
 
-ModuleEditorTabState* __fastcall TMainForm::GetActiveModuleTabState()
+ModuleEditorTabState* TMainForm::GetActiveModuleTabState()
 {
 	if (!pagesEdit)
 		return nullptr;
@@ -3219,7 +3739,7 @@ ModuleEditorTabState* __fastcall TMainForm::GetActiveModuleTabState()
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::ActivateModuleTab(TTabSheet* tab)
+void TMainForm::ActivateModuleTab(TTabSheet* tab)
 {
 	if (!tab || !pagesEdit)
 		return;
@@ -3230,7 +3750,7 @@ void __fastcall TMainForm::ActivateModuleTab(TTabSheet* tab)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::PopulateModuleTab(ModuleEditorTabState& state, const String& text)
+void TMainForm::PopulateModuleTab(ModuleEditorTabState& state, const String& text)
 {
 	if (!state.memo)
 		return;
@@ -3256,7 +3776,7 @@ void __fastcall TMainForm::PopulateModuleTab(ModuleEditorTabState& state, const 
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::SyncCurrentModuleFromTab(const ModuleEditorTabState* state)
+void TMainForm::SyncCurrentModuleFromTab(const ModuleEditorTabState* state)
 {
 	if (!state)
 	{
@@ -3291,7 +3811,7 @@ void __fastcall TMainForm::PagesEditChange(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-bool __fastcall TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePrompt)
+bool TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePrompt)
 {
 	if ((!state.metadataObject && !state.standalone) || !state.dirty || !state.memo)
 		return true;
@@ -3391,7 +3911,7 @@ void __fastcall TMainForm::FormCloseQuery(TObject *Sender, bool &CanClose)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text,
+void TMainForm::SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtualNode node, const String& text,
 	ModuleTextKind kind)
 {
 	CurrentModuleNode = node;
@@ -3415,7 +3935,7 @@ void __fastcall TMainForm::SetModuleEditorState(BaseMetadataObject* metadataObje
 }
 //---------------------------------------------------------------------------
 
-bool __fastcall TMainForm::SaveCurrentModuleTextIfNeeded(bool forcePrompt)
+bool TMainForm::SaveCurrentModuleTextIfNeeded(bool forcePrompt)
 {
 	ModuleEditorTabState* state = GetActiveModuleTabState();
 	if (!state)
@@ -3426,7 +3946,7 @@ bool __fastcall TMainForm::SaveCurrentModuleTextIfNeeded(bool forcePrompt)
 }
 //---------------------------------------------------------------------------
 
-bool __fastcall TMainForm::FlushCurrentModuleBeforeBuild()
+bool TMainForm::FlushCurrentModuleBeforeBuild()
 {
 	for (auto& it : ModuleTabs)
 	{
@@ -3437,7 +3957,7 @@ bool __fastcall TMainForm::FlushCurrentModuleBeforeBuild()
 }
 //---------------------------------------------------------------------------
 
-bool __fastcall TMainForm::IsConstantsContextNode(PVirtualNode node) const
+bool TMainForm::IsConstantsContextNode(PVirtualNode node) const
 {
 	if (!VirtualStringTreeValue1C || !node)
 		return false;
@@ -3503,7 +4023,7 @@ void __fastcall TMainForm::VirtualStringTreeValue1CMouseDown(TObject *Sender,
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
+void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 {
 	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
 	if (!IsConstantsContextNode(node))
@@ -3595,7 +4115,7 @@ void __fastcall TMainForm::ShowConstantsModule(ModuleTextKind kind, const String
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& caption)
+void TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& caption)
 {
 	PVirtualNode node = GetActiveTreeNode(VirtualStringTreeValue1C);
 	if (!IsConfigurationRootNode(VirtualStringTreeValue1C, node))
@@ -3636,7 +4156,289 @@ void __fastcall TMainForm::ShowConfigurationModule(ModuleTextKind kind, const St
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
+void TMainForm::EnsureCommonPicturePreviewControls()
+{
+	if (!Panel1)
+		return;
+
+	if (!CommonPicturePreviewInfoLabel)
+	{
+		CommonPicturePreviewInfoLabel = new TLabel(this);
+		CommonPicturePreviewInfoLabel->Parent = Panel1;
+		CommonPicturePreviewInfoLabel->Align = alTop;
+		CommonPicturePreviewInfoLabel->Alignment = taLeftJustify;
+		CommonPicturePreviewInfoLabel->Layout = tlCenter;
+		CommonPicturePreviewInfoLabel->WordWrap = true;
+		CommonPicturePreviewInfoLabel->Margins->Left = 8;
+		CommonPicturePreviewInfoLabel->Margins->Top = 8;
+		CommonPicturePreviewInfoLabel->Margins->Right = 8;
+		CommonPicturePreviewInfoLabel->Margins->Bottom = 8;
+		CommonPicturePreviewInfoLabel->Caption = L"Выберите изображение в списке \"Общие картинки\".";
+		CommonPicturePreviewInfoLabel->Height = 42;
+	}
+
+	if (!CommonPicturePreviewImage)
+	{
+		if (!CommonPicturePreviewScrollBox)
+		{
+			CommonPicturePreviewScrollBox = new TScrollBox(this);
+			CommonPicturePreviewScrollBox->Parent = Panel1;
+			CommonPicturePreviewScrollBox->Align = alClient;
+			CommonPicturePreviewScrollBox->AutoScroll = true;
+			CommonPicturePreviewScrollBox->HorzScrollBar->Tracking = true;
+			CommonPicturePreviewScrollBox->VertScrollBar->Tracking = true;
+			CommonPicturePreviewScrollBox->OnResize = CommonPicturePreviewScrollBoxResize;
+		}
+
+		CommonPicturePreviewImage = new TImage(this);
+		CommonPicturePreviewImage->Parent = CommonPicturePreviewScrollBox;
+		CommonPicturePreviewImage->Align = alNone;
+		CommonPicturePreviewImage->AutoSize = true;
+		CommonPicturePreviewImage->Center = false;
+		CommonPicturePreviewImage->Proportional = false;
+		CommonPicturePreviewImage->Stretch = false;
+		CommonPicturePreviewImage->Transparent = true;
+		CommonPicturePreviewImage->Left = 0;
+		CommonPicturePreviewImage->Top = 0;
+	}
+
+	if (!CommonPicturePreviewSvg)
+	{
+		CommonPicturePreviewSvg = new TSkSvg(this);
+		CommonPicturePreviewSvg->Parent = CommonPicturePreviewScrollBox;
+		CommonPicturePreviewSvg->Align = alNone;
+		CommonPicturePreviewSvg->Left = 0;
+		CommonPicturePreviewSvg->Top = 0;
+		CommonPicturePreviewSvg->Width = 1;
+		CommonPicturePreviewSvg->Height = 1;
+		CommonPicturePreviewSvg->Svg->WrapMode = TSkSvgWrapMode::Original;
+		CommonPicturePreviewSvg->Visible = false;
+	}
+}
+
+void TMainForm::CenterCommonPicturePreviewContent()
+{
+	if (!CommonPicturePreviewScrollBox)
+		return;
+
+	TControl* activePreview = nullptr;
+	if (CommonPicturePreviewSvg && CommonPicturePreviewSvg->Visible)
+		activePreview = CommonPicturePreviewSvg;
+	else if (CommonPicturePreviewImage && CommonPicturePreviewImage->Visible)
+		activePreview = CommonPicturePreviewImage;
+
+	if (!activePreview)
+		return;
+
+	const int viewportWidth = CommonPicturePreviewScrollBox->ClientWidth;
+	const int viewportHeight = CommonPicturePreviewScrollBox->ClientHeight;
+	int left = 0;
+	int top = 0;
+
+	if (activePreview->Width < viewportWidth)
+		left = (viewportWidth - activePreview->Width) / 2;
+	if (activePreview->Height < viewportHeight)
+		top = (viewportHeight - activePreview->Height) / 2;
+
+	activePreview->Left = left;
+	activePreview->Top = top;
+}
+
+void __fastcall TMainForm::CommonPicturePreviewScrollBoxResize(TObject *Sender)
+{
+	CenterCommonPicturePreviewContent();
+}
+
+void TMainForm::ClearCommonPicturePreview(const String& statusText)
+{
+	EnsureCommonPicturePreviewControls();
+	if (!CommonPicturePreviewInfoLabel || !CommonPicturePreviewImage)
+		return;
+
+	CommonPicturePreviewImage->Picture->Assign(nullptr);
+	CommonPicturePreviewImage->Width = 1;
+	CommonPicturePreviewImage->Height = 1;
+	CommonPicturePreviewImage->Visible = true;
+	if (CommonPicturePreviewSvg)
+	{
+		CommonPicturePreviewSvg->Svg->Source = L"";
+		CommonPicturePreviewSvg->Width = 1;
+		CommonPicturePreviewSvg->Height = 1;
+		CommonPicturePreviewSvg->Visible = false;
+	}
+	if (CommonPicturePreviewScrollBox)
+	{
+		CommonPicturePreviewScrollBox->HorzScrollBar->Position = 0;
+		CommonPicturePreviewScrollBox->VertScrollBar->Position = 0;
+	}
+	CenterCommonPicturePreviewContent();
+	CommonPicturePreviewInfoLabel->Caption = statusText;
+}
+
+bool TMainForm::ShowCommonPicturePreviewForNode(VirtualTreeData* data)
+{
+	if (!data)
+		return false;
+
+	TCommonPictures* pictureMetadata = dynamic_cast<TCommonPictures*>(data->MetadataObject);
+	if (!pictureMetadata)
+		return false;
+
+	EnsureCommonPicturePreviewControls();
+	if (!CommonPicturePreviewInfoLabel || !CommonPicturePreviewImage)
+		return false;
+
+	TBytes imageBytes;
+	bool loaded = false;
+	String loadedFrom = L"";
+
+	if (pictureMetadata->root_data && TryExtractImageBytesFromTree(pictureMetadata->root_data.get(), imageBytes))
+	{
+		loaded = true;
+		loadedFrom = L"данные метаданных";
+	}
+
+	if (!loaded && pictureMetadata->parent)
+	{
+		std::vector<String> guidCandidates;
+		AddUniqueCandidate(guidCandidates, pictureMetadata->guid);
+		if (pictureMetadata->root_data)
+			CollectGuidReferences(pictureMetadata->root_data.get(), guidCandidates);
+
+		for (const auto& guidCandidate : guidCandidates)
+		{
+			if (guidCandidate.IsEmpty())
+				continue;
+
+			std::vector<String> fileCandidates;
+			const String normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(guidCandidate);
+			AddUniqueCandidate(fileCandidates, guidCandidate);
+			AddUniqueCandidate(fileCandidates, normalizedGuid);
+			for (int i = 0; i <= 7; ++i)
+			{
+				AddUniqueCandidate(fileCandidates, guidCandidate + L"." + IntToStr(i));
+				AddUniqueCandidate(fileCandidates, normalizedGuid + L"." + IntToStr(i));
+			}
+
+			for (const auto& fileName : fileCandidates)
+			{
+				v8file* file = pictureMetadata->parent->GetFile(fileName);
+				if (TryExtractImageBytesFromV8File(file, imageBytes))
+				{
+					loaded = true;
+					loadedFrom = fileName;
+					break;
+				}
+			}
+
+			if (loaded)
+				break;
+		}
+	}
+
+	if (!loaded)
+	{
+		std::vector<String> sourceGuids;
+		AddUniqueCandidate(sourceGuids, pictureMetadata->guid);
+		if (pictureMetadata->root_data)
+			CollectGuidReferences(pictureMetadata->root_data.get(), sourceGuids);
+		for (const auto& sourceGuid : sourceGuids)
+		{
+			if (TryExtractImageBytesFromSourceCf(sourceGuid, imageBytes))
+			{
+				loaded = true;
+				loadedFrom = L"SourceCF";
+				break;
+			}
+		}
+	}
+
+	if (!loaded || imageBytes.empty())
+	{
+		ClearCommonPicturePreview(L"Изображение не найдено для: " + data->Name);
+		return true;
+	}
+
+	try
+	{
+		String svgText;
+		if (!TryLoadPictureFromBytes(imageBytes, CommonPicturePreviewImage->Picture))
+		{
+			TBytes embeddedBytes;
+			if (TryExtractPictureFromZipBytes(imageBytes, embeddedBytes)
+				&& TryLoadPictureFromBytes(embeddedBytes, CommonPicturePreviewImage->Picture))
+			{
+				imageBytes = embeddedBytes;
+			}
+			else if (TryExtractEmbeddedPictureBytes(imageBytes, embeddedBytes)
+				&& TryLoadPictureFromBytes(embeddedBytes, CommonPicturePreviewImage->Picture))
+			{
+				imageBytes = embeddedBytes;
+			}
+			else if (TryDecodeSvgTextFromBytes(imageBytes, svgText))
+			{
+			}
+			else
+			{
+				ClearCommonPicturePreview(L"Не удалось декодировать картинку: " + data->Name);
+				return true;
+			}
+		}
+		else
+		{
+			svgText = L"";
+		}
+
+		if (!svgText.IsEmpty())
+		{
+			if (!CommonPicturePreviewSvg)
+			{
+				ClearCommonPicturePreview(L"SVG не поддержан в текущей сборке: " + data->Name);
+				return true;
+			}
+
+			CommonPicturePreviewImage->Visible = false;
+			CommonPicturePreviewSvg->Visible = true;
+			CommonPicturePreviewSvg->Svg->Source = svgText;
+
+			int svgWidth = static_cast<int>(CommonPicturePreviewSvg->Svg->OriginalSize.Width + 0.5f);
+			int svgHeight = static_cast<int>(CommonPicturePreviewSvg->Svg->OriginalSize.Height + 0.5f);
+			if (svgWidth < 1) svgWidth = 1;
+			if (svgHeight < 1) svgHeight = 1;
+			CommonPicturePreviewSvg->Width = svgWidth;
+			CommonPicturePreviewSvg->Height = svgHeight;
+		}
+		else
+		{
+			CommonPicturePreviewSvg->Visible = false;
+			CommonPicturePreviewImage->Visible = true;
+			if (CommonPicturePreviewImage->Picture->Graphic && !CommonPicturePreviewImage->Picture->Graphic->Empty)
+			{
+				CommonPicturePreviewImage->Width = CommonPicturePreviewImage->Picture->Graphic->Width;
+				CommonPicturePreviewImage->Height = CommonPicturePreviewImage->Picture->Graphic->Height;
+			}
+		}
+		if (CommonPicturePreviewScrollBox)
+		{
+			CommonPicturePreviewScrollBox->HorzScrollBar->Position = 0;
+			CommonPicturePreviewScrollBox->VertScrollBar->Position = 0;
+		}
+		CenterCommonPicturePreviewContent();
+		CommonPicturePreviewInfoLabel->Caption =
+			L"Картинка: " + data->Name + L", размер: " + IntToStr(imageBytes.Length)
+			+ L" байт, источник: " + loadedFrom;
+		return true;
+	}
+	catch (...)
+	{
+		ClearCommonPicturePreview(L"Не удалось декодировать картинку: " + data->Name);
+		return true;
+	}
+}
+
+//---------------------------------------------------------------------------
+
+void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 {
 	Node = GetActiveTreeNode(VirtualStringTreeValue1C, Node);
 	if (!Node)
@@ -3721,6 +4523,13 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 
 	}
 
+	if (Data && ShowCommonPicturePreviewForNode(Data))
+	{
+		if (pagesEdit && TabSheet1)
+			pagesEdit->ActivePage = TabSheet1;
+		return;
+	}
+
 	if (moduleTextSelected && mess)
 	{
 		String nodeName = Data ? Data->Name : L"";
@@ -3802,7 +4611,7 @@ void __fastcall TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 	ActivateModuleTab(tab);
 }
 
-void __fastcall TMainForm::ScheduleMetadataNodeText(PVirtualNode Node)
+void TMainForm::ScheduleMetadataNodeText(PVirtualNode Node)
 {
 	PendingModuleNode = GetActiveTreeNode(VirtualStringTreeValue1C, Node);
 	if (!PendingModuleNode)
@@ -3893,5 +4702,6 @@ void __fastcall TMainForm::ActionSaveCFExecute(TObject *Sender)
 	}
 }
 //---------------------------------------------------------------------------
+
 
 

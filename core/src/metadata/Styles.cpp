@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -26,36 +26,36 @@ namespace
     }
 }
 
-__fastcall TStyles::TStyles() : BaseMetadataObject()
+TStyles::TStyles() : BaseMetadataObject()
 {
     styleName = "";
     root_data.reset();
 }
 
-__fastcall TStyles::TStyles(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TStyles::TStyles(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     styleName = "";
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TStyles::TStyles(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TStyles::TStyles(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     styleName = _name;
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TStyles::~TStyles()
+TStyles::~TStyles()
 {
 }
 
-String __fastcall TStyles::GetStyleName()
+String TStyles::GetStyleName()
 {
     return styleName;
 }
 
-void __fastcall TStyles::SetStyleName(String _name)
+void TStyles::SetStyleName(String _name)
 {
     styleName = _name;
     name = _name;
@@ -86,7 +86,7 @@ std::vector<std::unique_ptr<TForm1C>>& TStyles::getForms()
     return forms;
 }
 
-void __fastcall TStyles::initializeFromTree()
+void TStyles::initializeFromTree()
 {
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
@@ -99,3 +99,4 @@ void __fastcall TStyles::initializeFromTree()
     if (styleName.IsEmpty())
         styleName = name;
 }
+

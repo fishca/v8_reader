@@ -26,10 +26,11 @@ public:
 	std::vector<String> tabulars;    // список табличных частей
 	std::vector<String> forms;       // список форм
 	/* TODO : Реализовать класс */
-	__fastcall TSequences();
-	__fastcall TSequences(v8catalog *_parent, const String& _guid);
-	__fastcall TSequences(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TSequences();
+	TSequences();
+	TSequences(v8catalog *_parent, const String& _guid);
+	TSequences(v8catalog *_parent, const String& _guid, const String& _name);
+	~TSequences();
 };
 
 #endif
+

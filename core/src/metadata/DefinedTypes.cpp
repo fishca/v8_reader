@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TDefinedTypes::TDefinedTypes() : BaseMetadataObject()
+TDefinedTypes::TDefinedTypes() : BaseMetadataObject()
 {
     typeName = "";
     root_data.reset();
 }
 
-__fastcall TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     typeName = "";
     root_data.reset();
 }
 
-__fastcall TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     typeName = _name;
     root_data.reset();
 }
 
-__fastcall TDefinedTypes::~TDefinedTypes()
+TDefinedTypes::~TDefinedTypes()
 {
 }
 
-String __fastcall TDefinedTypes::GetTypeName()
+String TDefinedTypes::GetTypeName()
 {
     return typeName;
 }
 
-void __fastcall TDefinedTypes::SetTypeName(String _name)
+void TDefinedTypes::SetTypeName(String _name)
 {
     typeName = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TDefinedTypes::getForms()
     return forms;
 }
 
-void __fastcall TDefinedTypes::initializeFromTree()
+void TDefinedTypes::initializeFromTree()
 {
-    // Инициализация определяемого типа из дерева метаданных
-    // Имя типа уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РѕРїСЂРµРґРµР»СЏРµРјРѕРіРѕ С‚РёРїР° РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ С‚РёРїР° СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

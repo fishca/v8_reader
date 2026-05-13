@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef StylesH
 #define StylesH
@@ -12,13 +12,13 @@ private:
     String styleName;
 
 public:
-    __fastcall TStyles();
-    __fastcall TStyles(v8catalog* _parent, const String& _guid);
-    __fastcall TStyles(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TStyles();
+    TStyles();
+    TStyles(v8catalog* _parent, const String& _guid);
+    TStyles(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TStyles();
 
-    String __fastcall GetStyleName();
-    void __fastcall SetStyleName(String _name);
+    String GetStyleName();
+    void SetStyleName(String _name);
 
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
@@ -26,7 +26,7 @@ public:
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
     std::vector<std::unique_ptr<TRequisite>> attributes;
@@ -37,3 +37,4 @@ private:
 };
 
 #endif
+

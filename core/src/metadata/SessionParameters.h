@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef SessionParametersH
 #define SessionParametersH
@@ -8,37 +8,37 @@
 
 /**
  * @class TSessionParameters
- * @brief Класс для хранения параметров сеанса (md_SessionParameters)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ СЃРµР°РЅСЃР° (md_SessionParameters)
  *
- * Параметры сеанса - это объекты метаданных, которые содержат
- * параметры, доступные в текущем сеансе работы системы.
+ * РџР°СЂР°РјРµС‚СЂС‹ СЃРµР°РЅСЃР° - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * РїР°СЂР°РјРµС‚СЂС‹, РґРѕСЃС‚СѓРїРЅС‹Рµ РІ С‚РµРєСѓС‰РµРј СЃРµР°РЅСЃРµ СЂР°Р±РѕС‚С‹ СЃРёСЃС‚РµРјС‹.
  */
 class TSessionParameters : public BaseMetadataObject
 {
 private:
-    // parameterName хранится в унаследованном поле name из BaseMetadataObject
+    // parameterName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TSessionParameters();
-    __fastcall TSessionParameters(v8catalog* _parent, const String& _guid);
-    __fastcall TSessionParameters(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TSessionParameters();
+    TSessionParameters();
+    TSessionParameters(v8catalog* _parent, const String& _guid);
+    TSessionParameters(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TSessionParameters();
 
-    // Методы для получения имени параметра сеанса
-    String __fastcall GetParameterName();
-    void __fastcall SetParameterName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РїР°СЂР°РјРµС‚СЂР° СЃРµР°РЅСЃР°
+    String GetParameterName();
+    void SetParameterName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

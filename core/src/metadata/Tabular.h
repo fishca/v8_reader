@@ -17,10 +17,11 @@ class TTabular : public TMDO
 public:
 	std::vector<std::unique_ptr<TRequisite>> attributes;
 
-	__fastcall TTabular();
-	__fastcall TTabular(String _name, String _guid);
-	__fastcall ~TTabular();
+	TTabular();
+	TTabular(String _name, String _guid);
+	~TTabular();
 
-	void __fastcall initializeFromTree(tree* root);
+	void initializeFromTree(tree* root);
 };
 #endif
+

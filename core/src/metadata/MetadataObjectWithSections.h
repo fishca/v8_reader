@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef MetadataObjectWithSectionsH
 #define MetadataObjectWithSectionsH
@@ -9,23 +9,23 @@
 #include <functional>
 
 //---------------------------------------------------------------------------
-// Конфигурация путей в дереве парсинга для разных типов метаданных 1С
+// РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РїСѓС‚РµР№ РІ РґРµСЂРµРІРµ РїР°СЂСЃРёРЅРіР° РґР»СЏ СЂР°Р·РЅС‹С… С‚РёРїРѕРІ РјРµС‚Р°РґР°РЅРЅС‹С… 1РЎ
 struct MetadataTreePaths
 {
-    int attIdx;           // индекс: root[0][attIdx][1] = количество реквизитов
-    std::vector<int> attItemPath;   // путь к имени реквизита от узла элемента
-    int tabIdx;           // индекс для табличных частей
-    std::vector<int> tabItemPath;   // путь к имени табличной части
-    int formsIdx;         // индекс: root[0][formsIdx][0] = узел списка форм
-    int cmdIdx;           // индекс: root[0][cmdIdx][1] = количество команд
-    std::vector<int> cmdItemPath;   // путь к имени команды от узла элемента
-    int moxIdx;           // индекс: root[0][moxIdx][0] = узел списка макетов
+    int attIdx;           // РёРЅРґРµРєСЃ: root[0][attIdx][1] = РєРѕР»РёС‡РµСЃС‚РІРѕ СЂРµРєРІРёР·РёС‚РѕРІ
+    std::vector<int> attItemPath;   // РїСѓС‚СЊ Рє РёРјРµРЅРё СЂРµРєРІРёР·РёС‚Р° РѕС‚ СѓР·Р»Р° СЌР»РµРјРµРЅС‚Р°
+    int tabIdx;           // РёРЅРґРµРєСЃ РґР»СЏ С‚Р°Р±Р»РёС‡РЅС‹С… С‡Р°СЃС‚РµР№
+    std::vector<int> tabItemPath;   // РїСѓС‚СЊ Рє РёРјРµРЅРё С‚Р°Р±Р»РёС‡РЅРѕР№ С‡Р°СЃС‚Рё
+    int formsIdx;         // РёРЅРґРµРєСЃ: root[0][formsIdx][0] = СѓР·РµР» СЃРїРёСЃРєР° С„РѕСЂРј
+    int cmdIdx;           // РёРЅРґРµРєСЃ: root[0][cmdIdx][1] = РєРѕР»РёС‡РµСЃС‚РІРѕ РєРѕРјР°РЅРґ
+    std::vector<int> cmdItemPath;   // РїСѓС‚СЊ Рє РёРјРµРЅРё РєРѕРјР°РЅРґС‹ РѕС‚ СѓР·Р»Р° СЌР»РµРјРµРЅС‚Р°
+    int moxIdx;           // РёРЅРґРµРєСЃ: root[0][moxIdx][0] = СѓР·РµР» СЃРїРёСЃРєР° РјР°РєРµС‚РѕРІ
     std::function<String(v8catalog*, String&)> getFormNameFunc;
-    bool hasTabulars = true;  // у журналов нет табличных частей
+    bool hasTabulars = true;  // Сѓ Р¶СѓСЂРЅР°Р»РѕРІ РЅРµС‚ С‚Р°Р±Р»РёС‡РЅС‹С… С‡Р°СЃС‚РµР№
 };
 
 //---------------------------------------------------------------------------
-// Базовый класс для объектов метаданных с реквизитами, ТЧ, формами, командами и макетами
+// Р‘Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РѕР±СЉРµРєС‚РѕРІ РјРµС‚Р°РґР°РЅРЅС‹С… СЃ СЂРµРєРІРёР·РёС‚Р°РјРё, РўР§, С„РѕСЂРјР°РјРё, РєРѕРјР°РЅРґР°РјРё Рё РјР°РєРµС‚Р°РјРё
 class MetadataObjectWithSections : public BaseMetadataObject
 {
 protected:
@@ -38,14 +38,14 @@ protected:
 	ModuleTextDocument managerModuleDocument;
 
     void initializeFromTreeWithPaths(const MetadataTreePaths& paths);
-	void __fastcall RefreshModuleDocument(ModuleTextKind kind);
-	ModuleTextDocument& __fastcall GetModuleDocument(ModuleTextKind kind);
+	void RefreshModuleDocument(ModuleTextKind kind);
+	ModuleTextDocument& GetModuleDocument(ModuleTextKind kind);
 
 public:
-    __fastcall MetadataObjectWithSections();
-    __fastcall MetadataObjectWithSections(v8catalog* _parent, const String& _guid);
-    __fastcall MetadataObjectWithSections(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~MetadataObjectWithSections();
+    MetadataObjectWithSections();
+    MetadataObjectWithSections(v8catalog* _parent, const String& _guid);
+    MetadataObjectWithSections(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~MetadataObjectWithSections();
 
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override { return attributes; }
     std::vector<std::unique_ptr<TComand>>& getCommands() override { return comands; }
@@ -53,17 +53,18 @@ public:
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override { return tabulars; }
     std::vector<std::unique_ptr<TForm1C>>& getForms() override { return forms; }
 
-	bool __fastcall HasEditableModuleText() override;
-	String __fastcall GetEditableModuleText() override;
-	void __fastcall SetEditableModuleText(const String& value) override;
-	bool __fastcall SaveEditableModuleText(const String& value, String& errorText) override;
-	ModuleTextLocation __fastcall GetEditableModuleLocation() override;
-	bool __fastcall HasEditableModuleText(ModuleTextKind kind) override;
-	String __fastcall GetEditableModuleText(ModuleTextKind kind) override;
-	void __fastcall SetEditableModuleText(ModuleTextKind kind, const String& value) override;
-	bool __fastcall SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText) override;
-	ModuleTextLocation __fastcall GetEditableModuleLocation(ModuleTextKind kind) override;
+	bool HasEditableModuleText() override;
+	String GetEditableModuleText() override;
+	void SetEditableModuleText(const String& value) override;
+	bool SaveEditableModuleText(const String& value, String& errorText) override;
+	ModuleTextLocation GetEditableModuleLocation() override;
+	bool HasEditableModuleText(ModuleTextKind kind) override;
+	String GetEditableModuleText(ModuleTextKind kind) override;
+	void SetEditableModuleText(ModuleTextKind kind, const String& value) override;
+	bool SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText) override;
+	ModuleTextLocation GetEditableModuleLocation(ModuleTextKind kind) override;
 };
 
 //---------------------------------------------------------------------------
 #endif
+

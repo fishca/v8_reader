@@ -25,10 +25,11 @@ public:
 	std::vector<String> tabulars;    // список табличных частей
 	std::vector<String> forms;       // список форм
 	/* TODO : Реализовать класс */
-	__fastcall TEnums();
-	__fastcall TEnums(v8catalog *_parent, const String& _guid);
-	__fastcall TEnums(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TEnums();
+	TEnums();
+	TEnums(v8catalog *_parent, const String& _guid);
+	TEnums(v8catalog *_parent, const String& _guid, const String& _name);
+	~TEnums();
 };
 
 #endif
+

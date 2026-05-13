@@ -6,7 +6,7 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-__fastcall BaseMetadataObject::BaseMetadataObject()
+BaseMetadataObject::BaseMetadataObject()
 {
     name = "";
     guid = "";
@@ -14,7 +14,7 @@ __fastcall BaseMetadataObject::BaseMetadataObject()
     parent = nullptr;
 }
 
-__fastcall BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const String& _guid)
+BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const String& _guid)
 {
     guid = _guid;
     parent = _parent;
@@ -22,7 +22,7 @@ __fastcall BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const Stri
     name = ""; // Имя будет инициализировано в производных классах
 }
 
-__fastcall BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const String& _guid, const String& _name)
+BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const String& _guid, const String& _name)
 {
     name = _name;
     guid = _guid;
@@ -30,67 +30,68 @@ __fastcall BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const Stri
     root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 }
 
-__fastcall BaseMetadataObject::~BaseMetadataObject()
+BaseMetadataObject::~BaseMetadataObject()
 {
 	// unique_ptr автоматически освобождает память
 }
 
-String __fastcall BaseMetadataObject::GetName()
+String BaseMetadataObject::GetName()
 {
     return name;
 }
 
-String __fastcall BaseMetadataObject::GetGUID()
+String BaseMetadataObject::GetGUID()
 {
     return guid;
 }
 
-bool __fastcall BaseMetadataObject::HasEditableModuleText()
+bool BaseMetadataObject::HasEditableModuleText()
 {
 	return false;
 }
 
-String __fastcall BaseMetadataObject::GetEditableModuleText()
+String BaseMetadataObject::GetEditableModuleText()
 {
 	return L"";
 }
 
-void __fastcall BaseMetadataObject::SetEditableModuleText(const String& value)
+void BaseMetadataObject::SetEditableModuleText(const String& value)
 {
 }
 
-bool __fastcall BaseMetadataObject::SaveEditableModuleText(const String& value, String& errorText)
+bool BaseMetadataObject::SaveEditableModuleText(const String& value, String& errorText)
 {
 	errorText = L"Для этого объекта редактирование модуля не реализовано.";
 	return false;
 }
 
-ModuleTextLocation __fastcall BaseMetadataObject::GetEditableModuleLocation()
+ModuleTextLocation BaseMetadataObject::GetEditableModuleLocation()
 {
 	return ModuleTextLocation();
 }
 
-bool __fastcall BaseMetadataObject::HasEditableModuleText(ModuleTextKind kind)
+bool BaseMetadataObject::HasEditableModuleText(ModuleTextKind kind)
 {
 	return HasEditableModuleText();
 }
 
-String __fastcall BaseMetadataObject::GetEditableModuleText(ModuleTextKind kind)
+String BaseMetadataObject::GetEditableModuleText(ModuleTextKind kind)
 {
 	return GetEditableModuleText();
 }
 
-void __fastcall BaseMetadataObject::SetEditableModuleText(ModuleTextKind kind, const String& value)
+void BaseMetadataObject::SetEditableModuleText(ModuleTextKind kind, const String& value)
 {
 	SetEditableModuleText(value);
 }
 
-bool __fastcall BaseMetadataObject::SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText)
+bool BaseMetadataObject::SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText)
 {
 	return SaveEditableModuleText(value, errorText);
 }
 
-ModuleTextLocation __fastcall BaseMetadataObject::GetEditableModuleLocation(ModuleTextKind kind)
+ModuleTextLocation BaseMetadataObject::GetEditableModuleLocation(ModuleTextKind kind)
 {
 	return GetEditableModuleLocation();
 }
+

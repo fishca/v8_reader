@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TSettingsStorages::TSettingsStorages() : BaseMetadataObject()
+TSettingsStorages::TSettingsStorages() : BaseMetadataObject()
 {
     storageName = "";
     root_data.reset();
 }
 
-__fastcall TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     storageName = "";
     root_data.reset();
 }
 
-__fastcall TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     storageName = _name;
     root_data.reset();
 }
 
-__fastcall TSettingsStorages::~TSettingsStorages()
+TSettingsStorages::~TSettingsStorages()
 {
 }
 
-String __fastcall TSettingsStorages::GetStorageName()
+String TSettingsStorages::GetStorageName()
 {
     return storageName;
 }
 
-void __fastcall TSettingsStorages::SetStorageName(String _name)
+void TSettingsStorages::SetStorageName(String _name)
 {
     storageName = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TSettingsStorages::getForms()
     return forms;
 }
 
-void __fastcall TSettingsStorages::initializeFromTree()
+void TSettingsStorages::initializeFromTree()
 {
-    // Инициализация хранилища настроек из дерева метаданных
-    // Имя хранилища настроек уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С…СЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ С…СЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #ifndef WebServicesH
 #define WebServicesH
 
@@ -7,37 +7,37 @@
 
 /**
  * @class TWebServices
- * @brief Класс для хранения веб-сервисов (md_WebServices)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РІРµР±-СЃРµСЂРІРёСЃРѕРІ (md_WebServices)
  *
- * Веб-сервисы - это объекты метаданных, которые предоставляют
- * SOAP и HTTP интерфейсы для интеграции с внешними системами.
+ * Р’РµР±-СЃРµСЂРІРёСЃС‹ - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ РїСЂРµРґРѕСЃС‚Р°РІР»СЏСЋС‚
+ * SOAP Рё HTTP РёРЅС‚РµСЂС„РµР№СЃС‹ РґР»СЏ РёРЅС‚РµРіСЂР°С†РёРё СЃ РІРЅРµС€РЅРёРјРё СЃРёСЃС‚РµРјР°РјРё.
  */
 class TWebServices : public BaseMetadataObject
 {
 private:
-    // data хранится в унаследованном поле root_data из BaseMetadataObject
+    // data С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ root_data РёР· BaseMetadataObject
 
 public:
-    __fastcall TWebServices();
-    __fastcall TWebServices(v8catalog* _parent, const String& _guid);
-    __fastcall TWebServices(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TWebServices();
+    TWebServices();
+    TWebServices(v8catalog* _parent, const String& _guid);
+    TWebServices(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TWebServices();
 
-    // Методы для получения имени веб-сервиса
-    String __fastcall GetWebServiceName();
-    void __fastcall SetWebServiceName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РІРµР±-СЃРµСЂРІРёСЃР°
+    String GetWebServiceName();
+    void SetWebServiceName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 
 //---------------------------------------------------------------------------
 #endif
+

@@ -8,21 +8,21 @@
 #pragma package(smart_init)
 
 
-__fastcall TNumerators::TNumerators()
+TNumerators::TNumerators()
 {
 	guid   = "";
 	name   = "";
 	parent = NULL;
 }
 
-__fastcall TNumerators::TNumerators(v8catalog *_parent, const String& _guid)
+TNumerators::TNumerators(v8catalog *_parent, const String& _guid)
 {
 	guid      = _guid;
 	parent    = _parent;
 	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 }
 
-__fastcall TNumerators::TNumerators(v8catalog *_parent, const String& _guid, const String& _name)
+TNumerators::TNumerators(v8catalog *_parent, const String& _guid, const String& _name)
 {
 	name      = _name;
 	guid      = _guid;
@@ -30,7 +30,8 @@ __fastcall TNumerators::TNumerators(v8catalog *_parent, const String& _guid, con
 	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 }
 
-__fastcall TNumerators::~TNumerators()
+TNumerators::~TNumerators()
 {
 
 }
+

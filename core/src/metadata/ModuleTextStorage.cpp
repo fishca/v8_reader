@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -15,9 +15,9 @@
 
 namespace
 {
-	bool __fastcall LooksLikeStrictModuleBody(const String& value);
+	bool LooksLikeStrictModuleBody(const String& value);
 
-	bool __fastcall LooksLikeUtf16Le(const TBytes& bytes, int sourceSize)
+	bool LooksLikeUtf16Le(const TBytes& bytes, int sourceSize)
 	{
 		int limit = sourceSize < 200 ? sourceSize : 200;
 		int checked = 0;
@@ -33,7 +33,7 @@ namespace
 		return checked > 0 && zeroOdd * 2 >= checked;
 	}
 
-	String __fastcall DecodeModuleText(const TBytes& sourceBytes, int sourceSize, ModuleTextEncodingKind& encoding)
+	String DecodeModuleText(const TBytes& sourceBytes, int sourceSize, ModuleTextEncodingKind& encoding)
 	{
 		encoding = ModuleTextEncodingKind::Unknown;
 
@@ -75,7 +75,7 @@ namespace
 		}
 	}
 
-	void __fastcall AddUniquePath(std::vector<String>& values, const String& value)
+	void AddUniquePath(std::vector<String>& values, const String& value)
 	{
 		if (value.IsEmpty())
 			return;
@@ -88,7 +88,7 @@ namespace
 		values.push_back(value);
 	}
 
-	std::vector<String> __fastcall GetSourceCfRoots()
+	std::vector<String> GetSourceCfRoots()
 	{
 		std::vector<String> roots;
 		AddUniquePath(roots, TPath::Combine(GetCurrentDir(), L"SourceCF"));
@@ -96,7 +96,7 @@ namespace
 		return roots;
 	}
 
-	void __fastcall AddUniqueString(std::vector<String>& values, const String& value)
+	void AddUniqueString(std::vector<String>& values, const String& value)
 	{
 		if (value.IsEmpty())
 			return;
@@ -109,7 +109,7 @@ namespace
 		values.push_back(value);
 	}
 
-	std::vector<String> __fastcall GetModuleContainerCandidates(const String& baseGuid,
+	std::vector<String> GetModuleContainerCandidates(const String& baseGuid,
 		ModuleTextKind kind = ModuleTextKind::Unknown)
 	{
 		std::vector<String> candidates;
@@ -162,7 +162,7 @@ namespace
 		return candidates;
 	}
 
-	String __fastcall ReadDiskFileRawText(const String& filePath, ModuleTextEncodingKind& encoding)
+	String ReadDiskFileRawText(const String& filePath, ModuleTextEncodingKind& encoding)
 	{
 		if (!FileExists(filePath))
 		{
@@ -177,7 +177,7 @@ namespace
 		return DecodeModuleText(sb->Bytes, sb->Size, encoding);
 	}
 
-	bool __fastcall TryReadDiskModuleFile(const String& filePath,
+	bool TryReadDiskModuleFile(const String& filePath,
 										  ModuleTextKind kind,
 										  const String& metadataGuid,
 										  const String& moduleDataGuid,
@@ -215,7 +215,7 @@ namespace
 		return true;
 	}
 
-	bool __fastcall TryLoadFromSourceCfByGuid(const String& metadataGuid,
+	bool TryLoadFromSourceCfByGuid(const String& metadataGuid,
 											  ModuleTextKind kind,
 											  ModuleTextDocument& document)
 	{
@@ -294,7 +294,7 @@ namespace
 		return false;
 	}
 
-	bool __fastcall TryLoadFromSourceCfByModuleName(const String& moduleName,
+	bool TryLoadFromSourceCfByModuleName(const String& moduleName,
 													ModuleTextKind kind,
 													ModuleTextDocument& document)
 	{
@@ -327,7 +327,7 @@ namespace
 		return false;
 	}
 
-	void __fastcall CollectGuidReferences(tree* node, std::vector<String>& guids)
+	void CollectGuidReferences(tree* node, std::vector<String>& guids)
 	{
 		if (!node)
 			return;
@@ -339,7 +339,7 @@ namespace
 			CollectGuidReferences(node->get_subnode(i), guids);
 	}
 
-	String __fastcall FindEmbeddedModuleText(tree* node)
+	String FindEmbeddedModuleText(tree* node)
 	{
 		if (!node)
 			return L"";
@@ -357,7 +357,7 @@ namespace
 		return L"";
 	}
 
-	String __fastcall ReadRootMetadataGuid(v8catalog* parent)
+	String ReadRootMetadataGuid(v8catalog* parent)
 	{
 		if (!parent)
 			return L"";
@@ -378,7 +378,7 @@ namespace
 		return L"";
 	}
 
-	String __fastcall ReadV8FileAsText(v8file* file)
+	String ReadV8FileAsText(v8file* file)
 	{
 		if (!file)
 			return L"";
@@ -400,7 +400,7 @@ namespace
 		}
 	}
 
-	bool __fastcall LooksLikeStrictModuleBody(const String& value)
+	bool LooksLikeStrictModuleBody(const String& value)
 	{
 		String text = Trim(value);
 		if (text.IsEmpty())
@@ -410,7 +410,7 @@ namespace
 			return false;
 
 		const String upper = UpperCase(text);
-		if (upper.Pos(L"ПРОЦЕДУРА") > 0 || upper.Pos(L"ФУНКЦИЯ") > 0
+		if (upper.Pos(L"РџР РћР¦Р•Р”РЈР Рђ") > 0 || upper.Pos(L"Р¤РЈРќРљР¦РРЇ") > 0
 			|| upper.Pos(L"PROCEDURE") > 0 || upper.Pos(L"FUNCTION") > 0)
 			return true;
 
@@ -424,7 +424,7 @@ namespace
 		return false;
 	}
 
-	String __fastcall ExtractConfigurationObjectGuid(const String& metadataText)
+	String ExtractConfigurationObjectGuid(const String& metadataText)
 	{
 		const String marker = L"{1,0,";
 		int searchFrom = 1;
@@ -450,7 +450,7 @@ namespace
 	}
 
 
-	String __fastcall ReadConfigurationObjectGuid(v8catalog* parent)
+	String ReadConfigurationObjectGuid(v8catalog* parent)
 	{
 		const String metadataGuid = ReadRootMetadataGuid(parent);
 		if (metadataGuid.IsEmpty() || !parent)
@@ -462,7 +462,7 @@ namespace
 		return objectGuid.IsEmpty() ? metadataGuid : objectGuid;
 	}
 
-	String __fastcall TryReadNamedTextFile(v8catalog* catalog, const String& fileName)
+	String TryReadNamedTextFile(v8catalog* catalog, const String& fileName)
 	{
 		if (!catalog)
 			return L"";
@@ -475,7 +475,7 @@ namespace
 		return ModuleTextStorage::LooksLike1CModuleText(text) ? text : L"";
 	}
 
-	String __fastcall TryReadModuleContainer(v8file* file, bool strictContainerOnly = false)
+	String TryReadModuleContainer(v8file* file, bool strictContainerOnly = false)
 	{
 		if (!file)
 			return L"";
@@ -537,7 +537,7 @@ namespace
 		}
 	}
 
-	void __fastcall WriteTextWithEncoding(TStream* stream, const String& text, ModuleTextEncodingKind encoding)
+	void WriteTextWithEncoding(TStream* stream, const String& text, ModuleTextEncodingKind encoding)
 	{
 		TBytes bytes;
 
@@ -583,7 +583,7 @@ namespace
 
 namespace ModuleTextStorage
 {
-	bool __fastcall LooksLike1CModuleText(const String& value)
+	bool LooksLike1CModuleText(const String& value)
 	{
 		String trimmed = Trim(value);
 		if (trimmed.IsEmpty() || trimmed[1] == L'{')
@@ -592,13 +592,13 @@ namespace ModuleTextStorage
 		return value.Length() > 0
 			&& (value.Pos(L"\n") > 0
 				|| value.Pos(L"\r") > 0
-				|| value.Pos(L"Процедура") > 0
-				|| value.Pos(L"Функция") > 0
-				|| value.Pos(L"КонецПроцедуры") > 0
-				|| value.Pos(L"КонецФункции") > 0);
+				|| value.Pos(L"РџСЂРѕС†РµРґСѓСЂР°") > 0
+				|| value.Pos(L"Р¤СѓРЅРєС†РёСЏ") > 0
+				|| value.Pos(L"РљРѕРЅРµС†РџСЂРѕС†РµРґСѓСЂС‹") > 0
+				|| value.Pos(L"РљРѕРЅРµС†Р¤СѓРЅРєС†РёРё") > 0);
 	}
 
-	bool __fastcall IsGuidLike(const String& value)
+	bool IsGuidLike(const String& value)
 	{
 		if (value.Length() != 36)
 			return false;
@@ -625,7 +625,7 @@ namespace ModuleTextStorage
 		return true;
 	}
 
-	String __fastcall NormalizeGuidFileName(const String& guid)
+	String NormalizeGuidFileName(const String& guid)
 	{
 		String result = Trim(guid).LowerCase();
 		if (result.Length() >= 2 && result[1] == L'{' && result[result.Length()] == L'}')
@@ -633,7 +633,7 @@ namespace ModuleTextStorage
 		return result;
 	}
 
-	ModuleTextDocument __fastcall LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName)
+	ModuleTextDocument LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -691,7 +691,7 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	ModuleTextDocument __fastcall LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName)
+	ModuleTextDocument LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -717,7 +717,7 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	ModuleTextDocument __fastcall LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind)
+	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -771,7 +771,7 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	ModuleTextDocument __fastcall LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind)
+	ModuleTextDocument LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -819,7 +819,7 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	ModuleTextDocument __fastcall LoadConfigurationModule(v8catalog* parent, ModuleTextKind kind)
+	ModuleTextDocument LoadConfigurationModule(v8catalog* parent, ModuleTextKind kind)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -855,13 +855,13 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	bool __fastcall SaveDocument(ModuleTextDocument& document, const String& newText, String& errorText)
+	bool SaveDocument(ModuleTextDocument& document, const String& newText, String& errorText)
 	{
 		errorText = L"";
 
 		if (!document.location.editable || document.location.filePath.IsEmpty())
 		{
-			errorText = L"Не найден редактируемый файл модуля в SourceCF.";
+			errorText = L"РќРµ РЅР°Р№РґРµРЅ СЂРµРґР°РєС‚РёСЂСѓРµРјС‹Р№ С„Р°Р№Р» РјРѕРґСѓР»СЏ РІ SourceCF.";
 			return false;
 		}
 
@@ -869,7 +869,7 @@ namespace ModuleTextStorage
 		const String dir = ExtractFileDir(target);
 		if (!TDirectory::Exists(dir))
 		{
-			errorText = L"Каталог модуля не существует: " + dir;
+			errorText = L"РљР°С‚Р°Р»РѕРі РјРѕРґСѓР»СЏ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚: " + dir;
 			return false;
 		}
 
@@ -899,7 +899,7 @@ namespace ModuleTextStorage
 		}
 	}
 
-	String __fastcall DescribeLocation(const ModuleTextLocation& location)
+	String DescribeLocation(const ModuleTextLocation& location)
 	{
 		if (!location.filePath.IsEmpty())
 			return location.filePath;
@@ -910,3 +910,4 @@ namespace ModuleTextStorage
 		return L"";
 	}
 }
+

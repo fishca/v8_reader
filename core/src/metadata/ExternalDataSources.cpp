@@ -211,13 +211,13 @@ namespace
 	}
 }
 
-__fastcall TExternalDataSources::TExternalDataSources()
+TExternalDataSources::TExternalDataSources()
 	: BaseMetadataObject()
 {
 	root_data.reset();
 }
 
-__fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid)
+TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid)
 	: BaseMetadataObject()
 {
 	name = _guid;
@@ -241,7 +241,7 @@ __fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const 
 	root_data.reset();
 }
 
-__fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid, const String& _name)
+TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid, const String& _name)
 	: BaseMetadataObject()
 {
 	name = _name;
@@ -265,7 +265,7 @@ __fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const 
 	root_data.reset();
 }
 
-__fastcall TExternalDataSources::~TExternalDataSources()
+TExternalDataSources::~TExternalDataSources()
 {
 }
 
@@ -294,7 +294,7 @@ std::vector<std::unique_ptr<TForm1C>>& TExternalDataSources::getForms()
 	return forms;
 }
 
-void __fastcall TExternalDataSources::initializeFromTree()
+void TExternalDataSources::initializeFromTree()
 {
 	tree* root = GetPayloadRoot(root_data.get());
 	String sourceName = GetFirstValueByPath(root, {
@@ -335,3 +335,4 @@ void __fastcall TExternalDataSources::initializeFromTree()
 		}
 	}
 }
+

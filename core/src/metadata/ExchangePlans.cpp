@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -375,41 +375,41 @@ static MetadataTreePaths GetExchangePlansPaths()
     return paths;
 }
 
-__fastcall TExchangePlans::TExchangePlans() : MetadataObjectWithSections()
+TExchangePlans::TExchangePlans() : MetadataObjectWithSections()
 {
     exchangePlanName = "";
     root_data.reset();
 }
 
-__fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid) : MetadataObjectWithSections(_parent, _guid)
+TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid) : MetadataObjectWithSections(_parent, _guid)
 {
     exchangePlanName = "";
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name) : MetadataObjectWithSections(_parent, _guid, _name)
+TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name) : MetadataObjectWithSections(_parent, _guid, _name)
 {
     exchangePlanName = _name;
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TExchangePlans::~TExchangePlans()
+TExchangePlans::~TExchangePlans()
 {
 }
 
-String __fastcall TExchangePlans::GetExchangePlanName()
+String TExchangePlans::GetExchangePlanName()
 {
     return exchangePlanName;
 }
 
-void __fastcall TExchangePlans::SetExchangePlanName(String _name)
+void TExchangePlans::SetExchangePlanName(String _name)
 {
     exchangePlanName = _name;
 }
 
-void __fastcall TExchangePlans::initializeFromTree()
+void TExchangePlans::initializeFromTree()
 {
     MetadataObjectWithSections::initializeFromTreeWithPaths(GetExchangePlansPaths());
 
@@ -428,3 +428,4 @@ void __fastcall TExchangePlans::initializeFromTree()
     if (getLayouts().empty() && root_data)
         TryCollectExchangePlanLayouts(parent, root_data.get(), getLayouts());
 }
+

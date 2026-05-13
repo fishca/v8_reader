@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef FilterCriteriaH
 #define FilterCriteriaH
@@ -8,37 +8,37 @@
 
 /**
  * @class TFilterCriteria
- * @brief Класс для хранения критериев отбора (md_FilterCriteria)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РєСЂРёС‚РµСЂРёРµРІ РѕС‚Р±РѕСЂР° (md_FilterCriteria)
  *
- * Критерии отбора - это объекты метаданных, которые содержат
- * условия для фильтрации данных в запросах и отчетах.
+ * РљСЂРёС‚РµСЂРёРё РѕС‚Р±РѕСЂР° - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * СѓСЃР»РѕРІРёСЏ РґР»СЏ С„РёР»СЊС‚СЂР°С†РёРё РґР°РЅРЅС‹С… РІ Р·Р°РїСЂРѕСЃР°С… Рё РѕС‚С‡РµС‚Р°С….
  */
 class TFilterCriteria : public BaseMetadataObject
 {
 private:
-    // filterCriteriaName хранится в унаследованном поле name из BaseMetadataObject
+    // filterCriteriaName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TFilterCriteria();
-    __fastcall TFilterCriteria(v8catalog* _parent, const String& _guid);
-    __fastcall TFilterCriteria(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TFilterCriteria();
+    TFilterCriteria();
+    TFilterCriteria(v8catalog* _parent, const String& _guid);
+    TFilterCriteria(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TFilterCriteria();
 
-    // Методы для получения имени критерия отбора
-    String __fastcall GetFilterCriteriaName();
-    void __fastcall SetFilterCriteriaName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РєСЂРёС‚РµСЂРёСЏ РѕС‚Р±РѕСЂР°
+    String GetFilterCriteriaName();
+    void SetFilterCriteriaName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

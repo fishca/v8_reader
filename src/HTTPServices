@@ -1,20 +1,20 @@
-#include <vcl.h>
+﻿#include <vcl.h>
 #pragma hdrstop
 
 #include "HTTPServices.h"
 
 //---------------------------------------------------------------------------
-__fastcall THTTPServices::THTTPServices(v8catalog* cf, String& fileName, String& objectName)
+THTTPServices::THTTPServices(v8catalog* cf, String& fileName, String& objectName)
 	: BaseMetadataObject(cf, fileName, objectName)
 {
 	FHTTPServicesName = objectName;
 }
 //---------------------------------------------------------------------------
-__fastcall THTTPServices::THTTPServices(void)
+THTTPServices::THTTPServices(void)
 {
 }
 //---------------------------------------------------------------------------
-__fastcall THTTPServices::~THTTPServices(void)
+THTTPServices::~THTTPServices(void)
 {
 }
 //---------------------------------------------------------------------------
@@ -25,3 +25,4 @@ UnicodeString THTTPServices::GetText()
 	return result;
 }
 //---------------------------------------------------------------------------
+

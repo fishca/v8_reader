@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef FunctionalOptionsH
 #define FunctionalOptionsH
@@ -8,37 +8,37 @@
 
 /**
  * @class TFunctionalOptions
- * @brief Класс для хранения функциональных опций (md_FunctionalOptions)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№ (md_FunctionalOptions)
  *
- * Функциональные опции - это объекты метаданных, которые содержат
- * настройки функциональности системы.
+ * Р¤СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹Рµ РѕРїС†РёРё - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * РЅР°СЃС‚СЂРѕР№РєРё С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕСЃС‚Рё СЃРёСЃС‚РµРјС‹.
  */
 class TFunctionalOptions : public BaseMetadataObject
 {
 private:
-    // name хранится в унаследованном поле name из BaseMetadataObject
+    // name С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TFunctionalOptions();
-    __fastcall TFunctionalOptions(v8catalog* _parent, const String& _guid);
-    __fastcall TFunctionalOptions(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TFunctionalOptions();
+    TFunctionalOptions();
+    TFunctionalOptions(v8catalog* _parent, const String& _guid);
+    TFunctionalOptions(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TFunctionalOptions();
 
-    // Методы для получения имени функциональной опции
-    String __fastcall GetOptionName();
-    void __fastcall SetOptionName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕР№ РѕРїС†РёРё
+    String GetOptionName();
+    void SetOptionName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

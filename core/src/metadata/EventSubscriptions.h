@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef EventSubscriptionsH
 #define EventSubscriptionsH
@@ -8,37 +8,37 @@
 
 /**
  * @class TEventSubscriptions
- * @brief Класс для хранения подписок на события (md_EventSubscriptions)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РїРѕРґРїРёСЃРѕРє РЅР° СЃРѕР±С‹С‚РёСЏ (md_EventSubscriptions)
  *
- * Подписки на события - это объекты метаданных, которые содержат
- * настройки подписок на различные события системы.
+ * РџРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёСЏ - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * РЅР°СЃС‚СЂРѕР№РєРё РїРѕРґРїРёСЃРѕРє РЅР° СЂР°Р·Р»РёС‡РЅС‹Рµ СЃРѕР±С‹С‚РёСЏ СЃРёСЃС‚РµРјС‹.
  */
 class TEventSubscriptions : public BaseMetadataObject
 {
 private:
-    // eventSubscriptionName хранится в унаследованном поле name из BaseMetadataObject
+    // eventSubscriptionName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TEventSubscriptions();
-    __fastcall TEventSubscriptions(v8catalog* _parent, const String& _guid);
-    __fastcall TEventSubscriptions(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TEventSubscriptions();
+    TEventSubscriptions();
+    TEventSubscriptions(v8catalog* _parent, const String& _guid);
+    TEventSubscriptions(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TEventSubscriptions();
 
-    // Методы для получения имени подписки на событие
-    String __fastcall GetEventSubscriptionName();
-    void __fastcall SetEventSubscriptionName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РїРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёРµ
+    String GetEventSubscriptionName();
+    void SetEventSubscriptionName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

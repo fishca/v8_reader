@@ -28,13 +28,13 @@ struct ConfigFile
 class ConfigStorage
 {
 public:
-	__fastcall ConfigStorage(){};
-	virtual __fastcall ~ConfigStorage(){};
-	virtual ConfigFile* __fastcall readfile(const String& path) = 0; // Если файл не существует, возвращается NULL
-	virtual bool __fastcall writefile(const String& path, TStream* str) = 0;
-	virtual String __fastcall presentation() = 0;
-	virtual void __fastcall close(ConfigFile* cf) = 0;
-	virtual bool __fastcall fileexists(const String& path) = 0;
+	ConfigStorage(){};
+	virtual ~ConfigStorage(){};
+	virtual ConfigFile* readfile(const String& path) = 0; // Если файл не существует, возвращается NULL
+	virtual bool writefile(const String& path, TStream* str) = 0;
+	virtual String presentation() = 0;
+	virtual void close(ConfigFile* cf) = 0;
+	virtual bool fileexists(const String& path) = 0;
 };
 
 //---------------------------------------------------------------------------
@@ -44,13 +44,13 @@ class ConfigStorageDirectory : public ConfigStorage
 private:
 	String fdir;
 public:
-	__fastcall ConfigStorageDirectory(const String& _dir);
+	ConfigStorageDirectory(const String& _dir);
 	__property String dir = {read = fdir};
-	virtual ConfigFile* __fastcall readfile(const String& path);
-	virtual bool __fastcall writefile(const String& path, TStream* str);
-	virtual String __fastcall presentation();
-	virtual void __fastcall close(ConfigFile* cf){delete cf->str; delete cf;};
-	virtual bool __fastcall fileexists(const String& path);
+	virtual ConfigFile* readfile(const String& path);
+	virtual bool writefile(const String& path, TStream* str);
+	virtual String presentation();
+	virtual void close(ConfigFile* cf){delete cf->str; delete cf;};
+	virtual bool fileexists(const String& path);
 };
 
 //---------------------------------------------------------------------------
@@ -61,13 +61,13 @@ private:
 	String filename;
 	v8catalog* cat;
 public:
-	__fastcall ConfigStorageCFFile(const String& fname);
-	virtual __fastcall ~ConfigStorageCFFile();
-	virtual ConfigFile* __fastcall readfile(const String& path);
-	virtual bool __fastcall writefile(const String& path, TStream* str);
-	virtual String __fastcall presentation();
-	virtual void __fastcall close(ConfigFile* cf);
-	virtual bool __fastcall fileexists(const String& path);
+	ConfigStorageCFFile(const String& fname);
+	virtual ~ConfigStorageCFFile();
+	virtual ConfigFile* readfile(const String& path);
+	virtual bool writefile(const String& path, TStream* str);
+	virtual String presentation();
+	virtual void close(ConfigFile* cf);
+	virtual bool fileexists(const String& path);
 };
 
 //---------------------------------------------------------------------------
@@ -92,8 +92,8 @@ struct container_file
 	int dynno; // Номер (индекс) динамического обновления (0, 1 и т.д.). Если без динамического обновления, то -1, если UID динамического обновления не найден, то -2. Для пропускаемых файлов -3.
 	//static wchar_t temppath[MAX_PATH];
 
-	__fastcall container_file(table_file* _f, const String& _name);
-	__fastcall ~container_file();
+	container_file(table_file* _f, const String& _name);
+	~container_file();
 	bool open();
 	bool ropen(); // raw open
 	void close();
@@ -110,14 +110,14 @@ protected:
 	std::map<String,container_file*> files;
 	bool ready;
 public:
-	__fastcall ConfigStorageTable(T_1CD* _base = NULL) : base(_base){};
-	virtual __fastcall ~ConfigStorageTable();
-	virtual ConfigFile* __fastcall readfile(const String& path);
-	virtual bool __fastcall writefile(const String& path, TStream* str);
-	virtual void __fastcall close(ConfigFile* cf);
-	bool __fastcall save_config(String _filename); // сохранение конфигурации в файл
-	bool __fastcall getready(){return ready;};
-	virtual bool __fastcall fileexists(const String& path);
+	ConfigStorageTable(T_1CD* _base = NULL) : base(_base){};
+	virtual ~ConfigStorageTable();
+	virtual ConfigFile* readfile(const String& path);
+	virtual bool writefile(const String& path, TStream* str);
+	virtual void close(ConfigFile* cf);
+	bool save_config(String _filename); // сохранение конфигурации в файл
+	bool getready(){return ready;};
+	virtual bool fileexists(const String& path);
 };
 
 //---------------------------------------------------------------------------
@@ -127,8 +127,8 @@ class ConfigStorageTableConfig : public ConfigStorageTable
 private:
 	String present;
 public:
-	__fastcall ConfigStorageTableConfig(TableFiles* tabf, T_1CD* _base = NULL);
-	virtual String __fastcall presentation();
+	ConfigStorageTableConfig(TableFiles* tabf, T_1CD* _base = NULL);
+	virtual String presentation();
 };
 
 //---------------------------------------------------------------------------
@@ -138,8 +138,8 @@ class ConfigStorageTableConfigSave : public ConfigStorageTable
 private:
 	String present;
 public:
-	__fastcall ConfigStorageTableConfigSave(TableFiles* tabc, TableFiles* tabcs, T_1CD* _base = NULL);
-	virtual String __fastcall presentation();
+	ConfigStorageTableConfigSave(TableFiles* tabc, TableFiles* tabcs, T_1CD* _base = NULL);
+	virtual String presentation();
 };
 
 //---------------------------------------------------------------------------
@@ -149,8 +149,8 @@ class ConfigStorageTableConfigCas : public ConfigStorageTable
 private:
 	String present;
 public:
-	__fastcall ConfigStorageTableConfigCas(TableFiles* tabc, const String& configver, T_1CD* _base = NULL);
-	virtual String __fastcall presentation();
+	ConfigStorageTableConfigCas(TableFiles* tabc, const String& configver, T_1CD* _base = NULL);
+	virtual String presentation();
 };
 
 //---------------------------------------------------------------------------
@@ -160,12 +160,13 @@ class ConfigStorageTableConfigCasSave : public ConfigStorageTable
 private:
 	String present;
 public:
-	__fastcall ConfigStorageTableConfigCasSave(TableFiles* tabc, TableFiles* tabcs, const TGUID& uid, const String& configver, T_1CD* _base = NULL);
-	virtual String __fastcall presentation();
+	ConfigStorageTableConfigCasSave(TableFiles* tabc, TableFiles* tabcs, const TGUID& uid, const String& configver, T_1CD* _base = NULL);
+	virtual String presentation();
 };
 
 
 
 //---------------------------------------------------------------------------
 #endif
+
 

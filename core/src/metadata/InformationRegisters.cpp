@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -10,12 +10,12 @@
 static InfoRegisterTreePaths GetInformationRegistersPaths()
 {
 	InfoRegisterTreePaths paths;
-	// TODO: пути скопированы по аналогии с Catalogs - необходимо проверить и исправить для регистров сведений
+	// TODO: РїСѓС‚Рё СЃРєРѕРїРёСЂРѕРІР°РЅС‹ РїРѕ Р°РЅР°Р»РѕРіРёРё СЃ Catalogs - РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРѕРІРµСЂРёС‚СЊ Рё РёСЃРїСЂР°РІРёС‚СЊ РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ СЃРІРµРґРµРЅРёР№
 	paths.attIdx = 7;
 	paths.attItemPath = {0, 1, 1, 1, 2};
-	paths.dimIdx = 4;   // измерения
+	paths.dimIdx = 4;   // РёР·РјРµСЂРµРЅРёСЏ
 	paths.dimItemPath = {0, 1, 1, 1, 2};
-	paths.resIdx = 3;   // ресурсы
+	paths.resIdx = 3;   // СЂРµСЃСѓСЂСЃС‹
 	paths.resItemPath = {0, 1, 1, 1, 2};
 	paths.formsIdx = 5;
 	paths.cmdIdx = 8;
@@ -25,30 +25,31 @@ static InfoRegisterTreePaths GetInformationRegistersPaths()
 	return paths;
 }
 
-__fastcall TInformationRegisters::TInformationRegisters()
+TInformationRegisters::TInformationRegisters()
 	: MetadataObjectInformationRegister()
 {
 }
 
-__fastcall TInformationRegisters::TInformationRegisters(v8catalog *_parent, const String& _guid)
+TInformationRegisters::TInformationRegisters(v8catalog *_parent, const String& _guid)
 	: MetadataObjectInformationRegister(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TInformationRegisters::TInformationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
+TInformationRegisters::TInformationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectInformationRegister(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TInformationRegisters::~TInformationRegisters()
+TInformationRegisters::~TInformationRegisters()
 {
 }
 
-void __fastcall TInformationRegisters::initializeFromTree()
+void TInformationRegisters::initializeFromTree()
 {
 	MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetInformationRegistersPaths());
 }
+

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters() : BaseMetadataObject()
+TFunctionalOptionsParameters::TFunctionalOptionsParameters() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TFunctionalOptionsParameters::~TFunctionalOptionsParameters()
+TFunctionalOptionsParameters::~TFunctionalOptionsParameters()
 {
 }
 
-String __fastcall TFunctionalOptionsParameters::GetParameterName()
+String TFunctionalOptionsParameters::GetParameterName()
 {
     return name;
 }
 
-void __fastcall TFunctionalOptionsParameters::SetParameterName(String _name)
+void TFunctionalOptionsParameters::SetParameterName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TFunctionalOptionsParameters::getForms()
     return forms;
 }
 
-void __fastcall TFunctionalOptionsParameters::initializeFromTree()
+void TFunctionalOptionsParameters::initializeFromTree()
 {
-    // Инициализация параметра функциональной опции из дерева метаданных
-    // Имя параметра функциональной опции уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїР°СЂР°РјРµС‚СЂР° С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕР№ РѕРїС†РёРё РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РїР°СЂР°РјРµС‚СЂР° С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕР№ РѕРїС†РёРё СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

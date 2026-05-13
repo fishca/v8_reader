@@ -27,11 +27,11 @@ public:
 	std::vector<std::unique_ptr<TTabular>> tabulars;        // список табличных частей
 	std::vector<std::unique_ptr<TForm1C>> forms;            // список форм
 
-	__fastcall TChartOfAccounts();
-	__fastcall TChartOfAccounts(v8catalog *_parent, const String& _guid);
-	__fastcall TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name);
+	TChartOfAccounts();
+	TChartOfAccounts(v8catalog *_parent, const String& _guid);
+	TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name);
 
-	virtual __fastcall ~TChartOfAccounts();
+	virtual ~TChartOfAccounts();
 
 	// Реализация виртуальных методов BaseMetadataObject
 	virtual std::vector<std::unique_ptr<TRequisite>>& getAttributes() override { return attributes; }
@@ -40,7 +40,8 @@ public:
 	virtual std::vector<std::unique_ptr<TTabular>>& getTabularSections() override { return tabulars; }
 	virtual std::vector<std::unique_ptr<TForm1C>>& getForms() override { return forms; }
 
-	virtual void __fastcall initializeFromTree() override;
+	virtual void initializeFromTree() override;
 };
 
 #endif
+

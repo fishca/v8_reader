@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #ifndef XDTOPackagesH
 #define XDTOPackagesH
 
@@ -7,35 +7,35 @@
 
 /**
  * @class TXDTOPackages
- * @brief Класс для хранения XDTO-пакетов (md_XDTOPackages)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ XDTO-РїР°РєРµС‚РѕРІ (md_XDTOPackages)
  *
- * XDTO-пакеты используются для работы с XDTO (XML Data Transfer Objects)
+ * XDTO-РїР°РєРµС‚С‹ РёСЃРїРѕР»СЊР·СѓСЋС‚СЃСЏ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ XDTO (XML Data Transfer Objects)
  */
 class TXDTOPackages : public BaseMetadataObject
 {
 private:
-    // data хранится в унаследованном поле root_data из BaseMetadataObject
+    // data С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ root_data РёР· BaseMetadataObject
 
 public:
-    __fastcall TXDTOPackages();
-    __fastcall TXDTOPackages(v8catalog* _parent, const String& _guid);
-    __fastcall TXDTOPackages(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TXDTOPackages();
+    TXDTOPackages();
+    TXDTOPackages(v8catalog* _parent, const String& _guid);
+    TXDTOPackages(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TXDTOPackages();
 
-    // Методы для получения имени XDTO-пакета
-    String __fastcall GetXDTOPackageName();
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё XDTO-РїР°РєРµС‚Р°
+    String GetXDTOPackageName();
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -45,3 +45,4 @@ private:
 
 //---------------------------------------------------------------------------
 #endif
+

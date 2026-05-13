@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef DocumentsH
 #define DocumentsH
@@ -10,12 +10,13 @@
 class TDocuments : public MetadataObjectWithSections
 {
 public:
-	__fastcall TDocuments();
-	__fastcall TDocuments(v8catalog *_parent, const String& _guid);
-	__fastcall TDocuments(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TDocuments();
+	TDocuments();
+	TDocuments(v8catalog *_parent, const String& _guid);
+	TDocuments(v8catalog *_parent, const String& _guid, const String& _name);
+	~TDocuments();
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 };
 
 #endif
+

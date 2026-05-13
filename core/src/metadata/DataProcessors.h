@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef DataProcessorsH
 #define DataProcessorsH
@@ -10,12 +10,13 @@
 class TDataProcessors : public MetadataObjectWithSections
 {
 public:
-	__fastcall TDataProcessors();
-	__fastcall TDataProcessors(v8catalog *_parent, const String& _guid);
-	__fastcall TDataProcessors(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TDataProcessors();
+	TDataProcessors();
+	TDataProcessors(v8catalog *_parent, const String& _guid);
+	TDataProcessors(v8catalog *_parent, const String& _guid, const String& _name);
+	~TDataProcessors();
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 };
 
 #endif
+

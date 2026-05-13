@@ -9,13 +9,14 @@
 class TTasks : public MetadataObjectWithSections
 {
 public:
-	__fastcall TTasks();
-	__fastcall TTasks(v8catalog *_parent, const String& _guid);
-	__fastcall TTasks(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TTasks();
+	TTasks();
+	TTasks(v8catalog *_parent, const String& _guid);
+	TTasks(v8catalog *_parent, const String& _guid, const String& _name);
+	~TTasks();
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 };
 
 //---------------------------------------------------------------------------
 #endif
+

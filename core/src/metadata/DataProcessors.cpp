@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -23,30 +23,31 @@ static MetadataTreePaths GetDataProcessorsPaths()
 	return paths;
 }
 
-__fastcall TDataProcessors::TDataProcessors()
+TDataProcessors::TDataProcessors()
 	: MetadataObjectWithSections()
 {
 }
 
-__fastcall TDataProcessors::TDataProcessors(v8catalog *_parent, const String& _guid)
+TDataProcessors::TDataProcessors(v8catalog *_parent, const String& _guid)
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TDataProcessors::TDataProcessors(v8catalog *_parent, const String& _guid, const String& _name)
+TDataProcessors::TDataProcessors(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TDataProcessors::~TDataProcessors()
+TDataProcessors::~TDataProcessors()
 {
 }
 
-void __fastcall TDataProcessors::initializeFromTree()
+void TDataProcessors::initializeFromTree()
 {
 	MetadataObjectWithSections::initializeFromTreeWithPaths(GetDataProcessorsPaths());
 }
+

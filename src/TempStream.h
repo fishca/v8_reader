@@ -4,26 +4,27 @@
 #define TempStreamH
 
 #include <System.Classes.hpp>
+#include <memory>
 
-class TTempStreamStaticInit
-{
-public:
-	__fastcall TTempStreamStaticInit();
-	__fastcall ~TTempStreamStaticInit();
-};
+namespace v8reader::core::io {
+class TempFileStream;
+}
 
 
 //---------------------------------------------------------------------------
-class TTempStream : public THandleStream
+class TTempStream : public TStream
 {
 public:
-	static String tempcat;
-	static String tempname;
-	static long tempno;
-	static String __fastcall gettempname();
+	TTempStream();
+	virtual ~TTempStream();
 
-	__fastcall TTempStream();
-	virtual __fastcall ~TTempStream();
+	virtual int __fastcall Read(void* Buffer, int Count) override;
+	virtual int __fastcall Write(const void* Buffer, int Count) override;
+	virtual int __fastcall Seek(int Offset, System::Word Origin) override;
+	virtual __int64 __fastcall Seek(const __int64 Offset, TSeekOrigin Origin) override;
+
+private:
+	std::unique_ptr<v8reader::core::io::TempFileStream> stream_;
 };
 
 //---------------------------------------------------------------------------

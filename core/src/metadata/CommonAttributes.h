@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef CommonAttributesH
 #define CommonAttributesH
@@ -8,37 +8,37 @@
 
 /**
  * @class TCommonAttributes
- * @brief Класс для хранения общих реквизитов (md_CommonAttributes)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РѕР±С‰РёС… СЂРµРєРІРёР·РёС‚РѕРІ (md_CommonAttributes)
  *
- * Общие реквизиты - это объекты метаданных, которые содержат
- * реквизиты, доступные для использования в различных элементах конфигурации.
+ * РћР±С‰РёРµ СЂРµРєРІРёР·РёС‚С‹ - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * СЂРµРєРІРёР·РёС‚С‹, РґРѕСЃС‚СѓРїРЅС‹Рµ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РІ СЂР°Р·Р»РёС‡РЅС‹С… СЌР»РµРјРµРЅС‚Р°С… РєРѕРЅС„РёРіСѓСЂР°С†РёРё.
  */
 class TCommonAttributes : public BaseMetadataObject
 {
 private:
-    // attributeName хранится в унаследованном поле name из BaseMetadataObject
+    // attributeName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TCommonAttributes();
-    __fastcall TCommonAttributes(v8catalog* _parent, const String& _guid);
-    __fastcall TCommonAttributes(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TCommonAttributes();
+    TCommonAttributes();
+    TCommonAttributes(v8catalog* _parent, const String& _guid);
+    TCommonAttributes(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TCommonAttributes();
 
-    // Методы для получения имени общего реквизита
-    String __fastcall GetAttributeName();
-    void __fastcall SetAttributeName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РѕР±С‰РµРіРѕ СЂРµРєРІРёР·РёС‚Р°
+    String GetAttributeName();
+    void SetAttributeName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

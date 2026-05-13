@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef ScheduledJobsH
 #define ScheduledJobsH
@@ -8,37 +8,37 @@
 
 /**
  * @class TScheduledJobs
- * @brief Класс для хранения регламентных заданий (md_ScheduledJobs)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ СЂРµРіР»Р°РјРµРЅС‚РЅС‹С… Р·Р°РґР°РЅРёР№ (md_ScheduledJobs)
  *
- * Регламентные задания - это объекты метаданных, которые содержат
- * настройки автоматического выполнения задач по расписанию.
+ * Р РµРіР»Р°РјРµРЅС‚РЅС‹Рµ Р·Р°РґР°РЅРёСЏ - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * РЅР°СЃС‚СЂРѕР№РєРё Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РґР°С‡ РїРѕ СЂР°СЃРїРёСЃР°РЅРёСЋ.
  */
 class TScheduledJobs : public BaseMetadataObject
 {
 private:
-    // scheduledJobsName хранится в унаследованном поле name из BaseMetadataObject
+    // scheduledJobsName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TScheduledJobs();
-    __fastcall TScheduledJobs(v8catalog* _parent, const String& _guid);
-    __fastcall TScheduledJobs(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TScheduledJobs();
+    TScheduledJobs();
+    TScheduledJobs(v8catalog* _parent, const String& _guid);
+    TScheduledJobs(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TScheduledJobs();
 
-    // Методы для получения имени регламентного задания
-    String __fastcall GetScheduledJobsName();
-    void __fastcall SetScheduledJobsName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё СЂРµРіР»Р°РјРµРЅС‚РЅРѕРіРѕ Р·Р°РґР°РЅРёСЏ
+    String GetScheduledJobsName();
+    void SetScheduledJobsName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;
@@ -47,3 +47,4 @@ private:
 };
 
 #endif
+

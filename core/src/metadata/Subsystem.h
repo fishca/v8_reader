@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef SubsystemH
 #define SubsystemH
@@ -9,16 +9,16 @@
 class TSubsystem : public BaseMetadataObject
 {
 private:
-	// subsystemName хранится в унаследованном поле name из BaseMetadataObject
+	// subsystemName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-	__fastcall TSubsystem();
-	__fastcall TSubsystem(v8catalog* _parent, const String& _guid);
-	__fastcall TSubsystem(v8catalog* _parent, const String& _guid, const String& _name);
-	virtual __fastcall ~TSubsystem();
+	TSubsystem();
+	TSubsystem(v8catalog* _parent, const String& _guid);
+	TSubsystem(v8catalog* _parent, const String& _guid, const String& _name);
+	virtual ~TSubsystem();
 
-	String __fastcall GetSubsystemName();
-	void __fastcall SetSubsystemName(String _name);
+	String GetSubsystemName();
+	void SetSubsystemName(String _name);
 
 	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
 	std::vector<std::unique_ptr<TComand>>& getCommands() override;
@@ -26,7 +26,7 @@ public:
 	std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
 	std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 
 private:
 	std::vector<std::unique_ptr<TRequisite>> attributes;

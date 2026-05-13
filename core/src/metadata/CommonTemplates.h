@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef CommonTemplatesH
 #define CommonTemplatesH
@@ -8,37 +8,37 @@
 
 /**
  * @class TCommonTemplates
- * @brief Класс для хранения общих макетов (md_CommonTemplates)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РѕР±С‰РёС… РјР°РєРµС‚РѕРІ (md_CommonTemplates)
  *
- * Общие макеты - это объекты метаданных, которые содержат
- * макеты, доступные в различных частях конфигурации.
+ * РћР±С‰РёРµ РјР°РєРµС‚С‹ - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
+ * РјР°РєРµС‚С‹, РґРѕСЃС‚СѓРїРЅС‹Рµ РІ СЂР°Р·Р»РёС‡РЅС‹С… С‡Р°СЃС‚СЏС… РєРѕРЅС„РёРіСѓСЂР°С†РёРё.
  */
 class TCommonTemplates : public BaseMetadataObject
 {
 private:
-    // templateName хранится в унаследованном поле name из BaseMetadataObject
+    // templateName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
 
 public:
-    __fastcall TCommonTemplates();
-    __fastcall TCommonTemplates(v8catalog* _parent, const String& _guid);
-    __fastcall TCommonTemplates(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TCommonTemplates();
+    TCommonTemplates();
+    TCommonTemplates(v8catalog* _parent, const String& _guid);
+    TCommonTemplates(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TCommonTemplates();
 
-    // Методы для получения имени общего макета
-    String __fastcall GetTemplateName();
-    void __fastcall SetTemplateName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РѕР±С‰РµРіРѕ РјР°РєРµС‚Р°
+    String GetTemplateName();
+    void SetTemplateName(String _name);
 
-    // Реализация виртуальных методов BaseMetadataObject
+    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
     std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
     std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
 private:
-    // Внутренние хранилища для совместимости с интерфейсом
+    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;

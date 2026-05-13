@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TInterfaces::TInterfaces() : BaseMetadataObject()
+TInterfaces::TInterfaces() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TInterfaces::~TInterfaces()
+TInterfaces::~TInterfaces()
 {
 }
 
-String __fastcall TInterfaces::GetInterfaceName()
+String TInterfaces::GetInterfaceName()
 {
     return name;
 }
 
-void __fastcall TInterfaces::SetInterfaceName(String _name)
+void TInterfaces::SetInterfaceName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TInterfaces::getForms()
     return forms;
 }
 
-void __fastcall TInterfaces::initializeFromTree()
+void TInterfaces::initializeFromTree()
 {
-    // Инициализация интерфейса из дерева метаданных
-    // Имя интерфейса уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РёРЅС‚РµСЂС„РµР№СЃР° РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РёРЅС‚РµСЂС„РµР№СЃР° СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

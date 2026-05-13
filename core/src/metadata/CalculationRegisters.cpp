@@ -34,13 +34,13 @@ static InfoRegisterTreePaths GetCalculationRegistersPaths()
 }
 
 //---------------------------------------------------------------------------
-__fastcall TCalculationRegisters::TCalculationRegisters()
+TCalculationRegisters::TCalculationRegisters()
 	: MetadataObjectInformationRegister()
 {
 }
 
 //---------------------------------------------------------------------------
-__fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid)
+TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid)
 	: MetadataObjectInformationRegister(_parent, _guid)
 {
 	initializeFromTree();
@@ -48,7 +48,7 @@ __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, cons
 }
 
 //---------------------------------------------------------------------------
-__fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
+TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectInformationRegister(_parent, _guid, _name)
 {
 	initializeFromTree();
@@ -56,13 +56,14 @@ __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, cons
 }
 
 //---------------------------------------------------------------------------
-__fastcall TCalculationRegisters::~TCalculationRegisters()
+TCalculationRegisters::~TCalculationRegisters()
 {
 }
 
 //---------------------------------------------------------------------------
-void __fastcall TCalculationRegisters::initializeFromTree()
+void TCalculationRegisters::initializeFromTree()
 {
 	// Инициализируем стандартные поля (реквизиты, измерения, ресурсы, формы, команды, макеты)
 	MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetCalculationRegistersPaths());
 }
+

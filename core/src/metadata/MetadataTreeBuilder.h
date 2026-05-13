@@ -3,13 +3,14 @@
 #define MetadataTreeBuilderH
 //---------------------------------------------------------------------------
 
-#include <vcl.h>
+#include <System.hpp>
 #include <vector>
 #include <memory>
 #include <unordered_set>
 
 #include "VirtualTrees.hpp"
-#include "MainUnit.h"
+#include "VirtualTreeData.h"
+#include "SmartPointers.h"
 #include "BaseMetadataObject.h"
 #include "MetadataObjectInformationRegister.h"
 #include "AccountingRegisters.h"

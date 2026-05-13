@@ -28,10 +28,10 @@ struct TExternalDataSourceCube
 class TExternalDataSources : public BaseMetadataObject
 {
 public:
-	__fastcall TExternalDataSources();
-	__fastcall TExternalDataSources(v8catalog* _parent, const String& _guid);
-	__fastcall TExternalDataSources(v8catalog* _parent, const String& _guid, const String& _name);
-	virtual __fastcall ~TExternalDataSources();
+	TExternalDataSources();
+	TExternalDataSources(v8catalog* _parent, const String& _guid);
+	TExternalDataSources(v8catalog* _parent, const String& _guid, const String& _name);
+	virtual ~TExternalDataSources();
 
 	std::vector<TExternalDataSourceTable> tables;
 	std::vector<TExternalDataSourceCube> cubes;
@@ -43,7 +43,7 @@ public:
 	std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
 	std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 
 private:
 	std::vector<std::unique_ptr<TRequisite>> attributes;
@@ -54,3 +54,4 @@ private:
 };
 
 #endif
+

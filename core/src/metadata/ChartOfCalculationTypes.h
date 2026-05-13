@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef ChartOfCalculationTypesH
 #define ChartOfCalculationTypesH
@@ -10,12 +10,13 @@
 class TChartOfCalculationTypes : public MetadataObjectWithSections
 {
 public:
-	__fastcall TChartOfCalculationTypes();
-	__fastcall TChartOfCalculationTypes(v8catalog *_parent, const String& _guid);
-	__fastcall TChartOfCalculationTypes(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TChartOfCalculationTypes();
+	TChartOfCalculationTypes();
+	TChartOfCalculationTypes(v8catalog *_parent, const String& _guid);
+	TChartOfCalculationTypes(v8catalog *_parent, const String& _guid, const String& _name);
+	~TChartOfCalculationTypes();
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 };
 
 #endif
+

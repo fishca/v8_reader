@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -23,30 +23,31 @@ static MetadataTreePaths GetDocumentsPaths()
 	return paths;
 }
 
-__fastcall TDocuments::TDocuments()
+TDocuments::TDocuments()
 	: MetadataObjectWithSections()
 {
 }
 
-__fastcall TDocuments::TDocuments(v8catalog *_parent, const String& _guid)
+TDocuments::TDocuments(v8catalog *_parent, const String& _guid)
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TDocuments::TDocuments(v8catalog *_parent, const String& _guid, const String& _name)
+TDocuments::TDocuments(v8catalog *_parent, const String& _guid, const String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TDocuments::~TDocuments()
+TDocuments::~TDocuments()
 {
 }
 
-void __fastcall TDocuments::initializeFromTree()
+void TDocuments::initializeFromTree()
 {
 	MetadataObjectWithSections::initializeFromTreeWithPaths(GetDocumentsPaths());
 }
+

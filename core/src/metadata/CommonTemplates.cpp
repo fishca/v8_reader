@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TCommonTemplates::TCommonTemplates() : BaseMetadataObject()
+TCommonTemplates::TCommonTemplates() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommonTemplates::TCommonTemplates(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommonTemplates::TCommonTemplates(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommonTemplates::TCommonTemplates(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommonTemplates::TCommonTemplates(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TCommonTemplates::~TCommonTemplates()
+TCommonTemplates::~TCommonTemplates()
 {
 }
 
-String __fastcall TCommonTemplates::GetTemplateName()
+String TCommonTemplates::GetTemplateName()
 {
     return name;
 }
 
-void __fastcall TCommonTemplates::SetTemplateName(String _name)
+void TCommonTemplates::SetTemplateName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,8 @@ std::vector<std::unique_ptr<TForm1C>>& TCommonTemplates::getForms()
     return forms;
 }
 
-void __fastcall TCommonTemplates::initializeFromTree()
+void TCommonTemplates::initializeFromTree()
 {
-    // Инициализация общего макета из дерева метаданных
-    // Имя общего макета уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РѕР±С‰РµРіРѕ РјР°РєРµС‚Р° РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РѕР±С‰РµРіРѕ РјР°РєРµС‚Р° СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }

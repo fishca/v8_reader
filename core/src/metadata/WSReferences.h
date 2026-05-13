@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef WSReferencesH
 #define WSReferencesH
@@ -12,13 +12,13 @@ private:
 	String referenceName;
 
 public:
-	__fastcall TWSReferences();
-	__fastcall TWSReferences(v8catalog* _parent, const String& _guid);
-	__fastcall TWSReferences(v8catalog* _parent, const String& _guid, const String& _name);
-	virtual __fastcall ~TWSReferences();
+	TWSReferences();
+	TWSReferences(v8catalog* _parent, const String& _guid);
+	TWSReferences(v8catalog* _parent, const String& _guid, const String& _name);
+	virtual ~TWSReferences();
 
-	String __fastcall GetReferenceName();
-	void __fastcall SetReferenceName(String _name);
+	String GetReferenceName();
+	void SetReferenceName(String _name);
 
 	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
 	std::vector<std::unique_ptr<TComand>>& getCommands() override;
@@ -26,7 +26,7 @@ public:
 	std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
 	std::vector<std::unique_ptr<TForm1C>>& getForms() override;
 
-	void __fastcall initializeFromTree() override;
+	void initializeFromTree() override;
 
 private:
 	std::vector<std::unique_ptr<TRequisite>> attributes;
@@ -37,3 +37,4 @@ private:
 };
 
 #endif
+

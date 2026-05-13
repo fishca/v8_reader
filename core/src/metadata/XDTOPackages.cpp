@@ -1,42 +1,42 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 #pragma hdrstop
 
 #include "XDTOPackages.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-__fastcall TXDTOPackages::TXDTOPackages() : BaseMetadataObject()
+TXDTOPackages::TXDTOPackages() : BaseMetadataObject()
 {
     name = "";
     root_data = nullptr;
     parent = nullptr;
 }
 
-__fastcall TXDTOPackages::TXDTOPackages(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TXDTOPackages::TXDTOPackages(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     parent = _parent;
     root_data.reset();
 }
 
-__fastcall TXDTOPackages::TXDTOPackages(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TXDTOPackages::TXDTOPackages(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     parent = _parent;
     root_data.reset();
 }
 
-__fastcall TXDTOPackages::~TXDTOPackages()
+TXDTOPackages::~TXDTOPackages()
 {
-    // root_data будет освобожден в базовом классе
+    // root_data Р±СѓРґРµС‚ РѕСЃРІРѕР±РѕР¶РґРµРЅ РІ Р±Р°Р·РѕРІРѕРј РєР»Р°СЃСЃРµ
 }
 
-String __fastcall TXDTOPackages::GetXDTOPackageName()
+String TXDTOPackages::GetXDTOPackageName()
 {
     return name;
 }
 
-// Реализация виртуальных методов BaseMetadataObject
+// Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
 
 std::vector<std::unique_ptr<TRequisite>>& TXDTOPackages::getAttributes()
 {
@@ -63,9 +63,10 @@ std::vector<std::unique_ptr<TForm1C>>& TXDTOPackages::getForms()
     return forms;
 }
 
-void __fastcall TXDTOPackages::initializeFromTree()
+void TXDTOPackages::initializeFromTree()
 {
-    // XDTO-пакеты могут не иметь стандартной структуры реквизитов/команд
-    // Оставляем пустыми vectors - это нормально для данного типа метаданных
+    // XDTO-РїР°РєРµС‚С‹ РјРѕРіСѓС‚ РЅРµ РёРјРµС‚СЊ СЃС‚Р°РЅРґР°СЂС‚РЅРѕР№ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЂРµРєРІРёР·РёС‚РѕРІ/РєРѕРјР°РЅРґ
+    // РћСЃС‚Р°РІР»СЏРµРј РїСѓСЃС‚С‹РјРё vectors - СЌС‚Рѕ РЅРѕСЂРјР°Р»СЊРЅРѕ РґР»СЏ РґР°РЅРЅРѕРіРѕ С‚РёРїР° РјРµС‚Р°РґР°РЅРЅС‹С…
 }
 //---------------------------------------------------------------------------
+

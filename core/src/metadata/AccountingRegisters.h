@@ -17,12 +17,12 @@ protected:
     std::vector<std::unique_ptr<TDimensionAccountingFlag>> dimensionAccountingFlags;  // Признаки учета субконто
 
 public:
-    __fastcall TAccountingRegisters();
-    __fastcall TAccountingRegisters(v8catalog *_parent, const String& _guid);
-    __fastcall TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name);
-    __fastcall ~TAccountingRegisters();
+    TAccountingRegisters();
+    TAccountingRegisters(v8catalog *_parent, const String& _guid);
+    TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name);
+    ~TAccountingRegisters();
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 
     // Геттеры для AccountingFlags
     std::vector<std::unique_ptr<TAccountingFlag>>& getAccountingFlags() { return accountingFlags; }
@@ -31,3 +31,4 @@ public:
 
 //---------------------------------------------------------------------------
 #endif
+

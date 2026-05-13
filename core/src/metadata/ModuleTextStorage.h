@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef ModuleTextStorageH
 #define ModuleTextStorageH
@@ -57,18 +57,19 @@ struct ModuleTextDocument
 
 namespace ModuleTextStorage
 {
-	String __fastcall NormalizeGuidFileName(const String& guid);
-	bool __fastcall IsGuidLike(const String& value);
-	bool __fastcall LooksLike1CModuleText(const String& value);
+	String NormalizeGuidFileName(const String& guid);
+	bool IsGuidLike(const String& value);
+	bool LooksLike1CModuleText(const String& value);
 
-	ModuleTextDocument __fastcall LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
-	ModuleTextDocument __fastcall LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
-	ModuleTextDocument __fastcall LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind);
-	ModuleTextDocument __fastcall LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind);
-	ModuleTextDocument __fastcall LoadConfigurationModule(v8catalog* parent, ModuleTextKind kind);
+	ModuleTextDocument LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
+	ModuleTextDocument LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
+	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind);
+	ModuleTextDocument LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind);
+	ModuleTextDocument LoadConfigurationModule(v8catalog* parent, ModuleTextKind kind);
 
-	bool __fastcall SaveDocument(ModuleTextDocument& document, const String& newText, String& errorText);
-	String __fastcall DescribeLocation(const ModuleTextLocation& location);
+	bool SaveDocument(ModuleTextDocument& document, const String& newText, String& errorText);
+	String DescribeLocation(const ModuleTextLocation& location);
 }
 
 #endif
+

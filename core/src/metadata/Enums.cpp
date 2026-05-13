@@ -8,21 +8,21 @@
 #pragma package(smart_init)
 
 
-__fastcall TEnums::TEnums()
+TEnums::TEnums()
 {
 	guid   = "";
 	name   = "";
 	parent = NULL;
 }
 
-__fastcall TEnums::TEnums(v8catalog *_parent, const String& _guid)
+TEnums::TEnums(v8catalog *_parent, const String& _guid)
 {
 	guid      = _guid;
 	parent    = _parent;
 	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
 }
 
-__fastcall TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
+TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 {
 	name      = _name;
 	guid      = _guid;
@@ -101,7 +101,8 @@ __fastcall TEnums::TEnums(v8catalog *_parent, const String& _guid, const String&
 
 }
 
-__fastcall TEnums::~TEnums()
+TEnums::~TEnums()
 {
 
 }
+

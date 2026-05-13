@@ -19,44 +19,45 @@
     guid = "";
 }
 
-__fastcall TRequisite::~TRequisite()
+TRequisite::~TRequisite()
 {
 
 }
 
 
 
-__fastcall TAccountingFlag::TAccountingFlag()
-{
-	name = "";
-	guid = "";
-}
-
-__fastcall TAccountingFlag::TAccountingFlag(String _name, String _guid)
-{
-	name = _name;
-	guid = _guid;
-}
-
-__fastcall TAccountingFlag::~TAccountingFlag()
-{
-
-}
-
-__fastcall TDimensionAccountingFlag::TDimensionAccountingFlag()
+TAccountingFlag::TAccountingFlag()
 {
 	name = "";
 	guid = "";
 }
 
-__fastcall TDimensionAccountingFlag::TDimensionAccountingFlag(String _name, String _guid)
+TAccountingFlag::TAccountingFlag(String _name, String _guid)
 {
 	name = _name;
 	guid = _guid;
 }
 
-__fastcall TDimensionAccountingFlag::~TDimensionAccountingFlag()
+TAccountingFlag::~TAccountingFlag()
 {
 
 }
+
+TDimensionAccountingFlag::TDimensionAccountingFlag()
+{
+	name = "";
+	guid = "";
+}
+
+TDimensionAccountingFlag::TDimensionAccountingFlag(String _name, String _guid)
+{
+	name = _name;
+	guid = _guid;
+}
+
+TDimensionAccountingFlag::~TDimensionAccountingFlag()
+{
+
+}
+
 

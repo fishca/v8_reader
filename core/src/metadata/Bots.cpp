@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -26,36 +26,36 @@ namespace
     }
 }
 
-__fastcall TBots::TBots() : BaseMetadataObject()
+TBots::TBots() : BaseMetadataObject()
 {
     botName = "";
     root_data.reset();
 }
 
-__fastcall TBots::TBots(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TBots::TBots(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     botName = "";
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TBots::TBots(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TBots::TBots(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     botName = _name;
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TBots::~TBots()
+TBots::~TBots()
 {
 }
 
-String __fastcall TBots::GetBotName()
+String TBots::GetBotName()
 {
     return botName;
 }
 
-void __fastcall TBots::SetBotName(String _name)
+void TBots::SetBotName(String _name)
 {
     botName = _name;
     name = _name;
@@ -86,7 +86,7 @@ std::vector<std::unique_ptr<TForm1C>>& TBots::getForms()
     return forms;
 }
 
-void __fastcall TBots::initializeFromTree()
+void TBots::initializeFromTree()
 {
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
@@ -99,3 +99,4 @@ void __fastcall TBots::initializeFromTree()
     if (botName.IsEmpty())
         botName = name;
 }
+

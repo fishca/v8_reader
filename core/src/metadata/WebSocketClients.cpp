@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -26,36 +26,36 @@ namespace
     }
 }
 
-__fastcall TWebSocketClients::TWebSocketClients() : BaseMetadataObject()
+TWebSocketClients::TWebSocketClients() : BaseMetadataObject()
 {
     clientName = "";
     root_data.reset();
 }
 
-__fastcall TWebSocketClients::TWebSocketClients(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TWebSocketClients::TWebSocketClients(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     clientName = "";
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TWebSocketClients::TWebSocketClients(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TWebSocketClients::TWebSocketClients(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     clientName = _name;
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TWebSocketClients::~TWebSocketClients()
+TWebSocketClients::~TWebSocketClients()
 {
 }
 
-String __fastcall TWebSocketClients::GetClientName()
+String TWebSocketClients::GetClientName()
 {
     return clientName;
 }
 
-void __fastcall TWebSocketClients::SetClientName(String _name)
+void TWebSocketClients::SetClientName(String _name)
 {
     clientName = _name;
     name = _name;
@@ -86,7 +86,7 @@ std::vector<std::unique_ptr<TForm1C>>& TWebSocketClients::getForms()
     return forms;
 }
 
-void __fastcall TWebSocketClients::initializeFromTree()
+void TWebSocketClients::initializeFromTree()
 {
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
@@ -99,3 +99,4 @@ void __fastcall TWebSocketClients::initializeFromTree()
     if (clientName.IsEmpty())
         clientName = name;
 }
+

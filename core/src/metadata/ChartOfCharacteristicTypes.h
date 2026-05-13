@@ -21,10 +21,10 @@ private:
 
 public:
 	/* TODO : Реализовать класс */
-	__fastcall TChartOfCharacteristicTypes();
-	__fastcall TChartOfCharacteristicTypes(v8catalog *_parent, const String& _guid);
-	__fastcall TChartOfCharacteristicTypes(v8catalog *_parent, const String& _guid, const String& _name);
-	__fastcall ~TChartOfCharacteristicTypes();
+	TChartOfCharacteristicTypes();
+	TChartOfCharacteristicTypes(v8catalog *_parent, const String& _guid);
+	TChartOfCharacteristicTypes(v8catalog *_parent, const String& _guid, const String& _name);
+	~TChartOfCharacteristicTypes();
 
 	// Реализация виртуальных методов
 	virtual std::vector<std::unique_ptr<TRequisite>>& getAttributes() override { return attributes; }
@@ -33,10 +33,11 @@ public:
 	virtual std::vector<std::unique_ptr<TTabular>>& getTabularSections() override { return tabulars; }
 	virtual std::vector<std::unique_ptr<TForm1C>>& getForms() override { return forms; }
 
-	virtual void __fastcall initializeFromTree() override;
+	virtual void initializeFromTree() override;
 
 	void SetName();
 	void SetGUID();
 };
 
 #endif
+

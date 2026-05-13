@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -7,34 +7,34 @@
 #pragma package(smart_init)
 
 
-__fastcall TSessionParameters::TSessionParameters() : BaseMetadataObject()
+TSessionParameters::TSessionParameters() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TSessionParameters::TSessionParameters(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TSessionParameters::TSessionParameters(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TSessionParameters::TSessionParameters(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TSessionParameters::TSessionParameters(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
 }
 
-__fastcall TSessionParameters::~TSessionParameters()
+TSessionParameters::~TSessionParameters()
 {
 }
 
-String __fastcall TSessionParameters::GetParameterName()
+String TSessionParameters::GetParameterName()
 {
     return name;
 }
 
-void __fastcall TSessionParameters::SetParameterName(String _name)
+void TSessionParameters::SetParameterName(String _name)
 {
     name = _name;
 }
@@ -64,8 +64,9 @@ std::vector<std::unique_ptr<TForm1C>>& TSessionParameters::getForms()
     return forms;
 }
 
-void __fastcall TSessionParameters::initializeFromTree()
+void TSessionParameters::initializeFromTree()
 {
-    // Инициализация параметра сеанса из дерева метаданных
-    // Имя параметра сеанса уже установлено в конструкторе
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїР°СЂР°РјРµС‚СЂР° СЃРµР°РЅСЃР° РёР· РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // РРјСЏ РїР°СЂР°РјРµС‚СЂР° СЃРµР°РЅСЃР° СѓР¶Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ РІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂРµ
 }
+

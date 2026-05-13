@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -97,36 +97,36 @@ namespace
     }
 }
 
-__fastcall TFilterCriteria::TFilterCriteria() : BaseMetadataObject()
+TFilterCriteria::TFilterCriteria() : BaseMetadataObject()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TFilterCriteria::TFilterCriteria(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TFilterCriteria::TFilterCriteria(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     name = "";
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TFilterCriteria::TFilterCriteria(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TFilterCriteria::TFilterCriteria(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TFilterCriteria::~TFilterCriteria()
+TFilterCriteria::~TFilterCriteria()
 {
 }
 
-String __fastcall TFilterCriteria::GetFilterCriteriaName()
+String TFilterCriteria::GetFilterCriteriaName()
 {
     return name;
 }
 
-void __fastcall TFilterCriteria::SetFilterCriteriaName(String _name)
+void TFilterCriteria::SetFilterCriteriaName(String _name)
 {
     name = _name;
 }
@@ -156,7 +156,7 @@ std::vector<std::unique_ptr<TForm1C>>& TFilterCriteria::getForms()
     return forms;
 }
 
-void __fastcall TFilterCriteria::initializeFromTree()
+void TFilterCriteria::initializeFromTree()
 {
     forms.clear();
     commands.clear();
@@ -210,3 +210,4 @@ void __fastcall TFilterCriteria::initializeFromTree()
         commands.push_back(std::make_unique<TComand>(commandName, GetDescriptorGuid(descriptor)));
     }
 }
+

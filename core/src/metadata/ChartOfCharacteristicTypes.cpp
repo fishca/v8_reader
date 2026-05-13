@@ -30,27 +30,27 @@ namespace
 	}
 }
 
-__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes():BaseMetadataObject()
+TChartOfCharacteristicTypes::TChartOfCharacteristicTypes():BaseMetadataObject()
 {
 }
 
-__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid) : BaseMetadataObject(_parent, _guid)
-{
-	initializeFromTree();
-	root_data.reset();
-}
-
-__fastcall TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid, const String &_name) : BaseMetadataObject(_parent, _guid, _name)
+TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid) : BaseMetadataObject(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-__fastcall TChartOfCharacteristicTypes::~TChartOfCharacteristicTypes()
+TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid, const String &_name) : BaseMetadataObject(_parent, _guid, _name)
+{
+	initializeFromTree();
+	root_data.reset();
+}
+
+TChartOfCharacteristicTypes::~TChartOfCharacteristicTypes()
 {
 }
 
-void __fastcall TChartOfCharacteristicTypes::initializeFromTree()
+void TChartOfCharacteristicTypes::initializeFromTree()
 {
 
 	if (!root_data) return;
@@ -161,3 +161,4 @@ void __fastcall TChartOfCharacteristicTypes::initializeFromTree()
 
 	}
 }
+

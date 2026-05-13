@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef ExchangePlansH
 #define ExchangePlansH
@@ -8,27 +8,28 @@
 
 /**
  * @class TExchangePlans
- * @brief Класс для хранения планов обмена (md_ExchangePlans)
+ * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РїР»Р°РЅРѕРІ РѕР±РјРµРЅР° (md_ExchangePlans)
  *
- * Планы обмена - это объекты метаданных, которые определяют
- * правила обмена данными между информационными базами 1С.
+ * РџР»Р°РЅС‹ РѕР±РјРµРЅР° - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ РѕРїСЂРµРґРµР»СЏСЋС‚
+ * РїСЂР°РІРёР»Р° РѕР±РјРµРЅР° РґР°РЅРЅС‹РјРё РјРµР¶РґСѓ РёРЅС„РѕСЂРјР°С†РёРѕРЅРЅС‹РјРё Р±Р°Р·Р°РјРё 1РЎ.
  */
 class TExchangePlans : public MetadataObjectWithSections
 {
 private:
-    String exchangePlanName;  // Имя плана обмена
+    String exchangePlanName;  // РРјСЏ РїР»Р°РЅР° РѕР±РјРµРЅР°
 
 public:
-    __fastcall TExchangePlans();
-    __fastcall TExchangePlans(v8catalog* _parent, const String& _guid);
-    __fastcall TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name);
-    virtual __fastcall ~TExchangePlans();
+    TExchangePlans();
+    TExchangePlans(v8catalog* _parent, const String& _guid);
+    TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name);
+    virtual ~TExchangePlans();
 
-    // Методы для получения имени плана обмена
-    String __fastcall GetExchangePlanName();
-    void __fastcall SetExchangePlanName(String _name);
+    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РїР»Р°РЅР° РѕР±РјРµРЅР°
+    String GetExchangePlanName();
+    void SetExchangePlanName(String _name);
 
-    void __fastcall initializeFromTree() override;
+    void initializeFromTree() override;
 };
 
 #endif
+

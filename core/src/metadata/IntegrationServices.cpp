@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -26,36 +26,36 @@ namespace
     }
 }
 
-__fastcall TIntegrationServices::TIntegrationServices() : BaseMetadataObject()
+TIntegrationServices::TIntegrationServices() : BaseMetadataObject()
 {
     serviceName = "";
     root_data.reset();
 }
 
-__fastcall TIntegrationServices::TIntegrationServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TIntegrationServices::TIntegrationServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
     serviceName = "";
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TIntegrationServices::TIntegrationServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TIntegrationServices::TIntegrationServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     serviceName = _name;
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TIntegrationServices::~TIntegrationServices()
+TIntegrationServices::~TIntegrationServices()
 {
 }
 
-String __fastcall TIntegrationServices::GetServiceName()
+String TIntegrationServices::GetServiceName()
 {
     return serviceName;
 }
 
-void __fastcall TIntegrationServices::SetServiceName(String _name)
+void TIntegrationServices::SetServiceName(String _name)
 {
     serviceName = _name;
     name = _name;
@@ -86,7 +86,7 @@ std::vector<std::unique_ptr<TForm1C>>& TIntegrationServices::getForms()
     return forms;
 }
 
-void __fastcall TIntegrationServices::initializeFromTree()
+void TIntegrationServices::initializeFromTree()
 {
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
@@ -99,3 +99,4 @@ void __fastcall TIntegrationServices::initializeFromTree()
     if (serviceName.IsEmpty())
         serviceName = name;
 }
+

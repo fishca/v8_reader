@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------
 
 
-TMDObject* __fastcall TMDObjectManager::newMetaData()
+TMDObject* TMDObjectManager::newMetaData()
 {
 	TMDObject* md = CreateMetaData();
 	md_list->Add(md);
@@ -15,8 +15,9 @@ TMDObject* __fastcall TMDObjectManager::newMetaData()
 	return md;
 }
 
-__fastcall TMDObjectManager::TMDObjectManager()
+TMDObjectManager::TMDObjectManager()
 {
 	md_list = new TObjectList(true);
 }
+
 
