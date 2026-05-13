@@ -1,23 +1,21 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "AccumulationRegisters.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 static InfoRegisterTreePaths GetAccumulationRegistersPaths()
 {
 	InfoRegisterTreePaths paths;
-	// РџСѓС‚Рё РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ РЅР°РєРѕРїР»РµРЅРёСЏ - Р°РЅР°Р»РѕРіРёС‡РЅРѕ СЂРµРіРёСЃС‚СЂР°Рј СЃРІРµРґРµРЅРёР№
+	// Пути для регистров накопления - аналогично регистрам сведений
 	paths.attIdx = 6;
 	paths.attItemPath = {0, 1, 1, 1, 2};
 	
-    paths.dimIdx = 7;   // РёР·РјРµСЂРµРЅРёСЏ
+    paths.dimIdx = 7;   // измерения
 	paths.dimItemPath = {0, 1, 1, 1, 2};
 	
-    paths.resIdx = 5;   // СЂРµСЃСѓСЂСЃС‹
+    paths.resIdx = 5;   // ресурсы
 	paths.resItemPath = {0, 1, 1, 1, 2};
 	
     paths.formsIdx = 8;

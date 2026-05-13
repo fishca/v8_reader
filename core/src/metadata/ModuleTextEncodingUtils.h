@@ -4,6 +4,7 @@
 #define ModuleTextEncodingUtilsH
 
 #include "../APIcfBase.h"
+#include "../../include/v8reader_core/io/IByteStream.h"
 #include "ModuleTextStorage.h"
 
 namespace ModuleTextEncodingUtils
@@ -66,7 +67,7 @@ namespace ModuleTextEncodingUtils
 		}
 	}
 
-	inline void WriteTextWithEncoding(TStream* stream, const String& text, ModuleTextEncodingKind encoding)
+	inline void WriteTextWithEncoding(v8reader::core::io::IByteStream& stream, const String& text, ModuleTextEncodingKind encoding)
 	{
 		TBytes bytes;
 
@@ -75,7 +76,7 @@ namespace ModuleTextEncodingUtils
 			case ModuleTextEncodingKind::Utf16LeBom:
 			{
 				const unsigned char bom[] = {0xFF, 0xFE};
-				stream->WriteBuffer((void*)bom, 2);
+				stream.Write(bom, 2);
 				bytes = TEncoding::Unicode->GetBytes(text);
 				break;
 			}
@@ -87,7 +88,7 @@ namespace ModuleTextEncodingUtils
 			case ModuleTextEncodingKind::Utf8Bom:
 			{
 				const unsigned char bom[] = {0xEF, 0xBB, 0xBF};
-				stream->WriteBuffer((void*)bom, 3);
+				stream.Write(bom, 3);
 				bytes = TEncoding::UTF8->GetBytes(text);
 				break;
 			}
@@ -106,7 +107,7 @@ namespace ModuleTextEncodingUtils
 		}
 
 		if (!bytes.empty())
-			stream->WriteBuffer(&bytes[0], bytes.Length);
+			stream.Write(&bytes[0], static_cast<std::size_t>(bytes.Length));
 	}
 }
 

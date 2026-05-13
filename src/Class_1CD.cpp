@@ -4342,7 +4342,7 @@ bool field::save_blob_to_file(char* rec, String _filename, bool unpack)
 				}
 			}
 
-			cat = new v8catalog(_sx2, zippedContainer, true);
+			cat = v8reader::vcl_bridge::CreateCatalogFromVclStream(_sx2, zippedContainer, true);
 			if(!cat->GetFirst())
 			{
 				temp_stream = new TFileStream(_filename, fmCreate);
@@ -8199,7 +8199,7 @@ void T_1CD::add_supplier_config(table_file* tf)
 		delete f;
 		f = NULL;
 
-		cat = new v8catalog(s, true);
+		cat = v8reader::vcl_bridge::CreateCatalogFromVclStream(s, true);
 		s = NULL;
 		file = cat->GetFile(L"version");
 		if(!file)
@@ -9012,7 +9012,7 @@ bool T_1CD::recursive_test_stream_format(TStream* str, String path, bool maybezi
 
 	try
 	{
-		cat = new v8catalog(_s, zipped2, true);
+		cat = v8reader::vcl_bridge::CreateCatalogFromVclStream(_s, zipped2, true);
 	}
 	catch (...)
 	{
@@ -9145,7 +9145,7 @@ bool T_1CD::recursive_test_stream_format(v8catalog* cat, String path)
 				if(fname != L"module" && fname != L"text")
 				{
 					TMemoryStream* file_stream = new TMemoryStream();
-					v8f->SaveToStream(file_stream);
+					v8reader::vcl_bridge::SaveV8FileToVclStream(v8f, file_stream);
 					file_stream->Seek(0l, soBeginning);
 					result = recursive_test_stream_format(file_stream, path + L"/" + v8f->GetFileName());
 					delete file_stream;
@@ -10916,14 +10916,14 @@ bool T_1CD::save_depot_config(const String& _filename, int ver)
 		for(psmap = metamap.begin(); psmap != metamap.end(); ++psmap)
 		{
 			f = cath->createFile(psmap->first);
-			f->WriteAndClose(psmap->second);
+			v8reader::vcl_bridge::WriteAndCloseV8FileFromVclStream(f, psmap->second);
 			delete psmap->second;
 		}
 	}
 	for(psmap = extmap.begin(); psmap != extmap.end(); ++psmap)
 	{
 		f = cat->createFile(psmap->first);
-		f->WriteAndClose(psmap->second);
+		v8reader::vcl_bridge::WriteAndCloseV8FileFromVclStream(f, psmap->second);
 		delete psmap->second;
 	}
 
@@ -11568,7 +11568,7 @@ bool T_1CD::save_part_depot_config(const String& _filename, int ver_begin, int v
 										iscatalog = false;
 										if(out->Size > 0)
 										{
-											cat = new v8catalog(out, false, true);
+											cat = v8reader::vcl_bridge::CreateCatalogFromVclStream(out, false, true);
 											iscatalog = cat->IsCatalog();
 										}
 										if(iscatalog) cat->SaveToDir(cath + se);

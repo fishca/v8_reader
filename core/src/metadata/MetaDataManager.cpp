@@ -1,6 +1,5 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "../APIcfBase.h"
 #include "Parse_tree.h"
@@ -23,12 +22,20 @@
 #include "SettingsStorages.h"
 #include "Interfaces.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
+v8catalog* MetaDataManager::loadFromFile(const std::filesystem::path& filename)
+{
+    return new v8catalog(filename, true);
+}
+
+v8catalog* MetaDataManager::loadFromFile16(const Utf16String& filename)
+{
+    return loadFromFile(std::filesystem::path(filename));
+}
 
 v8catalog* MetaDataManager::loadFromFile(const String& filename)
 {
-    return new v8catalog(filename, true);
+    return loadFromFile16(V8Utf16FromString(filename));
 }
 
 bool MetaDataManager::Initialize(v8catalog* cf)
@@ -46,7 +53,7 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 		return false;
 	}
 
-	filedata = cf->GetFile(L"version");
+	filedata = cf->GetFile16(u"version");
 	if(!filedata)
 	{
 		return false;
@@ -72,7 +79,7 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 	if(ver < 100)
 	{
 		// 8.0
-		filedata = cf->GetFile(L"metadata");
+		filedata = cf->GetFile16(u"metadata");
 		if(!filedata)
 		{
 			return false;
@@ -87,11 +94,11 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 	}
 	else
 	{
-		//8.1 РёР»Рё 8.2
+		//8.1 или 8.2
 		cat = cf;
 	}
 
-	filedata = cat->GetFile(L"root");
+	filedata = cat->GetFile16(u"root");
 	if(!filedata)
 	{
 		return false;
@@ -114,7 +121,7 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 	meta = node->get_value();
 	tr.reset();
 
-	filedata = cat->GetFile(meta);
+	filedata = cat->GetFile16(V8Utf16FromString(meta));
 	if(!filedata)
 	{
 		return false;
@@ -157,139 +164,139 @@ void PreFillingMD(tree* tr)
 //
 //	node3 = tr;
 //
-//	// Р—Р°РїРѕР»РЅСЏРµРј СЃРїСЂР°РІРѕС‡РЅРёРєРё
+//	// Заполняем справочники
 //	fill_md(tr, GUID_Catalogs, MainForm->Catalogs);
 //
-//	// Р—Р°РїРѕР»РЅСЏРµРј СЏР·С‹РєРё
+//	// Заполняем языки
 //	fill_md(tr, GUID_Languages, MainForm->Languages);
 //
-//	// Р—Р°РїРѕР»РЅСЏРµРј СЂРµРіРёСЃС‚СЂС‹ РЅР°РєРѕРїР»РµРЅРёСЏ
+//	// Заполняем регистры накопления
 //	fill_md(tr, GUID_AccumulationRegisters, MainForm->AccumulationRegisters);
 //
-//	// Р—Р°РїРѕР»РЅСЏРµРј СЂРµРіРёСЃС‚СЂС‹ Р±СѓС…РіР°Р»С‚РµСЂРёРё
+//	// Заполняем регистры бухгалтерии
 //	fill_md(tr, GUID_AccountingRegisters, MainForm->AccountingRegisters);
 //
-//	// Р—Р°РїРѕР»РЅСЏРµРј СЂРµРіРёСЃС‚СЂС‹ СЂР°СЃС‡РµС‚Р°
+//	// Заполняем регистры расчета
 //	fill_md(tr, GUID_CalculationRegisters, MainForm->CalculationRegisters);
 //
-//	// Р—Р°РїРѕР»РЅСЏРµРј Р±РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃС‹
+//	// Заполняем бизнес-процессы
 //	fill_md(tr, GUID_BusinessProcesses, MainForm->BusinessProcesses);
 //
-//	// РџР’РҐ
+//	// ПВХ
 //	fill_md(tr, GUID_ChartOfCharacteristicTypes, MainForm->ChartsOfCharacteristicTypes);
 //
-//	// РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ
+//	// группы команд
 //	fill_md(tr, GUID_CommandGroups, MainForm->CommandGroups);
 //
-//	// РѕР±С‰РёРµ СЂРµРєРІРёР·РёС‚С‹
+//	// общие реквизиты
 //	fill_md(tr, GUID_CommonAttributes, MainForm->CommonAttributes);
 //
-//	// РѕР±С‰РёРµ РєРѕРјР°РЅРґС‹
+//	// общие команды
 //	fill_md(tr, GUID_CommonCommands, MainForm->CommonCommands);
 //
-//	// РѕР±С‰РёРµ С„РѕСЂРјС‹
+//	// общие формы
 //	fill_md(tr, GUID_CommonForms, MainForm->CommonForms);
 //
-//	// РѕР±С‰РёРµ РјРѕРґСѓР»Рё
+//	// общие модули
 //	fill_md(tr, GUID_CommonModules, MainForm->CommonModules);
 //
-//	// РѕР±С‰РёРµ РєР°СЂС‚РёРЅРєРё
+//	// общие картинки
 //	fill_md(tr, GUID_CommonPictures, MainForm->CommonPictures);
 //
-//	// РѕР±С‰РёРµ РјР°РєРµС‚С‹
+//	// общие макеты
 //	fill_md(tr, GUID_CommonTemplates, MainForm->CommonTemplates);
 //
-//	// РєРѕРЅСЃС‚Р°РЅС‚С‹
+//	// константы
 //	fill_md(tr, GUID_Constants, MainForm->Constants);
 //
-//	// РѕР±СЂР°Р±РѕС‚РєРё
+//	// обработки
 //	fill_md(tr, GUID_DataProcessors, MainForm->DataProcessors);
 //
-//	// РѕРїСЂРµРґРµР»СЏРµРјС‹Рµ С‚РёРїС‹
+//	// определяемые типы
 //	fill_md(tr, GUID_DefinedTypes, MainForm->DefinedTypes);
 //
-//	// Р¶СѓСЂРЅР°Р»С‹ РґРѕРєСѓРјРµРЅС‚РѕРІ
+//	// журналы документов
 //	fill_md(tr, GUID_JournDocuments, MainForm->DocumentJournals);
 //
-//	// РЅСѓРјРµСЂР°С‚РѕСЂС‹
+//	// нумераторы
 //	fill_md(tr, GUID_Numerators, MainForm->DocumentNumerators);
 //
-//	// РґРѕРєСѓРјРµРЅС‚С‹
+//	// документы
 //	fill_md(tr, GUID_Documents, MainForm->Documents);
 //
-//	// РїРµСЂРµС‡РёСЃР»РµРЅРёСЏ
+//	// перечисления
 //	fill_md(tr, GUID_Enums, MainForm->Enums);
 //
-//	// РїРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёСЏ
+//	// подписки на события
 //	fill_md(tr, GUID_EventSubscriptions, MainForm->EventSubscriptions);
 //
-//	// РїР»Р°РЅС‹ РѕР±РјРµРЅР°
+//	// планы обмена
 //	fill_md(tr, GUID_ExchangePlans, MainForm->ExchangePlans);
 //
-//	// РїР»Р°РЅС‹ СЃС‡РµС‚РѕРІ
+//	// планы счетов
 //	fill_md(tr, GUID_ChartsOfAccounts, MainForm->ChartOfAccounts);
 //
-//	// РїР»Р°РЅС‹ РІРёРґРѕРІ СЂР°СЃС‡РµС‚Р°
+//	// планы видов расчета
 //	fill_md(tr, GUID_ChartsOfCalculationTypes, MainForm->ChartOfCalculationTypes);
 //
-//	// РІРЅРµС€РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРё РґР°РЅРЅС‹С…
+//	// внешние источники данных
 //	fill_md(tr, GUID_ExternalDataSources, MainForm->ExternalDataSources);
 //
-//	// РєСЂРёС‚РµСЂРёРё РѕС‚Р±РѕСЂР°
+//	// критерии отбора
 //	fill_md(tr, GUID_FilterCriteria, MainForm->FilterCriteria);
 //
-//	// С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹Рµ РѕРїС†РёРё
+//	// функциональные опции
 //	fill_md(tr, GUID_FunctionalOptions, MainForm->FunctionalOptions);
 //
-//	// РїР°СЂР°РјРµС‚СЂС‹ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№
+//	// параметры функциональных опций
 //	fill_md(tr, GUID_FunctionalOptionsParameters, MainForm->FunctionalOptionsParameters);
 //
-//	// http - СЃРµСЂРІРёСЃС‹
+//	// http - сервисы
 //	fill_md(tr, GUID_HTTPServices, MainForm->HTTPServices);
 //
-//	// СЂРµРіРёСЃС‚СЂС‹ СЃРІРµРґРµРЅРёР№
+//	// регистры сведений
 //	fill_md(tr, GUID_InformationRegisters, MainForm->InformationRegisters);
 //
-//	// РёРЅС‚РµСЂС„РµР№СЃС‹
+//	// интерфейсы
 //	fill_md(tr, GUID_Interfaces, MainForm->Interfaces);
 //
-//	// РѕС‚С‡РµС‚С‹
+//	// отчеты
 //	fill_md(tr, GUID_Reports, MainForm->Reports);
 //
-//	// СЂРѕР»Рё
+//	// роли
 //	fill_md(tr, GUID_Roles, MainForm->Roles);
 //
-//	// РїР°СЂР°РјРµС‚СЂС‹ СЃРµР°РЅСЃР°
+//	// параметры сеанса
 //	fill_md(tr, GUID_SessionParameters, MainForm->SessionParameters);
 //
-//	// С…СЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє
+//	// хранилища настроек
 //	fill_md(tr, GUID_SettingsStorages, MainForm->SettingsStorages);
 //
-//	// СЌР»РµРјРµРЅС‚С‹ СЃС‚РёР»СЏ
+//	// элементы стиля
 //	fill_md(tr, GUID_StyleItems, MainForm->StyleItems);
 //
-//	// СЃС‚РёР»Рё
+//	// стили
 //	fill_md(tr, GUID_Styles, MainForm->Styles);
 //
-//	// РїРѕРґСЃРёСЃС‚РµРјС‹
+//	// подсистемы
 //	fill_subsystem(tr, MainForm->Subsystems);
 //
-//	// Р·Р°РґР°С‡Рё
+//	// задачи
 //	fill_md(tr, GUID_Tasks, MainForm->Tasks);
 //
-//	// РІРµР±-СЃРµСЂРІРёСЃС‹
+//	// веб-сервисы
 //	fill_md(tr, GUID_WebServices, MainForm->WebServices);
 //
-//	// ws-СЃСЃС‹Р»РєРё
+//	// ws-ссылки
 //	fill_md(tr, GUID_WSReferences, MainForm->WSReferences);
 //
-//	// xdto-РїР°РєРµС‚С‹
+//	// xdto-пакеты
 //	fill_md(tr, GUID_XDTOPackages, MainForm->XDTOPackages);
 //
-//	// СЂРµРіР» Р·Р°РґР°РЅРёСЏ
+//	// регл задания
 //	fill_md(tr, GUID_ScheduledJobs, MainForm->ScheduledJobs);
 //
-//	// РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚Рё
+//	// последовательности
 //	fill_md(tr, GUID_Sequences, MainForm->Sequences);
 //
 //	structver = (*node)[0].get_value().ToInt();
@@ -345,11 +352,11 @@ void PreFillingMD(tree* tr)
 //	//mess->AddMessage(cf_synonym + " (" + cf_version + ")", msEmpty);
 //	//MainForm->ConfigName = cf_synonym + " (" + cf_version + ")";
 //	//ConfigName = cf_synonym + " (" + cf_version + ")";
-//	//mess->AddMessage("РџСЂРѕС‡РёС‚Р°РЅР° РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ: " + cf_synonym + " (" + cf_version + ")", msInfo);
+//	//mess->AddMessage("Прочитана конфигурация: " + cf_synonym + " (" + cf_version + ")", msInfo);
 
 }
 
-// РџСЂРѕС†РµРґСѓСЂР° Р·Р°РїРѕР»РЅСЏРµС‚ РјРµС‚Р°РґР°РЅРЅС‹Рµ РїРѕ РєРѕСЂРЅРµРІРѕРјСѓ РіСѓРёРґСѓ
+// Процедура заполняет метаданные по корневому гуиду
 void MetaDataManager::fill_md(v8catalog *cf, tree* tr, String guid_md)
 {
 //	v8file *filedata;
@@ -629,91 +636,91 @@ void MetaDataManager::fill_md(v8catalog *cf, tree* tr, String guid_md)
 
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїР°СЂР°РјРµС‚СЂРѕРІ СЃРµР°РЅСЃР°
+// Метод для получения списка параметров сеанса
 std::vector<std::shared_ptr<TSessionParameters>>& MetaDataManager::getSessionParameters()
 {
 	return SessionParameters;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РѕР±С‰РёС… СЂРµРєРІРёР·РёС‚РѕРІ
+// Метод для получения списка общих реквизитов
 std::vector<std::shared_ptr<TCommonAttributes>>& MetaDataManager::getCommonAttributes()
 {
 	return CommonAttributes;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РѕР±С‰РёС… РєРѕРјР°РЅРґ
+// Метод для получения списка общих команд
 std::vector<std::shared_ptr<TCommonCommands>>& MetaDataManager::getCommonCommands()
 {
 	return CommonCommands;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РѕР±С‰РёС… РјР°РєРµС‚РѕРІ
+// Метод для получения списка общих макетов
 std::vector<std::shared_ptr<TCommonTemplates>>& MetaDataManager::getCommonTemplates()
 {
 	return CommonTemplates;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РіСЂСѓРїРї РєРѕРјР°РЅРґ
+// Метод для получения списка групп команд
 std::vector<std::shared_ptr<TCommandGroups>>& MetaDataManager::getCommandGroups()
 {
 	return CommandGroups;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїР»Р°РЅРѕРІ РѕР±РјРµРЅР°
+// Метод для получения списка планов обмена
 std::vector<std::shared_ptr<TExchangePlans>>& MetaDataManager::getExchangePlans()
 {
 	return ExchangePlans;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїРѕРґРїРёСЃРѕРє РЅР° СЃРѕР±С‹С‚РёСЏ
+// Метод для получения списка подписок на события
 std::vector<std::shared_ptr<TEventSubscriptions>>& MetaDataManager::getEventSubscriptions()
 {
 	return EventSubscriptions;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° СЂРµРіР»Р°РјРµРЅС‚РЅС‹С… Р·Р°РґР°РЅРёР№
+// Метод для получения списка регламентных заданий
 std::vector<std::shared_ptr<TScheduledJobs>>& MetaDataManager::getScheduledJobs()
 {
 	return ScheduledJobs;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° Р±РѕС‚РѕРІ
+// Метод для получения списка ботов
 std::vector<std::shared_ptr<TBots>>& MetaDataManager::getBots()
 {
 	return Bots;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№
+// Метод для получения списка функциональных опций
 std::vector<std::shared_ptr<TFunctionalOptions>>& MetaDataManager::getFunctionalOptions()
 {
 	return FunctionalOptions;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РїР°СЂР°РјРµС‚СЂРѕРІ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№
+// Метод для получения списка параметров функциональных опций
 std::vector<std::shared_ptr<TFunctionalOptionsParameters>>& MetaDataManager::getFunctionalOptionsParameters()
 {
 	return FunctionalOptionsParameters;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РѕРїСЂРµРґРµР»СЏРµРјС‹С… С‚РёРїРѕРІ
+// Метод для получения списка определяемых типов
 std::vector<std::shared_ptr<TDefinedTypes>>& MetaDataManager::getDefinedTypes()
 {
 	return DefinedTypes;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° С…СЂР°РЅРёР»РёС‰ РЅР°СЃС‚СЂРѕРµРє
+// Метод для получения списка хранилищ настроек
 std::vector<std::shared_ptr<TSettingsStorages>>& MetaDataManager::getSettingsStorages()
 {
 	return SettingsStorages;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РёРЅС‚РµСЂС„РµР№СЃРѕРІ
+// Метод для получения списка интерфейсов
 std::vector<std::shared_ptr<TInterfaces>>& MetaDataManager::getInterfaces()
 {
 	return Interfaces;
 }
 
-// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° РєРѕРЅСЃС‚Р°РЅС‚
+// Метод для получения списка констант
 std::vector<std::shared_ptr<TConstants>>& MetaDataManager::getConstants()
 {
 	return Constants;

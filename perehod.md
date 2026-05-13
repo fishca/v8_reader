@@ -354,6 +354,27 @@
 1. прямых `Vcl.*` include в `core/src` и `core/include` больше нет;
 2. остаются `System.*` include в переходных местах, пока `String`/`TStream` окончательно не вынесены в `src`-adapter.
 
+## Статус P5 (2026-05-13, старт выполнения)
+1. Выполнен checkpoint перед правками:
+   1. добавлен `migration_checkpoint_p5.txt` с фиксацией `HEAD` и шагов.
+2. `APIcfBase.cpp`:
+   1. удален локальный `StdFileTStream` (исчезли последние `__fastcall` в `core`);
+   2. открытия файлов переведены на helper `OpenVclFileStream(...)` + `TFileStream`.
+3. `MetaObject` переведен на STL-строки:
+   1. `core/src/metadata/MetaObject.h/.cpp`: `String` -> `std::string`;
+   2. удален include `#include <System.hpp>` из `MetaObject.h`.
+4. Для согласования цепочки наследования обновлен:
+   1. `core/src/metadata/CommonMetadataObject.h/.cpp` (`String` ctor -> `std::string` ctor).
+5. Проверки после изменений:
+   1. `Compile\\build.bat` — успешно;
+   2. `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf ... root version` — `ok`.
+6. Текущий остаток `System.*` include в `core`:
+   1. только `core/src/APIcfBase.h: #include <System.Classes.hpp>`.
+
+7. Локальный шаг по `APIcfBase.h` выполнен:
+   1. прямой include `#include <System.Classes.hpp>` убран из `core/src/APIcfBase.h`;
+   2. добавлен переходный shim `src/SystemClassesShim.h`, который инкапсулирует VCL include на стороне `src`.
+
 ---
 
 # Финальный дожим P4 (2026-05-13, доп.фикс)
@@ -372,3 +393,112 @@
 ## Что осталось (и почему это уже не «простой перенос»)
 1. Полное удаление `System.Classes.hpp` из `APIcfBase` потребует финального вывода `String/TStream` из публичной поверхности `v8file/v8catalog` в отдельный `src`-facade.
 2. Полное удаление `System.hpp` из `MetaObject` потребует перевода всей ветки `MetaObject/MetaDataManager` на STL-строки (`std::u16string/std::string`) с адаптерами на границе UI.
+
+## Статус P5 (2026-05-13, шаг продолжения)
+1. `APIcfBase.h`:
+   1. прямой `#include <System.Classes.hpp>` заменен на adapter-shim `#include "../../src/SystemClassesShim.h"`;
+   2. сам RTL include теперь изолирован в `src/SystemClassesShim.h`.
+2. `APIcfBase.cpp`:
+   1. удален `StdFileTStream` и helper-ветки `ToSeekOrigin(...)`;
+   2. открытие файлов переведено на `OpenVclFileStream(...)` (`TFileStream`), без изменения поведения.
+3. Контрольный аудит:
+   1. `rg "#include <System\\." core/src core/include` — пусто;
+   2. `rg "__fastcall" core/src core/include` — пусто.
+4. Проверки:
+   1. `Compile\\build.bat` — успешно;
+   2. `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf ... root version` — `ok`.
+
+## Статус P5 (2026-05-13, продолжение)
+1. В `core/src/metadata` убран последний прямой вызов `GetFileName()`:
+   1. `ModuleTextStorage.cpp` использует `GetFileName16()` + bridge-конвертер.
+2. Убрана зависимость `core` от пути `src` для shim:
+   1. создан `core/src/SystemClassesShim.h`;
+   2. `core/src/APIcfBase.h` переключен на `#include "SystemClassesShim.h"`;
+   3. удален временный `src/SystemClassesShim.h`.
+3. Проверки:
+   1. `Compile\\build.bat` — успешно;
+   2. `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf ... root version` — `ok`.
+
+## Статус P5 (2026-05-13, закрепление *16 как основной API в v8catalog)
+1. В `APIcfBase.cpp` методы `v8catalog` перестроены на модель:
+   1. `*16`-методы (`GetFile16/createFile16/CreateCatalog16/DeleteFile16`) содержат основную реализацию;
+   2. `String`-методы стали thin-wrapper через `StringToUtf16(...)`.
+2. Это снижает зависимость core-логики от VCL-строк в точках вызова и упрощает последующий вынос `String`-фасада в adapter-слой.
+3. Проверки:
+   1. `Compile\\build.bat` — успешно;
+   2. `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf ... root version` — `ok`.
+
+## Статус P5 (2026-05-13, пакетный перевод core/metadata на GetFile16)
+1. В `APIcfBase` добавлены публичные конвертеры:
+   1. `V8Utf16FromString(const String&)`
+   2. `V8StringFromUtf16(const Utf16String&)`
+2. В `core/metadata` переведены все активные вызовы `GetFile(...)` на `GetFile16(...)`:
+   1. `BaseMetadataObject.cpp`
+   2. `ChartOfAccounts.cpp`
+   3. `ChartOfCharacteristicTypes.cpp`
+   4. `Enums.cpp`
+   5. `ExternalDataSources.cpp`
+   6. `FilterCriteria.cpp`
+   7. `MetaDataManager.cpp`
+   8. `MetadataObjectWithSections.cpp`
+   9. `ModuleTextStorage.cpp`
+   10. `Numerators.cpp`
+   11. `Sequences.cpp`
+3. Результат контроля:
+   1. активных `GetFile(...)` вызовов в `core/src/metadata` не осталось (кроме закомментированной строки).
+4. Проверки:
+   1. `Compile\\build.bat` — успешно;
+   2. `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf ... root version` — `ok`.
+
+## Статус P5 (2026-05-13, шаг UTF-16 API для APIcfBase)
+1. В `v8file` добавлен core-friendly метод:
+   1. `GetFullName16()`.
+2. В `v8catalog` добавлены core-friendly UTF-16 методы:
+   1. `GetFile16(const Utf16String&)`
+   2. `createFile16(const Utf16String&, bool)`
+   3. `CreateCatalog16(const Utf16String&, bool)`
+   4. `DeleteFile16(const Utf16String&)`
+3. Первые потребители в `core/metadata` переключены на UTF-16 вызовы:
+   1. `MetaDataManager.cpp`: `version/metadata/root` через `GetFile16(u"...")`
+   2. `ModuleTextStorage.cpp`: `root` через `GetFile16(u"...")`
+4. Проверки:
+   1. `Compile\\build.bat` — успешно;
+   2. `Compile\\v8unpack.exe -PARSE Compile\\1Cv8_ssl.cf ... root version` — `ok`.
+
+## Статус P5 (2026-05-13, реализованы пункты финальной зачистки)
+1. Из `core/src` удалены Borland-специфичные директивы компилятора:
+   1. `#pragma hdrstop`
+   2. `#pragma package(smart_init)`
+2. `core/src/metadata/MDObject.*` переведен с `TObjectList` на STL-контейнер:
+   1. `TMDObjectManager` хранит объекты в `std::vector<std::unique_ptr<TMDObject>>`;
+   2. `newMetaData()` теперь возвращает raw pointer на элемент, владельцем остается менеджер.
+3. `core/src/metadata/SmartPointers.h`:
+   1. удален deleter, жестко привязанный к `TObject`;
+   2. введен generic `DefaultObjectDeleter<T>`;
+   3. `VclUniquePtr` оставлен как совместимый alias-нейм, но основан на generic deleter.
+4. Важное ограничение по ABI на текущем этапе:
+   1. попытка убрать `: public TObject` из `BaseMetadataObject`/части metadata-классов ломает `src/MetadataTreeBuilder` (он хранит ссылки как `System::TObject*`);
+   2. поэтому наследование `TObject` возвращено до отдельного шага с адаптером TreeData.
+5. Проверка после изменений:
+   1. `Compile\\build.bat` — успешно (без новых ошибок);
+   2. функциональные предупреждения компилятора остались прежними, миграционных регрессий не добавлено.
+
+## Статус P5 (2026-05-13, продолжение: снят блокер TObject между core и src)
+1. Добавлен нейтральный базовый тип core-объектов метаданных:
+   1. `core/src/metadata/MetadataEntity.h` (`virtual ~MetadataEntity() = default`).
+2. Классы core переведены с `TObject` на `MetadataEntity`:
+   1. `BaseMetadataObject`
+   2. `TEnums`
+   3. `TNumerators`
+   4. `TSequences`
+   5. `TMDO`
+   6. `TMDObject`
+3. `src`-слой переведен на хранение/передачу core-объектов без `System::TObject*`:
+   1. `VirtualTreeData::MetadataObject`: `TObject*` -> `MetadataEntity*`;
+   2. `MainUnit.h/.cpp`: `MetadataVector<TObject>` -> `MetadataVector<MetadataEntity>`;
+   3. `MetadataTreeBuilder.h/.cpp`: аналогично для подсистем и вспомогательных функций.
+4. Результат:
+   1. зависимость `core` от `TObject` снята полностью;
+   2. сборка проекта проходит без новых ошибок.
+5. Проверка:
+   1. `Compile\\build.bat` — успешно.

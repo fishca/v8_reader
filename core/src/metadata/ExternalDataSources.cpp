@@ -1,10 +1,8 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "ExternalDataSources.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 namespace
 {
@@ -71,7 +69,7 @@ namespace
 		if (!parent || guid.IsEmpty())
 			return String();
 
-		v8file* file = parent->GetFile(guid);
+		v8file* file = parent->GetFile16(V8Utf16FromString(guid));
 		if (!file)
 			return String();
 
@@ -129,7 +127,7 @@ namespace
 		if (!parent || guid.IsEmpty())
 			return tableData;
 
-		v8file* file = parent->GetFile(guid);
+		v8file* file = parent->GetFile16(V8Utf16FromString(guid));
 		if (!file)
 			return tableData;
 
@@ -166,7 +164,7 @@ namespace
 		if (!parent || guid.IsEmpty())
 			return cubeData;
 
-		v8file* file = parent->GetFile(guid);
+		v8file* file = parent->GetFile16(V8Utf16FromString(guid));
 		if (!file)
 			return cubeData;
 
@@ -227,7 +225,7 @@ TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _gu
 	{
 		try
 		{
-			v8file* file = parent->GetFile(guid);
+			v8file* file = parent->GetFile16(V8Utf16FromString(guid));
 			if (file)
 				root_data.reset(get_treeFromV8file(file));
 		}
@@ -251,7 +249,7 @@ TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _gu
 	{
 		try
 		{
-			v8file* file = parent->GetFile(guid);
+			v8file* file = parent->GetFile16(V8Utf16FromString(guid));
 			if (file)
 				root_data.reset(get_treeFromV8file(file));
 		}

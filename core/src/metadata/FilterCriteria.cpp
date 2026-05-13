@@ -1,11 +1,9 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "guids.h"
 #include "FilterCriteria.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 namespace
 {
@@ -87,7 +85,7 @@ namespace
         if (!parent || guid.IsEmpty())
             return L"";
 
-        v8file* file = parent->GetFile(guid);
+        v8file* file = parent->GetFile16(V8Utf16FromString(guid));
         if (!file)
             return L"";
 

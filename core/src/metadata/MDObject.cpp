@@ -1,23 +1,17 @@
-﻿//---------------------------------------------------------------------------
-
-#pragma package(smart_init)
-#pragma hdrstop
-
-#include "MDObject.h"
 //---------------------------------------------------------------------------
 
 
+#include "MDObject.h"
+//---------------------------------------------------------------------------
 TMDObject* TMDObjectManager::newMetaData()
 {
-	TMDObject* md = CreateMetaData();
-	md_list->Add(md);
-
-	return md;
+	std::unique_ptr<TMDObject> md(CreateMetaData());
+	TMDObject* raw = md.get();
+	md_list.push_back(std::move(md));
+	return raw;
 }
 
 TMDObjectManager::TMDObjectManager()
-{
-	md_list = new TObjectList(true);
-}
+{}
 
 

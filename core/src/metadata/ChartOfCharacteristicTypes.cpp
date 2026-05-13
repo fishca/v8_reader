@@ -1,12 +1,10 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "ChartOfCharacteristicTypes.h"
 #include "ModuleTextStorage.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 namespace
 {
@@ -56,11 +54,11 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 	if (!root_data) return;
 
 	auto& attributes = getAttributes();
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° СЂРµРєРІРёР·РёС‚РѕРІ
+	// Получаем имена реквизитов
 	attributes.clear();
 	tree* node_att = root_data.get();
 
-	node_att = &(*node_att)[0][3][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att = &(*node_att)[0][3][1]; // количество элементов
 	int CountAtt = node_att->get_value().ToInt();
 	int Delta = CountAtt - 2;
 	for (int i = 0; i < CountAtt; i++)
@@ -74,11 +72,11 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		} catch (...) {
 		}
 	}
-	// РџРѕР»СѓС‡Р°РµРј С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+	// Получаем табличные части
 	auto& tabulars = getTabularSections();
 	tabulars.clear();
 	tree* node_att_t = root_data.get();
-	node_att_t = &(*node_att_t)[0][5][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att_t = &(*node_att_t)[0][5][1]; // количество элементов
 	int CountAttTab = node_att_t->get_value().ToInt();
 	int DeltaTab = CountAttTab - 2;
 	for (int i = 0; i < CountAttTab; i++)
@@ -97,7 +95,7 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		std::unique_ptr<tree> tabularRootData;
 		if (parent && !GuidAttTab.IsEmpty())
 		{
-			v8file* tabularFile = parent->GetFile(GuidAttTab);
+			v8file* tabularFile = parent->GetFile16(V8Utf16FromString(GuidAttTab));
 			if (tabularFile)
 				tabularRootData.reset(get_treeFromV8file(tabularFile));
 		}
@@ -106,7 +104,7 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		tabulars.push_back(std::move(tabular));
 	}
 
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° С„РѕСЂРј
+	// Получаем имена форм
 	auto& forms = getForms();
 	forms.clear();
 	tree* node = root_data.get();
@@ -125,12 +123,12 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		}
 	}
 
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° РєРѕРјР°РЅРґ
+	// Получаем имена команд
 	auto& comands = getCommands();
 	comands.clear();
 	tree* node_att_c = root_data.get();
 
-	node_att_c = &(*node_att_c)[0][6][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att_c = &(*node_att_c)[0][6][1]; // количество элементов
 
 	int CountCom = node_att_c->get_value().ToInt();
 	int DeltaCom = CountCom - 2;
@@ -142,7 +140,7 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		String NameCom = node_com->get_value();
 		comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
 	}
-	// РџРѕР»СѓС‡Р°РµРј РјР°РєРµС‚С‹
+	// Получаем макеты
 	auto& moxels = getLayouts();
 	moxels.clear();
 	tree* node_mox = root_data.get();

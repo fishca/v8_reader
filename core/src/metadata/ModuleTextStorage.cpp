@@ -1,16 +1,17 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include <filesystem>
 #include <memory>
 #include <vector>
+#include <cstring>
+#include "../../include/v8reader_core/io/MemoryByteStream.h"
+#include "../../include/v8reader_core/io/StdFileStream.h"
 
 #include "ModuleTextStorage.h"
 #include "ModuleTextEncodingUtils.h"
 
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 namespace
 {
@@ -172,11 +173,25 @@ namespace
 			return L"";
 		}
 
-		std::unique_ptr<TFileStream> fs(new TFileStream(filePath, fmOpenRead | fmShareDenyNone));
+		v8reader::core::io::StdFileStream fs(ToFsPath(filePath), v8reader::core::io::FileOpenMode::ReadOnly);
+		v8reader::core::io::MemoryByteStream sb;
+		ByteVector chunk(64 * 1024);
+		while (true)
+		{
+			const std::size_t bytesRead = fs.Read(chunk.data(), chunk.size());
+			if (bytesRead == 0)
+				break;
+			sb.Write(chunk.data(), bytesRead);
+		}
+
+		const std::vector<std::uint8_t>& payload = sb.Data();
 		TBytes bytes;
-		std::unique_ptr<TBytesStream> sb(new TBytesStream(bytes));
-		sb->CopyFrom(fs.get(), 0);
-		return ModuleTextEncodingUtils::DecodeModuleText(sb->Bytes, sb->Size, encoding);
+		const int bytesCount = static_cast<int>(payload.size());
+		bytes.Length = bytesCount;
+		if (bytesCount > 0)
+			std::memcpy(&bytes[0], payload.data(), static_cast<std::size_t>(bytesCount));
+
+		return ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding);
 	}
 
 	bool TryReadDiskModuleFile(const String& filePath,
@@ -365,7 +380,7 @@ namespace
 
 		try
 		{
-			v8file* rootFile = parent->GetFile(L"root");
+			v8file* rootFile = parent->GetFile16(u"root");
 			std::unique_ptr<tree> rootTree(get_treeFromV8file(rootFile));
 			std::vector<String> rootGuids;
 			CollectGuidReferences(rootTree.get(), rootGuids);
@@ -384,19 +399,22 @@ namespace
 		if (!file)
 			return L"";
 
-		TBytes bytes;
-		TBytesStream* sb = new TBytesStream(bytes);
+		v8reader::core::io::MemoryByteStream sb;
 		try
 		{
-			file->SaveToStream(sb);
+			file->SaveToByteStream(sb);
+			const std::vector<std::uint8_t>& payload = sb.Data();
+			TBytes bytes;
+			const int bytesCount = static_cast<int>(payload.size());
+			bytes.Length = bytesCount;
+			if (bytesCount > 0)
+				std::memcpy(&bytes[0], payload.data(), static_cast<std::size_t>(bytesCount));
 			ModuleTextEncodingKind encoding;
-			String text = ModuleTextEncodingUtils::DecodeModuleText(sb->Bytes, sb->Size, encoding);
-			delete sb;
+			String text = ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding);
 			return text;
 		}
 		catch (...)
 		{
-			delete sb;
 			return L"";
 		}
 	}
@@ -411,7 +429,7 @@ namespace
 			return false;
 
 		const String upper = UpperCase(text);
-		if (upper.Pos(L"РџР РћР¦Р•Р”РЈР Рђ") > 0 || upper.Pos(L"Р¤РЈРќРљР¦РРЇ") > 0
+		if (upper.Pos(L"ПРОЦЕДУРА") > 0 || upper.Pos(L"ФУНКЦИЯ") > 0
 			|| upper.Pos(L"PROCEDURE") > 0 || upper.Pos(L"FUNCTION") > 0)
 			return true;
 
@@ -457,7 +475,7 @@ namespace
 		if (metadataGuid.IsEmpty() || !parent)
 			return metadataGuid;
 
-		v8file* metadataFile = parent->GetFile(metadataGuid);
+		v8file* metadataFile = parent->GetFile16(V8Utf16FromString(metadataGuid));
 		String metadataText = ReadV8FileAsText(metadataFile);
 		String objectGuid = ExtractConfigurationObjectGuid(metadataText);
 		return objectGuid.IsEmpty() ? metadataGuid : objectGuid;
@@ -468,7 +486,7 @@ namespace
 		if (!catalog)
 			return L"";
 
-		v8file* file = catalog->GetFile(fileName);
+		v8file* file = catalog->GetFile16(V8Utf16FromString(fileName));
 		if (!file)
 			return L"";
 
@@ -496,7 +514,7 @@ namespace
 				{
 					for (v8file* child = catalog->GetFirst(); child; child = child->GetNext())
 					{
-						String childName = child->GetFileName().LowerCase();
+						String childName = V8StringFromUtf16(child->GetFileName16()).LowerCase();
 						if (childName.Pos(L"text") > 0 || childName.Pos(L"module") > 0)
 						{
 							text = ReadV8FileAsText(child);
@@ -551,10 +569,10 @@ namespace ModuleTextStorage
 		return value.Length() > 0
 			&& (value.Pos(L"\n") > 0
 				|| value.Pos(L"\r") > 0
-				|| value.Pos(L"РџСЂРѕС†РµРґСѓСЂР°") > 0
-				|| value.Pos(L"Р¤СѓРЅРєС†РёСЏ") > 0
-				|| value.Pos(L"РљРѕРЅРµС†РџСЂРѕС†РµРґСѓСЂС‹") > 0
-				|| value.Pos(L"РљРѕРЅРµС†Р¤СѓРЅРєС†РёРё") > 0);
+				|| value.Pos(L"Процедура") > 0
+				|| value.Pos(L"Функция") > 0
+				|| value.Pos(L"КонецПроцедуры") > 0
+				|| value.Pos(L"КонецФункции") > 0);
 	}
 
 	bool IsGuidLike(const String& value)
@@ -611,7 +629,7 @@ namespace ModuleTextStorage
 
 			try
 			{
-				v8file* objectFile = parent->GetFile(metadataGuid);
+				v8file* objectFile = parent->GetFile16(V8Utf16FromString(metadataGuid));
 				if (objectFile)
 				{
 					std::unique_ptr<tree> objectTree(get_treeFromV8file(objectFile));
@@ -634,7 +652,7 @@ namespace ModuleTextStorage
 
 			for (size_t i = 0; i < candidates.size(); i++)
 			{
-				v8file* dataModule = parent->GetFile(candidates[i]);
+				v8file* dataModule = parent->GetFile16(V8Utf16FromString(candidates[i]));
 				String text = TryReadModuleContainer(dataModule, true);
 				if (!text.IsEmpty())
 				{
@@ -662,7 +680,7 @@ namespace ModuleTextStorage
 
 		if (parent && !metadataGuid.IsEmpty())
 		{
-			v8file* dataForm = parent->GetFile(metadataGuid + L".0");
+			v8file* dataForm = parent->GetFile16(V8Utf16FromString(metadataGuid + L".0"));
 			String text = TryReadModuleContainer(dataForm, true);
 			if (!text.IsEmpty())
 			{
@@ -692,7 +710,7 @@ namespace ModuleTextStorage
 
 			try
 			{
-				v8file* objectFile = parent->GetFile(metadataGuid);
+				v8file* objectFile = parent->GetFile16(V8Utf16FromString(metadataGuid));
 				if (objectFile)
 				{
 					std::unique_ptr<tree> objectTree(get_treeFromV8file(objectFile));
@@ -714,7 +732,7 @@ namespace ModuleTextStorage
 
 			for (size_t i = 0; i < candidates.size(); i++)
 			{
-				v8file* file = parent->GetFile(candidates[i]);
+				v8file* file = parent->GetFile16(V8Utf16FromString(candidates[i]));
 				String text = TryReadModuleContainer(file, true);
 				if (!text.IsEmpty())
 				{
@@ -798,7 +816,7 @@ namespace ModuleTextStorage
 				const std::vector<String> candidates = GetModuleContainerCandidates(normalizedGuid, kind);
 				for (const auto& candidate : candidates)
 				{
-					String text = TryReadModuleContainer(parent->GetFile(candidate), true);
+					String text = TryReadModuleContainer(parent->GetFile16(V8Utf16FromString(candidate)), true);
 					if (!text.IsEmpty())
 					{
 						document.text = text;
@@ -820,7 +838,7 @@ namespace ModuleTextStorage
 
 		if (!document.location.editable || document.location.filePath.IsEmpty())
 		{
-			errorText = L"РќРµ РЅР°Р№РґРµРЅ СЂРµРґР°РєС‚РёСЂСѓРµРјС‹Р№ С„Р°Р№Р» РјРѕРґСѓР»СЏ РІ SourceCF.";
+			errorText = L"Не найден редактируемый файл модуля в SourceCF.";
 			return false;
 		}
 
@@ -828,7 +846,7 @@ namespace ModuleTextStorage
 		const String dir = ExtractFileDir(target);
 		if (!DirectoryExistsFs(dir))
 		{
-			errorText = L"РљР°С‚Р°Р»РѕРі РјРѕРґСѓР»СЏ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚: " + dir;
+			errorText = L"Каталог модуля не существует: " + dir;
 			return false;
 		}
 
@@ -836,18 +854,18 @@ namespace ModuleTextStorage
 		try
 		{
 			{
-				std::unique_ptr<TFileStream> out(new TFileStream(tmp, fmCreate));
-				ModuleTextEncodingUtils::WriteTextWithEncoding(out.get(), newText, document.location.encoding);
+				v8reader::core::io::StdFileStream out(ToFsPath(tmp), v8reader::core::io::FileOpenMode::CreateTruncate);
+				ModuleTextEncodingUtils::WriteTextWithEncoding(out, newText, document.location.encoding);
 			}
 
 			if (FileExistsFs(target) && !DeleteFileFs(target))
 			{
-				errorText = L"Не удалось удалить исходный файл модуля: " + target;
+				errorText = L"�� ������� ������� �������� ���� ������: " + target;
 				return false;
 			}
 			if (!MoveFileFs(tmp, target))
 			{
-				errorText = L"Не удалось переместить временный файл модуля: " + tmp;
+				errorText = L"�� ������� ����������� ��������� ���� ������: " + tmp;
 				return false;
 			}
 

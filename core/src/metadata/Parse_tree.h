@@ -1,10 +1,9 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef Parse_treeH
 #define Parse_treeH
 
 #include "../APIcfBase.h"
-#pragma hdrstop
 #include <memory>
 #include <string>
 #include <string_view>
@@ -18,7 +17,7 @@ class tree
 private:
 	String value;
 	node_type type;
-	int num_subnode; // РєРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРґС‡РёРЅРµРЅРЅС‹С…
+	int num_subnode; // количество подчиненных
 	tree* parent; // +1
 	tree* next; // 0
 	tree* prev; // 0
@@ -57,8 +56,8 @@ typedef std::shared_ptr<tree> tree_shared_ptr;
 
 //tree* parse_1Ctext_old(String& text, String path);
 tree* parse_1Ctext(const String& text, const String& path);
-tree* parse_1Cstream(TStream* str, const String& path);
-bool test_parse_1Ctext(TStream* str, const String& path);
+tree* parse_1Cstream(v8reader::core::io::IByteStream& str, const String& path);
+bool test_parse_1Ctext(v8reader::core::io::IByteStream& str, const String& path);
 String outtext(tree* t);
 tree* find_node_by_guid(tree* root, const String& target_guid);
 tree* find_metadata_node_by_guid(tree* root, const String& target_guid);

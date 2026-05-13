@@ -1,4 +1,4 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 #pragma hdrstop
 
 #include "MetadataTreeBuilder.h"
@@ -7,7 +7,7 @@
 #pragma package(smart_init)
 
 //---------------------------------------------------------------------------
-// Р‘Р°Р·РѕРІС‹Рµ РѕРїРµСЂР°С†РёРё СЃ СѓР·Р»Р°РјРё РґРµСЂРµРІР°
+// Базовые операции с узлами дерева
 
 void initNode(VirtualTreeData* data, const String& name, int imageIndex, int age)
 {
@@ -32,7 +32,7 @@ PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const S
 
 void addTabularSections(TVirtualStringTree* tree, PVirtualNode parent, const std::vector<std::unique_ptr<TTabular>>& items, int age)
 {
-	PVirtualNode sectionNode = addChildNode(tree, parent, L"РўР°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё", TreeImage::TabularSections, age);
+	PVirtualNode sectionNode = addChildNode(tree, parent, L"Табличные части", TreeImage::TabularSections, age);
 	tree->Expanded[sectionNode] = true;
 
 	for (const auto& item : items)
@@ -85,22 +85,22 @@ static void addMetadataItemSection(TVirtualStringTree* tree, PVirtualNode parent
 }
 
 //---------------------------------------------------------------------------
-// РЎРµРєС†РёРё РґР»СЏ СЃС‚Р°РЅРґР°СЂС‚РЅС‹С… РѕР±СЉРµРєС‚РѕРІ Рё СЂРµРіРёСЃС‚СЂРѕРІ
+// Секции для стандартных объектов и регистров
 
 void fillStandardMetadataSections(TVirtualStringTree* tree, PVirtualNode childNode, BaseMetadataObject* metadataObject)
 {
 	if (!metadataObject)
 		return;
 
-	addModuleTextNode(tree, childNode, metadataObject, L"РњРѕРґСѓР»СЊ РѕР±СЉРµРєС‚Р°", ModuleTextKind::ObjectModule, TreeImage::Forms);
-	addModuleTextNode(tree, childNode, metadataObject, L"РњРѕРґСѓР»СЊ РјРµРЅРµРґР¶РµСЂР°", ModuleTextKind::ManagerModule, TreeImage::Forms);
+	addModuleTextNode(tree, childNode, metadataObject, L"Модуль объекта", ModuleTextKind::ObjectModule, TreeImage::Forms);
+	addModuleTextNode(tree, childNode, metadataObject, L"Модуль менеджера", ModuleTextKind::ManagerModule, TreeImage::Forms);
 
-	addSection(tree, childNode, L"Р РµРєРІРёР·РёС‚С‹", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
 
 	addTabularSections(tree, childNode, metadataObject->getTabularSections(), 0);
-	addMetadataItemSection(tree, childNode, L"Р¤РѕСЂРјС‹", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"РњРѕРґСѓР»СЊ С„РѕСЂРјС‹");
-	addMetadataItemSection(tree, childNode, L"РљРѕРјР°РЅРґС‹", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"РњРѕРґСѓР»СЊ РєРѕРјР°РЅРґС‹");
-	addSection(tree, childNode, L"РњР°РєРµС‚С‹",   TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(), [](const auto& item) { return item->name; });
+	addMetadataItemSection(tree, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"Модуль формы");
+	addMetadataItemSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"Модуль команды");
+	addSection(tree, childNode, L"Макеты",   TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(), [](const auto& item) { return item->name; });
 }
 
 void fillInformationRegisterSections(TVirtualStringTree* tree, PVirtualNode childNode, MetadataObjectInformationRegister* metadataObject)
@@ -108,17 +108,17 @@ void fillInformationRegisterSections(TVirtualStringTree* tree, PVirtualNode chil
 	if (!metadataObject)
 		return;
 
-	addModuleTextNode(tree, childNode, metadataObject, L"РњРѕРґСѓР»СЊ РѕР±СЉРµРєС‚Р°", ModuleTextKind::ObjectModule, TreeImage::Forms);
-	addModuleTextNode(tree, childNode, metadataObject, L"РњРѕРґСѓР»СЊ РјРµРЅРµРґР¶РµСЂР°", ModuleTextKind::ManagerModule, TreeImage::Forms);
+	addModuleTextNode(tree, childNode, metadataObject, L"Модуль объекта", ModuleTextKind::ObjectModule, TreeImage::Forms);
+	addModuleTextNode(tree, childNode, metadataObject, L"Модуль менеджера", ModuleTextKind::ManagerModule, TreeImage::Forms);
 
-	addSection(tree, childNode, L"РР·РјРµСЂРµРЅРёСЏ", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Р РµСЃСѓСЂСЃС‹",   TreeImage::Resources,  TreeImage::Resources, metadataObject->getResources(),  [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Р РµРєРІРёР·РёС‚С‹", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources, metadataObject->getResources(),  [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
 
-	addMetadataItemSection(tree, childNode, L"Р¤РѕСЂРјС‹", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"РњРѕРґСѓР»СЊ С„РѕСЂРјС‹");
-	addMetadataItemSection(tree, childNode, L"РљРѕРјР°РЅРґС‹", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"РњРѕРґСѓР»СЊ РєРѕРјР°РЅРґС‹");
+	addMetadataItemSection(tree, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"Модуль формы");
+	addMetadataItemSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"Модуль команды");
 
-	addSection(tree, childNode, L"РњР°РєРµС‚С‹",    TreeImage::Layouts,    TreeImage::Layouts, metadataObject->getLayouts(),    [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Макеты",    TreeImage::Layouts,    TreeImage::Layouts, metadataObject->getLayouts(),    [](const auto& item) { return item->name; });
 }
 
 //---------------------------------------------------------------------------
@@ -142,8 +142,8 @@ void fillFormsCommandsTree(TVirtualStringTree* tree, PVirtualNode childNode, Vir
 
 	childData->MetadataObject = metadataObject;
 
-	addMetadataItemSection(tree, childNode, L"Р¤РѕСЂРјС‹", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"РњРѕРґСѓР»СЊ С„РѕСЂРјС‹");
-	addMetadataItemSection(tree, childNode, L"РљРѕРјР°РЅРґС‹", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"РњРѕРґСѓР»СЊ РєРѕРјР°РЅРґС‹");
+	addMetadataItemSection(tree, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"Модуль формы");
+	addMetadataItemSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"Модуль команды");
 }
 
 void fillAccumulationRegisterTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData, int imgIndex, MetadataObjectInformationRegister* metadataObject)
@@ -191,16 +191,16 @@ void fillAccountingRegisterTree(TVirtualStringTree* tree, PVirtualNode childNode
 
 	childData->MetadataObject = metadataObject;
 
-	addSection(tree, childNode, L"РР·РјРµСЂРµРЅРёСЏ", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Р РµСЃСѓСЂСЃС‹",   TreeImage::Resources,  TreeImage::Resources, 	metadataObject->getResources(),  [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"Р РµРєРІРёР·РёС‚С‹", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"РџСЂРёР·РЅР°РєРё СѓС‡РµС‚Р°", TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->getAccountingFlags(), [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"РџСЂРёР·РЅР°РєРё СѓС‡РµС‚Р° СЃСѓР±РєРѕРЅС‚Рѕ", TreeImage::SubcontoFlags, TreeImage::SubcontoFlags, metadataObject->getDimensionAccountingFlags(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, metadataObject->getDimensions(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources, 	metadataObject->getResources(),  [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Реквизиты", TreeImage::Attributes, TreeImage::Attributes, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Признаки учета", TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->getAccountingFlags(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags, TreeImage::SubcontoFlags, metadataObject->getDimensionAccountingFlags(), [](const auto& item) { return item->name; });
 
-	addMetadataItemSection(tree, childNode, L"Р¤РѕСЂРјС‹", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"РњРѕРґСѓР»СЊ С„РѕСЂРјС‹");
-	addMetadataItemSection(tree, childNode, L"РљРѕРјР°РЅРґС‹", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"РњРѕРґСѓР»СЊ РєРѕРјР°РЅРґС‹");
+	addMetadataItemSection(tree, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"Модуль формы");
+	addMetadataItemSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"Модуль команды");
 
-	addSection(tree, childNode, L"РњР°РєРµС‚С‹",  TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Макеты",  TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
 }
 
 void fillChartAccTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData, int imgIndex, TChartOfAccounts* metadataObject)
@@ -212,16 +212,16 @@ void fillChartAccTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualT
 
 	childData->MetadataObject = metadataObject;
 
-	addSection(tree, childNode, L"Р РµРєРІРёР·РёС‚С‹",               TreeImage::Attributes,      TreeImage::Attributes,      metadataObject->getAttributes(), [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"РџСЂРёР·РЅР°РєРё СѓС‡РµС‚Р°",          TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->accflags,        [](const auto& item) { return item->name; });
-	addSection(tree, childNode, L"РџСЂРёР·РЅР°РєРё СѓС‡РµС‚Р° СЃСѓР±РєРѕРЅС‚Рѕ", TreeImage::SubcontoFlags,   TreeImage::SubcontoFlags,   metadataObject->dimaccflags,     [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Реквизиты",               TreeImage::Attributes,      TreeImage::Attributes,      metadataObject->getAttributes(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Признаки учета",          TreeImage::AccountingFlags, TreeImage::AccountingFlags, metadataObject->accflags,        [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Признаки учета субконто", TreeImage::SubcontoFlags,   TreeImage::SubcontoFlags,   metadataObject->dimaccflags,     [](const auto& item) { return item->name; });
 
 	addTabularSections(tree, childNode, metadataObject->getTabularSections(), 0);
 
-	addMetadataItemSection(tree, childNode, L"Р¤РѕСЂРјС‹",   TreeImage::Forms,    TreeImage::Forms,    metadataObject->getForms(),    metadataObject, ModuleTextKind::FormModule,    L"РњРѕРґСѓР»СЊ С„РѕСЂРјС‹");
-	addMetadataItemSection(tree, childNode, L"РљРѕРјР°РЅРґС‹", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"РњРѕРґСѓР»СЊ РєРѕРјР°РЅРґС‹");
+	addMetadataItemSection(tree, childNode, L"Формы",   TreeImage::Forms,    TreeImage::Forms,    metadataObject->getForms(),    metadataObject, ModuleTextKind::FormModule,    L"Модуль формы");
+	addMetadataItemSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"Модуль команды");
 
-	addSection(tree, childNode, L"РњР°РєРµС‚С‹",  TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Макеты",  TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
 }
 
 void fillJournalTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData, int imgIndex, BaseMetadataObject* metadataObject)
@@ -233,15 +233,15 @@ void fillJournalTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTr
 
 	childData->MetadataObject = metadataObject;
 
-	addModuleTextNode(tree, childNode, metadataObject, L"РњРѕРґСѓР»СЊ РјРµРЅРµРґР¶РµСЂР°", ModuleTextKind::ManagerModule, TreeImage::Forms);
+	addModuleTextNode(tree, childNode, metadataObject, L"Модуль менеджера", ModuleTextKind::ManagerModule, TreeImage::Forms);
 
-	addSection(tree, childNode, L"Р“СЂР°С„С‹",   TreeImage::JournalColumns, TreeImage::JournalColumns, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
+	addSection(tree, childNode, L"Графы",   TreeImage::JournalColumns, TreeImage::JournalColumns, metadataObject->getAttributes(), [](const auto& item) { return item->name; });
 
 	addTabularSections(tree, childNode, metadataObject->getTabularSections());
 
-	addMetadataItemSection(tree, childNode, L"Р¤РѕСЂРјС‹", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"РњРѕРґСѓР»СЊ С„РѕСЂРјС‹");
-	addMetadataItemSection(tree, childNode, L"РљРѕРјР°РЅРґС‹", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"РњРѕРґСѓР»СЊ РєРѕРјР°РЅРґС‹");
-	addSection(tree, childNode, L"РњР°РєРµС‚С‹",  TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
+	addMetadataItemSection(tree, childNode, L"Формы", TreeImage::Forms, TreeImage::Forms, metadataObject->getForms(), metadataObject, ModuleTextKind::FormModule, L"Модуль формы");
+	addMetadataItemSection(tree, childNode, L"Команды", TreeImage::Commands, TreeImage::Commands, metadataObject->getCommands(), metadataObject, ModuleTextKind::CommandModule, L"Модуль команды");
+	addSection(tree, childNode, L"Макеты",  TreeImage::Layouts,  TreeImage::Layouts, metadataObject->getLayouts(),  [](const auto& item) { return item->name; });
 }
 
 void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData, int imgIndex, TEnums* curEnum)
@@ -250,16 +250,16 @@ void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeD
 
 	childData->MetadataObject = curEnum;
 
-	PVirtualNode managerModuleNode = addChildNode(tree, childNode, L"РњРѕРґСѓР»СЊ РјРµРЅРµРґР¶РµСЂР°", TreeImage::Forms);
+	PVirtualNode managerModuleNode = addChildNode(tree, childNode, L"Модуль менеджера", TreeImage::Forms);
 	VirtualTreeData* managerModuleData = static_cast<VirtualTreeData*>(tree->GetNodeData(managerModuleNode));
 	managerModuleData->MetadataObject = curEnum;
 	managerModuleData->moduleLocation.kind = ModuleTextKind::ManagerModule;
 	managerModuleData->moduleEditable = false;
 
-	addSection(tree, childNode, L"Р—РЅР°С‡РµРЅРёСЏ", TreeImage::Attributes, TreeImage::Attributes, curEnum->attributes, [](const auto& item) { return item; });
-	addSection(tree, childNode, L"Р¤РѕСЂРјС‹",    TreeImage::Forms,      TreeImage::Forms,      curEnum->forms,      [](const auto& item) { return item; });
-	addSection(tree, childNode, L"РљРѕРјР°РЅРґС‹",  TreeImage::Commands,   TreeImage::Commands,   curEnum->comands,    [](const auto& item) { return item; });
-	addSection(tree, childNode, L"РњР°РєРµС‚С‹",   TreeImage::Layouts,    TreeImage::Layouts,    curEnum->moxels,     [](const auto& item) { return item; });
+	addSection(tree, childNode, L"Значения", TreeImage::Attributes, TreeImage::Attributes, curEnum->attributes, [](const auto& item) { return item; });
+	addSection(tree, childNode, L"Формы",    TreeImage::Forms,      TreeImage::Forms,      curEnum->forms,      [](const auto& item) { return item; });
+	addSection(tree, childNode, L"Команды",  TreeImage::Commands,   TreeImage::Commands,   curEnum->comands,    [](const auto& item) { return item; });
+	addSection(tree, childNode, L"Макеты",   TreeImage::Layouts,    TreeImage::Layouts,    curEnum->moxels,     [](const auto& item) { return item; });
 }
 
 namespace
@@ -285,10 +285,10 @@ namespace
 	{
 		PVirtualNode tableNode = addChildNode(tree, parent, tableData.name, imgIndex);
 
-		addStringSection(tree, tableNode, L"РџРѕР»СЏ",    TreeImage::Attributes, TreeImage::Attributes, tableData.fields);
-		addStringSection(tree, tableNode, L"Р¤РѕСЂРјС‹",   TreeImage::Forms,      TreeImage::Forms,      tableData.forms);
-		addStringSection(tree, tableNode, L"РљРѕРјР°РЅРґС‹", TreeImage::Commands,   TreeImage::Commands,   tableData.commands);
-		addStringSection(tree, tableNode, L"РњР°РєРµС‚С‹",  TreeImage::Layouts,    TreeImage::Layouts,    tableData.layouts);
+		addStringSection(tree, tableNode, L"Поля",    TreeImage::Attributes, TreeImage::Attributes, tableData.fields);
+		addStringSection(tree, tableNode, L"Формы",   TreeImage::Forms,      TreeImage::Forms,      tableData.forms);
+		addStringSection(tree, tableNode, L"Команды", TreeImage::Commands,   TreeImage::Commands,   tableData.commands);
+		addStringSection(tree, tableNode, L"Макеты",  TreeImage::Layouts,    TreeImage::Layouts,    tableData.layouts);
 
 		tree->Expanded[tableNode] = true;
 	}
@@ -299,17 +299,17 @@ namespace
 
 		if (!cubeData.dimensionTables.empty())
 		{
-			PVirtualNode dimensionTablesNode = addChildNode(tree, cubeNode, L"РўР°Р±Р»РёС†С‹ РёР·РјРµСЂРµРЅРёР№", TreeImage::TabularSections);
+			PVirtualNode dimensionTablesNode = addChildNode(tree, cubeNode, L"Таблицы измерений", TreeImage::TabularSections);
 			for (const auto& tableData : cubeData.dimensionTables)
 				fillExternalTableTree(tree, dimensionTablesNode, tableData, TreeImage::TabularSections);
 			tree->Expanded[dimensionTablesNode] = true;
 		}
 
-		addStringSection(tree, cubeNode, L"РР·РјРµСЂРµРЅРёСЏ", TreeImage::Dimensions, TreeImage::Dimensions, cubeData.dimensions);
-		addStringSection(tree, cubeNode, L"Р РµСЃСѓСЂСЃС‹",   TreeImage::Resources,  TreeImage::Resources,  cubeData.resources);
-		addStringSection(tree, cubeNode, L"Р¤РѕСЂРјС‹",     TreeImage::Forms,      TreeImage::Forms,      cubeData.forms);
-		addStringSection(tree, cubeNode, L"РљРѕРјР°РЅРґС‹",   TreeImage::Commands,   TreeImage::Commands,   cubeData.commands);
-		addStringSection(tree, cubeNode, L"РњР°РєРµС‚С‹",    TreeImage::Layouts,    TreeImage::Layouts,    cubeData.layouts);
+		addStringSection(tree, cubeNode, L"Измерения", TreeImage::Dimensions, TreeImage::Dimensions, cubeData.dimensions);
+		addStringSection(tree, cubeNode, L"Ресурсы",   TreeImage::Resources,  TreeImage::Resources,  cubeData.resources);
+		addStringSection(tree, cubeNode, L"Формы",     TreeImage::Forms,      TreeImage::Forms,      cubeData.forms);
+		addStringSection(tree, cubeNode, L"Команды",   TreeImage::Commands,   TreeImage::Commands,   cubeData.commands);
+		addStringSection(tree, cubeNode, L"Макеты",    TreeImage::Layouts,    TreeImage::Layouts,    cubeData.layouts);
 		tree->Expanded[cubeNode] = true;
 	}
 }
@@ -323,7 +323,7 @@ void fillExternalDataSourceTree(TVirtualStringTree* tree, PVirtualNode childNode
 
 	if (!metadataObject->tables.empty())
 	{
-		PVirtualNode tablesNode = addChildNode(tree, childNode, L"РўР°Р±Р»РёС†С‹", TreeImage::TabularSections);
+		PVirtualNode tablesNode = addChildNode(tree, childNode, L"Таблицы", TreeImage::TabularSections);
 		for (const auto& tableData : metadataObject->tables)
 			fillExternalTableTree(tree, tablesNode, tableData, TreeImage::TabularSections);
 		tree->Expanded[tablesNode] = true;
@@ -331,18 +331,18 @@ void fillExternalDataSourceTree(TVirtualStringTree* tree, PVirtualNode childNode
 
 	if (!metadataObject->cubes.empty())
 	{
-		PVirtualNode cubesNode = addChildNode(tree, childNode, L"РљСѓР±С‹", TreeImage::TabularSections);
+		PVirtualNode cubesNode = addChildNode(tree, childNode, L"Кубы", TreeImage::TabularSections);
 		for (const auto& cubeData : metadataObject->cubes)
 			fillExternalCubeTree(tree, cubesNode, cubeData, TreeImage::TabularSections);
 		tree->Expanded[cubesNode] = true;
 	}
 
-	addStringSection(tree, childNode, L"Р¤СѓРЅРєС†РёРё", TreeImage::Commands, TreeImage::Commands, metadataObject->functions);
+	addStringSection(tree, childNode, L"Функции", TreeImage::Commands, TreeImage::Commands, metadataObject->functions);
 	tree->Expanded[childNode] = true;
 }
 
 //---------------------------------------------------------------------------
-// Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ С„СѓРЅРєС†РёРё РґР»СЏ РїРѕРґСЃРёСЃС‚РµРј
+// Вспомогательные функции для подсистем
 
 String normalizeGuid(const String& guid)
 {
@@ -401,7 +401,7 @@ void GetListChildrenSubsystem(v8catalog* cf, String& guid_md, std::vector<String
 	}
 }
 
-TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& guid)
+TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, const String& guid)
 {
 	String targetGuid = normalizeGuid(guid);
 	if (targetGuid.IsEmpty())
@@ -423,7 +423,7 @@ TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<TObject>&
 	return nullptr;
 }
 
-String getSubsystemDisplayNameByGuid(v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& guid)
+String getSubsystemDisplayNameByGuid(v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, const String& guid)
 {
 	String guidCopy = guid;
 	String name = GetNameSubsystem(cf, guidCopy);
@@ -437,7 +437,7 @@ String getSubsystemDisplayNameByGuid(v8catalog* cf, const MetadataVector<TObject
 	return guid;
 }
 
-void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& parentGuid, int imgIndex)
+void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, const String& parentGuid, int imgIndex)
 {
 	if (!tree || !cf)
 		return;
@@ -474,14 +474,14 @@ void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode par
 	}
 }
 
-void addSubsystemChildrenToTree(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, TSubsystem* parentSubsystem, int imgIndex)
+void addSubsystemChildrenToTree(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, TSubsystem* parentSubsystem, int imgIndex)
 {
 	if (!tree || !cf || !parentSubsystem)
 		return;
 	addSubsystemChildrenToTreeByGuid(tree, parentNode, cf, subsystems, parentSubsystem->guid, imgIndex);
 }
 
-std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const MetadataVector<TObject>& subsystems)
+std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems)
 {
 	std::unordered_set<String> childSubsystemGuids;
 	if (!cf)
@@ -525,3 +525,4 @@ std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const Metad
 	}
 	return childSubsystemGuids;
 }
+

@@ -8,13 +8,12 @@
 // Кастомные deleters для умных указателей
 // ============================================================================
 
-// Кастомный deleter для VCL TObject
+// Кастомный deleter для object
 // Обеспечивает корректное удаление VCL-объектов
-struct VclObjectDeleter {
-    void operator()(TObject* obj) const {
-        if (obj) {
-            delete obj;
-        }
+template<typename T>
+struct DefaultObjectDeleter {
+    void operator()(T* obj) const {
+        delete obj;
     }
 };
 
@@ -50,10 +49,10 @@ struct V8CatalogDeleter {
 // Типы умных указателей
 // ============================================================================
 
-// Умный указатель для VCL объектов (TObject и его наследники)
-// Использует VclObjectDeleter для корректного удаления
+// Умный указатель для VCL объектов (object и его наследники)
+// Использует DefaultObjectDeleter для корректного удаления
 template<typename T>
-using VclUniquePtr = std::unique_ptr<T, VclObjectDeleter>;
+using VclUniquePtr = std::unique_ptr<T, DefaultObjectDeleter<T>>;
 
 // Умный указатель для дерева парсинга
 using TreeUniquePtr = std::unique_ptr<tree, TreeDeleter>;
@@ -99,57 +98,8 @@ void AddToMetadataVector(MetadataVector<T>& vec, std::unique_ptr<T> item) {
 // ============================================================================
 // Примеры использования
 // ============================================================================
-/*
-// Пример 1: Замена голого указателя v8catalog*
-// До:
-v8catalog* GlobalCF = nullptr;
-if (GlobalCF) {
-    delete GlobalCF;
-}
-GlobalCF = new v8catalog(filename, true);
 
-// После:
-V8CatalogUniquePtr GlobalCF;
-GlobalCF = std::make_unique<v8catalog>(filename, true);
-// Автоматическое освобождение при выходе из области видимости
-
-
-// Пример 2: Замена TObjectList* на MetadataVector
-// До:
-TObjectList* mdCatalogs = new TObjectList(true);
-mdCatalogs->Add(new TCatalogs(...));
-TCatalogs* cat = static_cast<TCatalogs*>(mdCatalogs->Items[i]);
-
-// После:
-MetadataVector<TCatalogs> mdCatalogs;
-mdCatalogs.push_back(std::make_unique<TCatalogs>(...));
-TCatalogs* cat = mdCatalogs[i].get();
-
-
-// Пример 3: Замена tree* на TreeUniquePtr
-// До:
-tree* root_data = new tree();
-delete root_data;
-
-// После:
-TreeUniquePtr root_data(new tree());
-// Автоматическое освобождение
-
-
-// Пример 4: Использование MetadataVector в методах
-// До:
-void FillTree(TObjectList* mdData) {
-    for (int i = 0; i < mdData->Count; i++) {
-        auto* item = static_cast<TCatalogs*>(mdData->Items[i]);
-    }
-}
-
-// После:
-void FillTree(const MetadataVector<TCatalogs>& mdData) {
-    for (const auto& item : mdData) {
-        TCatalogs* obj = item.get();
-    }
-}
-*/
 
 #endif
+
+

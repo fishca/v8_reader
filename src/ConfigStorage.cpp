@@ -148,7 +148,7 @@ ConfigFile* ConfigStorageCFFile::readfile(const String& path)
 
 	cf = new ConfigFile;
 	cf->str = new TMemoryStream();
-	f->SaveToStream(cf->str);
+	v8reader::vcl_bridge::SaveV8FileToVclStream(f, cf->str);
 	cf->str->Seek(0l, soBeginning);
 	cf->addin = f;
 	return cf;
@@ -172,7 +172,7 @@ bool ConfigStorageCFFile::writefile(const String& path, TStream* str)
 		fname = fname.SubString(i + 1, fname.Length() - i);
 	}
 	f = c->createFile(fname);
-	f->Write(str);
+	v8reader::vcl_bridge::WriteV8FileFromVclStream(f, str);
 	return true;
 }
 
@@ -486,7 +486,7 @@ ConfigFile* ConfigStorageTable::readfile(const String& path)
 	tf->open();
 	if(!fname.IsEmpty())
 	{
-		if(!tf->cat) tf->cat = new v8catalog(tf->stream, false, true);
+		if(!tf->cat) tf->cat = v8reader::vcl_bridge::CreateCatalogFromVclStream(tf->stream, false, true);
 		c = tf->cat;
 		for(i = fname.Pos(L"\\"); i; i = fname.Pos(L"\\"))
 		{
@@ -504,7 +504,7 @@ ConfigFile* ConfigStorageTable::readfile(const String& path)
 		cfa->variant = cstav_v8file;
 		cfa->f = f;
 		cf->str = new TMemoryStream();
-		f->SaveToStream(cf->str);
+		v8reader::vcl_bridge::SaveV8FileToVclStream(f, cf->str);
 		cf->str->Seek(0l, soBeginning);
 		cf->addin = cfa;
 	}
@@ -579,7 +579,7 @@ bool ConfigStorageTable::save_config(String _filename)
 			f = c->createFile(tf->name);
 			f->SetTimeCreate(&tf->file->ft_create);
 			f->SetTimeModify(&tf->file->ft_modify);
-			f->WriteAndClose(tf->rstream);
+			v8reader::vcl_bridge::WriteAndCloseV8FileFromVclStream(f, tf->rstream);
 
 			tf->close();
 		}
@@ -652,7 +652,7 @@ ConfigStorageTableConfig::ConfigStorageTableConfig(TableFiles* tabf, T_1CD* _bas
 		DynamicallyUpdated = new container_file(_DynamicallyUpdated, _DynamicallyUpdated->name);
 		DynamicallyUpdated->open();
 		s = tab->getbase()->getfilename() + L"\\" + tab->getname() + L"\\" + DynamicallyUpdated->name;
-		tt = parse_1Cstream(DynamicallyUpdated->stream, s);
+		tt = [&]() { v8reader::vcl_bridge::TStreamByteStreamAdapter adapter(DynamicallyUpdated->stream); return parse_1Cstream(adapter, s); }();
 		if(!tt)
 		{
 			error(L"Ошибка разбора файла DynamicallyUpdated"
@@ -823,7 +823,7 @@ ConfigStorageTableConfigSave::ConfigStorageTableConfigSave(TableFiles* tabc, Tab
 		deleted = new container_file(_deleted, _deleted->name);
 		deleted->open();
 		s = tab->getbase()->getfilename() + L"\\" + tab->getname() + L"\\" + deleted->name;
-		tt = parse_1Cstream(deleted->stream, s);
+		tt = [&]() { v8reader::vcl_bridge::TStreamByteStreamAdapter adapter(deleted->stream); return parse_1Cstream(adapter, s); }();
 		if(!tt)
 		{
 			error(L"Ошибка разбора файла deleted"
@@ -871,7 +871,7 @@ ConfigStorageTableConfigSave::ConfigStorageTableConfigSave(TableFiles* tabc, Tab
 		DynamicallyUpdated = new container_file(_DynamicallyUpdated, _DynamicallyUpdated->name);
 		DynamicallyUpdated->open();
 		s = tab->getbase()->getfilename() + L"\\" + tab->getname() + L"\\" + DynamicallyUpdated->name;
-		tt = parse_1Cstream(DynamicallyUpdated->stream, s);
+		tt = [&]() { v8reader::vcl_bridge::TStreamByteStreamAdapter adapter(DynamicallyUpdated->stream); return parse_1Cstream(adapter, s); }();
 		if(!tt)
 		{
 			error(L"Ошибка разбора файла DynamicallyUpdated"
@@ -1063,7 +1063,7 @@ ConfigStorageTableConfigCas::ConfigStorageTableConfigCas(TableFiles* tabc, const
 	configinfo = new container_file(_configinfo, L"configinfo");
 	files[L"CONFIGINFO"] = configinfo;
 	configinfo->open();
-	tt = parse_1Cstream(configinfo->stream, s);
+	tt = [&]() { v8reader::vcl_bridge::TStreamByteStreamAdapter adapter(configinfo->stream); return parse_1Cstream(adapter, s); }();
 	if(!tt)
 	{
 		error(L"Ошибка разбора файла configinfo"
@@ -1250,7 +1250,7 @@ ConfigStorageTableConfigCasSave::ConfigStorageTableConfigCasSave(TableFiles* tab
 	else s = present + L"\\" + gl + L"configinfo";
 
 	configinfo->open();
-	tt = parse_1Cstream(configinfo->stream, s);
+	tt = [&]() { v8reader::vcl_bridge::TStreamByteStreamAdapter adapter(configinfo->stream); return parse_1Cstream(adapter, s); }();
 	if(!tt)
 	{
 		error(L"Ошибка разбора файла configinfo"

@@ -1,10 +1,8 @@
 //---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "CommonModules.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 TCommonModules::TCommonModules() : BaseMetadataObject()
 {

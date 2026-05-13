@@ -1,25 +1,23 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "CalculationRegisters.h"
 
 //---------------------------------------------------------------------------
 
-#pragma package(smart_init)
 
-// РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РїСѓС‚РµР№ РІ РґРµСЂРµРІРµ РїР°СЂСЃРёРЅРіР° РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ СЂР°СЃС‡РµС‚Р°
+// Конфигурация путей в дереве парсинга для регистров расчета
 static InfoRegisterTreePaths GetCalculationRegistersPaths()
 {
     InfoRegisterTreePaths paths;
-    // РџСѓС‚Рё РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ СЂР°СЃС‡РµС‚Р°
+    // Пути для регистров расчета
     paths.attIdx = 3;
     paths.attItemPath = {0, 1, 1, 1, 2};
 
-    paths.dimIdx = 9;   // РёР·РјРµСЂРµРЅРёСЏ
+    paths.dimIdx = 9;   // измерения
     paths.dimItemPath = {0, 1, 1, 1, 2};
 
-    paths.resIdx = 6;   // СЂРµСЃСѓСЂСЃС‹
+    paths.resIdx = 6;   // ресурсы
     paths.resItemPath = {0, 1, 1, 1, 2};
 
     paths.formsIdx = 7;
@@ -63,7 +61,7 @@ TCalculationRegisters::~TCalculationRegisters()
 //---------------------------------------------------------------------------
 void TCalculationRegisters::initializeFromTree()
 {
-	// РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃС‚Р°РЅРґР°СЂС‚РЅС‹Рµ РїРѕР»СЏ (СЂРµРєРІРёР·РёС‚С‹, РёР·РјРµСЂРµРЅРёСЏ, СЂРµСЃСѓСЂСЃС‹, С„РѕСЂРјС‹, РєРѕРјР°РЅРґС‹, РјР°РєРµС‚С‹)
+	// Инициализируем стандартные поля (реквизиты, измерения, ресурсы, формы, команды, макеты)
 	MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetCalculationRegistersPaths());
 }
 

@@ -1,9 +1,8 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef MainUnitH
 #define MainUnitH
 //---------------------------------------------------------------------------
-#include <System.Classes.hpp>
 #include <Vcl.Controls.hpp>
 #include <Vcl.StdCtrls.hpp>
 #include <Vcl.Forms.hpp>
@@ -150,7 +149,7 @@ __published:	// IDE-managed Components
 
 
 private:	// User declarations
-	Messager* mess; // СЂРµРіРёСЃС‚СЂР°С‚РѕСЂ СЃРѕРѕР±С‰РµРЅРёР№
+	Messager* mess; // регистратор сообщений
 	TSyn1CSyn *Syn1CSyn;
 	TSynGeneralSyn *ModuleGeneralSyn;
 	TTabSheet *HighlightSettingsTab;
@@ -192,7 +191,7 @@ private:	// User declarations
 	bool CurrentModuleStandalone;
 	bool SwitchingModuleTab;
 	std::unordered_map<TTabSheet*, ModuleEditorTabState> ModuleTabs;
-    std::unique_ptr<MetaDataManager> MDManager; // РЈРјРЅС‹Р№ СѓРєР°Р·Р°С‚РµР»СЊ РґР»СЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ СѓРїСЂР°РІР»РµРЅРёСЏ РїР°РјСЏС‚СЊСЋ
+    std::unique_ptr<MetaDataManager> MDManager; // Умный указатель для автоматического управления памятью
 	void CreateHighlightSettingsTab();
 	void ApplyHighlightSettings();
 	void LoadHighlightSettings();
@@ -235,62 +234,62 @@ public:		// User declarations
 	void CompleteLoadProgress(const String& statusText);
 	void TreeInit();
 	void FillVirtualTree();
-	void FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
-	void FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex);
+	void FillTreeMD(PVirtualNode parentNode, const MetadataVector<MetadataEntity>& mdData, const String& md_name, int imgIndex);
+	void FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<MetadataEntity>& mdData, const String& md_name, int imgIndex);
 
 
 	String ConfigName;
 
-	MetadataVector<TObject> mdCatalogs;
-	MetadataVector<TObject> mdCommonss;
-	MetadataVector<TObject> mdLanguages;
-	MetadataVector<TObject> mdAccumulationRegisters;
-	MetadataVector<TObject> mdAccountingRegisters;
-	MetadataVector<TObject> mdCalculationRegisters;
-	MetadataVector<TObject> mdBusinessProcesses;
-	MetadataVector<TObject> mdChartsOfCharacteristicTypes;
-	MetadataVector<TObject> mdCommandGroups;
-	MetadataVector<TObject> mdCommonAttributes;
-	MetadataVector<TObject> mdCommonCommands;
-	MetadataVector<TObject> mdCommonForms;
-	MetadataVector<TObject> mdCommonModules;
-	MetadataVector<TObject> mdCommonPictures;
-	MetadataVector<TObject> mdCommonTemplates;
-	MetadataVector<TObject> mdConstants;
-	MetadataVector<TObject> mdDataProcessors;
-	MetadataVector<TObject> mdDefinedTypes;
-	MetadataVector<TObject> mdDocumentJournals;
-	MetadataVector<TObject> mdDocumentNumerators;
-	MetadataVector<TObject> mdDocuments;
-	MetadataVector<TObject> mdEnums;
-	MetadataVector<TObject> mdEventSubscriptions;
-	MetadataVector<TObject> mdExchangePlans;
-	MetadataVector<TObject> mdChartOfAccounts;
-	MetadataVector<TObject> mdChartOfCalculationTypes;
-	MetadataVector<TObject> mdExternalDataSources;
-	MetadataVector<TObject> mdFilterCriteria;
-	MetadataVector<TObject> mdFunctionalOptions;
-	MetadataVector<TObject> mdFunctionalOptionsParameters;
-	MetadataVector<TObject> mdHTTPServices;
-	MetadataVector<TObject> mdInformationRegisters;
-	MetadataVector<TObject> mdInterfaces;
-	MetadataVector<TObject> mdReports;
-	MetadataVector<TObject> mdRoles;
-	MetadataVector<TObject> mdBots;
-	MetadataVector<TObject> mdScheduledJobs;
-	MetadataVector<TObject> mdSessionParameters;
-	MetadataVector<TObject> mdSettingsStorages;
-	MetadataVector<TObject> mdStyleItems;
-	MetadataVector<TObject> mdStyles;
-	//std::vector<SubSys> Subsystems;  - РІРѕР·РјРѕР¶РЅРѕ РЅР°РґРѕ СѓРґР°Р»РёС‚СЊ, С‚.Рє. Р»РёС€РЅРµРµ СѓР¶Рµ
-	MetadataVector<TObject> mdSubsystems;
-	MetadataVector<TObject> mdTasks;
-	MetadataVector<TObject> mdWebServices;
-	MetadataVector<TObject> mdWSReferences;
-	MetadataVector<TObject> mdWebSocketClients;
-	MetadataVector<TObject> mdXDTOPackages;
-	MetadataVector<TObject> mdIntegrationServices;
-	MetadataVector<TObject> mdSequences;
+	MetadataVector<MetadataEntity> mdCatalogs;
+	MetadataVector<MetadataEntity> mdCommonss;
+	MetadataVector<MetadataEntity> mdLanguages;
+	MetadataVector<MetadataEntity> mdAccumulationRegisters;
+	MetadataVector<MetadataEntity> mdAccountingRegisters;
+	MetadataVector<MetadataEntity> mdCalculationRegisters;
+	MetadataVector<MetadataEntity> mdBusinessProcesses;
+	MetadataVector<MetadataEntity> mdChartsOfCharacteristicTypes;
+	MetadataVector<MetadataEntity> mdCommandGroups;
+	MetadataVector<MetadataEntity> mdCommonAttributes;
+	MetadataVector<MetadataEntity> mdCommonCommands;
+	MetadataVector<MetadataEntity> mdCommonForms;
+	MetadataVector<MetadataEntity> mdCommonModules;
+	MetadataVector<MetadataEntity> mdCommonPictures;
+	MetadataVector<MetadataEntity> mdCommonTemplates;
+	MetadataVector<MetadataEntity> mdConstants;
+	MetadataVector<MetadataEntity> mdDataProcessors;
+	MetadataVector<MetadataEntity> mdDefinedTypes;
+	MetadataVector<MetadataEntity> mdDocumentJournals;
+	MetadataVector<MetadataEntity> mdDocumentNumerators;
+	MetadataVector<MetadataEntity> mdDocuments;
+	MetadataVector<MetadataEntity> mdEnums;
+	MetadataVector<MetadataEntity> mdEventSubscriptions;
+	MetadataVector<MetadataEntity> mdExchangePlans;
+	MetadataVector<MetadataEntity> mdChartOfAccounts;
+	MetadataVector<MetadataEntity> mdChartOfCalculationTypes;
+	MetadataVector<MetadataEntity> mdExternalDataSources;
+	MetadataVector<MetadataEntity> mdFilterCriteria;
+	MetadataVector<MetadataEntity> mdFunctionalOptions;
+	MetadataVector<MetadataEntity> mdFunctionalOptionsParameters;
+	MetadataVector<MetadataEntity> mdHTTPServices;
+	MetadataVector<MetadataEntity> mdInformationRegisters;
+	MetadataVector<MetadataEntity> mdInterfaces;
+	MetadataVector<MetadataEntity> mdReports;
+	MetadataVector<MetadataEntity> mdRoles;
+	MetadataVector<MetadataEntity> mdBots;
+	MetadataVector<MetadataEntity> mdScheduledJobs;
+	MetadataVector<MetadataEntity> mdSessionParameters;
+	MetadataVector<MetadataEntity> mdSettingsStorages;
+	MetadataVector<MetadataEntity> mdStyleItems;
+	MetadataVector<MetadataEntity> mdStyles;
+	//std::vector<SubSys> Subsystems;  - возможно надо удалить, т.к. лишнее уже
+	MetadataVector<MetadataEntity> mdSubsystems;
+	MetadataVector<MetadataEntity> mdTasks;
+	MetadataVector<MetadataEntity> mdWebServices;
+	MetadataVector<MetadataEntity> mdWSReferences;
+	MetadataVector<MetadataEntity> mdWebSocketClients;
+	MetadataVector<MetadataEntity> mdXDTOPackages;
+	MetadataVector<MetadataEntity> mdIntegrationServices;
+	MetadataVector<MetadataEntity> mdSequences;
 
 	std::unique_ptr<v8catalog> GlobalCF;
 };
@@ -322,3 +321,4 @@ public:
 };
 
 #endif
+

@@ -1,13 +1,11 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "MetaObject.h"
 //#include "Visitor.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
-// Р”Р»СЏ СЂР°Р±РѕС‚С‹ СЃ UUID
+// Для работы с UUID
 #ifdef _WIN32
 #include <objbase.h>
 #pragma comment(lib, "ole32.lib")
@@ -15,7 +13,7 @@
 #include <uuid/uuid.h>
 #endif
 
-// Р”Р»СЏ СЂР°Р±РѕС‚С‹ СЃ РґР°С‚Р°РјРё
+// Для работы с датами
 #include <iomanip>
 #include <sstream>
 #include <ctime>
@@ -23,7 +21,7 @@
 #include <cctype>
 
 
-// ========== РЎС‚Р°С‚РёС‡РµСЃРєРёРµ РїРµСЂРµРјРµРЅРЅС‹Рµ ==========
+// ========== Статические переменные ==========
 
 //std::map<MetaObject::ObjectType, MetaObject::CreatorFunc>&
 //MetaObject::getTypeRegistry() {
@@ -37,7 +35,7 @@
 //    return registry;
 //}
 
-// ========== РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹ Рё РґРµСЃС‚СЂСѓРєС‚РѕСЂ ==========
+// ========== Конструкторы и деструктор ==========
 
 MetaObject::MetaObject()
     : state(ObjectState::New), signalData(std::make_shared<SignalData>()) {
@@ -45,7 +43,7 @@ MetaObject::MetaObject()
 }
 
 
-MetaObject::MetaObject(const String& name, const String& synonym, const String& comment) : name(name),
+MetaObject::MetaObject(const std::string& name, const std::string& synonym, const std::string& comment) : name(name),
 																						   synonym(synonym),
 																						   comment(comment),
 																						   state(ObjectState::New),
@@ -55,7 +53,7 @@ MetaObject::MetaObject(const String& name, const String& synonym, const String& 
 }
 
 MetaObject::~MetaObject() {
-    // РЈРІРµРґРѕРјР»СЏРµРј Рѕ СѓРґР°Р»РµРЅРёРё РѕР±СЉРµРєС‚Р°
+    // Уведомляем о удалении объекта
     //notifyStateChanged(state, ObjectState::Deleted);
 }
 
@@ -71,8 +69,8 @@ MetaObject::MetaObject(MetaObject&& other) noexcept
       dependents(std::move(other.dependents)),
       extendedProperties(std::move(other.extendedProperties)),
       signalData(std::move(other.signalData)) {
-    // РџСЂРё РїРµСЂРµРјРµС‰РµРЅРёРё РіРµРЅРµСЂРёСЂСѓРµРј РЅРѕРІС‹Р№ UUID?
-    // РќРµС‚, СЃРѕС…СЂР°РЅСЏРµРј СЃС‚Р°СЂС‹Р№, С‡С‚РѕР±С‹ СЃРѕС…СЂР°РЅРёС‚СЊ РёРґРµРЅС‚РёС‡РЅРѕСЃС‚СЊ
+    // При перемещении генерируем новый UUID?
+    // Нет, сохраняем старый, чтобы сохранить идентичность
 }
 
 MetaObject& MetaObject::operator=(MetaObject&& other) noexcept {
@@ -97,22 +95,22 @@ void MetaObject::initialize() {
     created = now;
     modified = now;
 
-    // Р“РµРЅРµСЂРёСЂСѓРµРј UUID С‚РѕР»СЊРєРѕ РµСЃР»Рё РѕРЅ РµС‰Рµ РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ
+    // Генерируем UUID только если он еще не установлен
 //    if (uuid.empty()) {
 //        uuid = generateUUID();
 //    }
 	uuid = generateUUID();
 }
 
-// ========== РРґРµРЅС‚РёС„РёРєР°С†РёСЏ Рё РёРЅС„РѕСЂРјР°С†РёСЏ Рѕ С‚РёРїРµ ==========
+// ========== Идентификация и информация о типе ==========
 
-String MetaObject::getFullName() const {
-    // Р‘Р°Р·РѕРІР°СЏ СЂРµР°Р»РёР·Р°С†РёСЏ - РїСЂРѕСЃС‚Рѕ РёРјСЏ
-    // Р’ РїРѕС‚РѕРјРєР°С… РјРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРѕ РёРјРµРЅ РёР»Рё РїСЂРµС„РёРєСЃ
+std::string MetaObject::getFullName() const {
+    // Базовая реализация - просто имя
+    // В потомках можно добавить пространство имен или префикс
     return name;
 }
 
-String MetaObject::getUUID() const {
+std::string MetaObject::getUUID() const {
     return uuid;
 }
 
@@ -135,49 +133,49 @@ const T* MetaObject::as() const {
     return dynamic_cast<const T*>(this);
 }
 
-// РЇРІРЅР°СЏ СЃРїРµС†РёР°Р»РёР·Р°С†РёСЏ С€Р°Р±Р»РѕРЅРѕРІ РґР»СЏ РёР·Р±РµР¶Р°РЅРёСЏ Р»РёРЅРєРѕРІРѕС‡РЅС‹С… РѕС€РёР±РѕРє
+// Явная специализация шаблонов для избежания линковочных ошибок
 template bool MetaObject::isInstanceOf<MetaObject>() const;
 template MetaObject* MetaObject::as<MetaObject>();
 template const MetaObject* MetaObject::as<MetaObject>() const;
 
-// ========== РћСЃРЅРѕРІРЅС‹Рµ СЃРІРѕР№СЃС‚РІР° ==========
+// ========== Основные свойства ==========
 
-void MetaObject::setName(const String& name) {
+void MetaObject::setName(const std::string& name) {
     if (this->name != name) {
         this->name = normalizeName(name);
     }
 }
 
-String MetaObject::getName() const {
+std::string MetaObject::getName() const {
     return name;
 }
 
-void MetaObject::setSynonym(const String& synonym) {
+void MetaObject::setSynonym(const std::string& synonym) {
 	if (this->synonym != synonym) {
 		this->synonym = synonym;
 	}
 }
 
-String MetaObject::getSynonym() const {
+std::string MetaObject::getSynonym() const {
 	return synonym;
 }
 
-void MetaObject::setComment(const String& comment) {
+void MetaObject::setComment(const std::string& comment) {
 	if (this->comment != comment) {
 		this->comment = comment;
 	}
 }
 
-String MetaObject::getComment() const {
+std::string MetaObject::getComment() const {
 	return comment;
 }
 
-// ========== РЈРїСЂР°РІР»РµРЅРёРµ Р·Р°РІРёСЃРёРјРѕСЃС‚СЏРјРё ==========
+// ========== Управление зависимостями ==========
 
 void MetaObject::addDependency(const std::shared_ptr<MetaObject>& object) {
     if (!object || object.get() == this) return;
 
-    // РџСЂРѕРІРµСЂСЏРµРј, РЅРµС‚ Р»Рё СѓР¶Рµ С‚Р°РєРѕР№ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё
+    // Проверяем, нет ли уже такой зависимости
     auto it = std::find_if(dependencies.begin(), dependencies.end(),
         [&object](const std::weak_ptr<MetaObject>& weak) {
             auto shared = weak.lock();
@@ -187,7 +185,7 @@ void MetaObject::addDependency(const std::shared_ptr<MetaObject>& object) {
     if (it == dependencies.end()) {
         dependencies.push_back(object);
 
-        // РћР±РЅРѕРІР»СЏРµРј РєСЌС€ Р·Р°РІРёСЃРёРјС‹С… РѕР±СЉРµРєС‚РѕРІ Сѓ Р·Р°РІРёСЃРёРјРѕРіРѕ РѕР±СЉРµРєС‚Р°
+        // Обновляем кэш зависимых объектов у зависимого объекта
         object->dependents.push_back(shared_from_this());
     }
 }
@@ -195,7 +193,7 @@ void MetaObject::addDependency(const std::shared_ptr<MetaObject>& object) {
 void MetaObject::removeDependency(const std::shared_ptr<MetaObject>& object) {
     if (!object) return;
 
-    // РЈРґР°Р»СЏРµРј РёР· Р·Р°РІРёСЃРёРјРѕСЃС‚РµР№
+    // Удаляем из зависимостей
     dependencies.erase(
         std::remove_if(dependencies.begin(), dependencies.end(),
             [&object](const std::weak_ptr<MetaObject>& weak) {
@@ -205,7 +203,7 @@ void MetaObject::removeDependency(const std::shared_ptr<MetaObject>& object) {
         dependencies.end()
     );
 
-    // РЈРґР°Р»СЏРµРј РёР· Р·Р°РІРёСЃРёРјС‹С… РѕР±СЉРµРєС‚РѕРІ
+    // Удаляем из зависимых объектов
     object->dependents.erase(
         std::remove_if(object->dependents.begin(), object->dependents.end(),
             [this](const std::weak_ptr<MetaObject>& weak) {
@@ -221,7 +219,7 @@ std::vector<std::weak_ptr<MetaObject>> MetaObject::getDependencies() const {
 }
 
 std::vector<std::weak_ptr<MetaObject>> MetaObject::getDependents() const {
-    // РћС‡РёС‰Р°РµРј "РїСЂРѕС‚СѓС…С€РёРµ" weak_ptr
+    // Очищаем "протухшие" weak_ptr
     dependents.erase(
         std::remove_if(dependents.begin(), dependents.end(),
             [](const std::weak_ptr<MetaObject>& weak) {
@@ -237,11 +235,11 @@ bool MetaObject::checkCircularDependencies(std::vector<std::string>& errors) con
 //    std::vector<const MetaObject*> visited;
 //    std::vector<const MetaObject*> stack;
 //
-//    // Р РµРєСѓСЂСЃРёРІРЅР°СЏ С„СѓРЅРєС†РёСЏ РґР»СЏ РїСЂРѕРІРµСЂРєРё
+//    // Рекурсивная функция для проверки
 //    std::function<bool(const MetaObject*)> checkCycle =
 //        [&](const MetaObject* obj) -> bool {
 //            if (std::find(stack.begin(), stack.end(), obj) != stack.end()) {
-//                // РќР°С€Р»Рё С†РёРєР»
+//                // Нашли цикл
 //                std::string cyclePath;
 //                for (const auto* node : stack) {
 //                    cyclePath += node->getName() + " -> ";
@@ -252,13 +250,13 @@ bool MetaObject::checkCircularDependencies(std::vector<std::string>& errors) con
 //            }
 //
 //            if (std::find(visited.begin(), visited.end(), obj) != visited.end()) {
-//                return false; // РЈР¶Рµ РїСЂРѕРІРµСЂСЏР»Рё
+//                return false; // Уже проверяли
 //            }
 //
 //            visited.push_back(obj);
 //            stack.push_back(obj);
 //
-//            // РџСЂРѕРІРµСЂСЏРµРј Р·Р°РІРёСЃРёРјРѕСЃС‚Рё
+//            // Проверяем зависимости
 //            for (const auto& weakDep : obj->dependencies) {
 //                if (auto dep = weakDep.lock()) {
 //                    if (checkCycle(dep.get())) {
@@ -275,7 +273,7 @@ bool MetaObject::checkCircularDependencies(std::vector<std::string>& errors) con
     return true;
 }
 
-// ========== Р Р°СЃС€РёСЂСЏРµРјС‹Рµ СЃРІРѕР№СЃС‚РІР° ==========
+// ========== Расширяемые свойства ==========
 
 void MetaObject::setExtendedProperty(const std::string& key,
                                     const std::variant<std::string, int, double, bool>& value) {
@@ -307,7 +305,7 @@ MetaObject::getAllExtendedProperties() const {
     return extendedProperties;
 }
 
-// ========== РЎРёРіРЅР°Р»С‹ Рё СЃРѕР±С‹С‚РёСЏ ==========
+// ========== Сигналы и события ==========
 
 size_t MetaObject::subscribeToPropertyChanged(PropertyChangedSignal callback) {
     size_t id = signalData->nextId++;
@@ -331,7 +329,7 @@ void MetaObject::notifyPropertyChanged(const std::string& propertyName) {
         try {
             callback(propertyName);
         } catch (...) {
-            // РРіРЅРѕСЂРёСЂСѓРµРј РёСЃРєР»СЋС‡РµРЅРёСЏ РІ РєРѕР»Р»Р±РµРєР°С…
+            // Игнорируем исключения в коллбеках
         }
     }
 }
@@ -341,14 +339,14 @@ void MetaObject::notifyStateChanged(ObjectState oldState, ObjectState newState) 
         try {
             callback(oldState, newState);
         } catch (...) {
-            // РРіРЅРѕСЂРёСЂСѓРµРј РёСЃРєР»СЋС‡РµРЅРёСЏ РІ РєРѕР»Р»Р±РµРєР°С…
+            // Игнорируем исключения в коллбеках
         }
     }
 }
 
-// ========== Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ ==========
+// ========== Вспомогательные методы ==========
 
-String MetaObject::generateUUID() {
+std::string MetaObject::generateUUID() {
 //#ifdef _WIN32
 //    GUID guid;
 //    if (CoCreateGuid(&guid) == S_OK) {
@@ -368,7 +366,7 @@ String MetaObject::generateUUID() {
 //    return buffer;
 //#endif
 
-    // Fallback - РіРµРЅРµСЂР°С†РёСЏ СЃР»СѓС‡Р°Р№РЅРѕРіРѕ UUID
+    // Fallback - генерация случайного UUID
 //    static std::random_device rd;
 //    static std::mt19937 gen(rd());
 //    static std::uniform_int_distribution<> dis(0, 15);
@@ -395,20 +393,20 @@ String MetaObject::generateUUID() {
     return "";
 }
 
-String MetaObject::normalizeName(const String& name) {
+std::string MetaObject::normalizeName(const std::string& name) {
 	//if (name.empty()) return name;
 
-	String result = name;
+	std::string result = name;
 
-//	// Р—Р°РјРµРЅСЏРµРј РїСЂРѕР±РµР»С‹ Рё СЃРїРµС†РёР°Р»СЊРЅС‹Рµ СЃРёРјРІРѕР»С‹ РЅР° РїРѕРґС‡РµСЂРєРёРІР°РЅРёСЏ
+//	// Заменяем пробелы и специальные символы на подчеркивания
 //	std::replace_if(result.begin(), result.end(),
 //		[](char c) { return !std::isalnum(c) && c != '_' && c != '.'; }, '_');
 //
-//	// РЈРґР°Р»СЏРµРј РґРІРѕР№РЅС‹Рµ РїРѕРґС‡РµСЂРєРёРІР°РЅРёСЏ
+//	// Удаляем двойные подчеркивания
 //	result.erase(std::unique(result.begin(), result.end(),
 //		[](char a, char b) { return a == '_' && b == '_'; }), result.end());
 //
-//	// РћР±СЂРµР·Р°РµРј РЅР°С‡Р°Р»СЊРЅС‹Рµ Рё РєРѕРЅРµС‡РЅС‹Рµ РїРѕРґС‡РµСЂРєРёРІР°РЅРёСЏ
+//	// Обрезаем начальные и конечные подчеркивания
 //	while (!result.empty() && result.front() == '_') {
 //		result.erase(result.begin());
 //	}
@@ -419,7 +417,7 @@ String MetaObject::normalizeName(const String& name) {
     return result;
 }
 
-// ========== РЎС‚Р°С‚РёС‡РµСЃРєРёРµ РјРµС‚РѕРґС‹ С„Р°Р±СЂРёРєРё ==========
+// ========== Статические методы фабрики ==========
 
 std::unique_ptr<MetaObject> MetaObject::create(ObjectType type,
                                               const std::string& name) {
@@ -444,7 +442,7 @@ std::unique_ptr<MetaObject> MetaObject::createByName(const std::string& typeName
 std::vector<std::pair<ObjectType, std::string>> MetaObject::getSupportedTypes() {
     std::vector<std::pair<ObjectType, std::string>> result;
 
-    // Р‘Р°Р·РѕРІС‹Рµ С‚РёРїС‹
+    // Базовые типы
     result.emplace_back(ObjectType::Constant, "Constant");
     result.emplace_back(ObjectType::Directory, "Directory");
     result.emplace_back(ObjectType::Document, "Document");
@@ -471,23 +469,23 @@ bool MetaObject::registerType(const std::string& typeName) {
     static_assert(std::is_base_of<MetaObject, T>::value,
                   "T must be derived from MetaObject");
 
-    // РџРѕР»СѓС‡Р°РµРј С‚РёРї РёР· СЃС‚Р°С‚РёС‡РµСЃРєРѕРіРѕ РјРµС‚РѕРґР° РєР»Р°СЃСЃР° T
+    // Получаем тип из статического метода класса T
     ObjectType type = T::getStaticType();
 
-    // Р РµРіРёСЃС‚СЂРёСЂСѓРµРј С„Р°Р±СЂРёС‡РЅСѓСЋ С„СѓРЅРєС†РёСЋ
+    // Регистрируем фабричную функцию
     getTypeRegistry()[type] = [typeName](const std::string& name) -> std::unique_ptr<MetaObject> {
         auto obj = std::make_unique<T>();
         obj->setName(name);
         return obj;
     };
 
-    // Р РµРіРёСЃС‚СЂРёСЂСѓРµРј РёРјСЏ С‚РёРїР°
+    // Регистрируем имя типа
     getNameRegistry()[typeName] = type;
 
     return true;
 }
 
-// ========== Р РµР°Р»РёР·Р°С†РёСЏ Visitor ==========
+// ========== Реализация Visitor ==========
 
-// Visitor.cpp РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ СЂРµР°Р»РёР·РѕРІР°РЅ РѕС‚РґРµР»СЊРЅРѕ
-// Р’РєР»СЋС‡Р°РµРј С‚РѕР»СЊРєРѕ Р·Р°РіРѕР»РѕРІРѕРє РґР»СЏ РєРѕРјРїРёР»СЏС†РёРё
+// Visitor.cpp должен быть реализован отдельно
+// Включаем только заголовок для компиляции

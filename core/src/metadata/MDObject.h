@@ -3,12 +3,14 @@
 #ifndef MDObjectH
 #define MDObjectH
 
+#include <memory>
 #include <vector>
 #include "../APIcfBase.h"
 #include "Parse_tree.h"
+#include "MetadataEntity.h"
 
 //---------------------------------------------------------------------------
-class TMDObject	: public TObject
+class TMDObject : public MetadataEntity
 {
 public:
 
@@ -40,10 +42,10 @@ public:
 
 };
 
-class TMDObjectManager : public TObject
+class TMDObjectManager
 {
 private:
-	TObjectList *md_list;
+	std::vector<std::unique_ptr<TMDObject>> md_list;
 	virtual TMDObject* CreateMetaData() = 0;
 public:
 	TMDObject* newMetaData();

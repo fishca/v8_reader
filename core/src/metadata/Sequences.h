@@ -7,9 +7,10 @@
 #include <memory>
 #include "../APIcfBase.h"
 #include "Parse_tree.h"
+#include "MetadataEntity.h"
 
 //---------------------------------------------------------------------------
-class TSequences : public TObject
+class TSequences : public MetadataEntity
 {
 public:
 

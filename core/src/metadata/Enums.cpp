@@ -1,11 +1,9 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "Enums.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 
 TEnums::TEnums()
@@ -19,7 +17,7 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid)
 {
 	guid      = _guid;
 	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
+	root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
 }
 
 TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
@@ -27,13 +25,13 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 	name      = _name;
 	guid      = _guid;
 	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
+	root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
 
-	// РџРѕР»СѓС‡Р°РµРј Р·РЅР°С‡РµРЅРёСЏ РїРµСЂРµС‡РёСЃР»РµРЅРёСЏ
+	// Получаем значения перечисления
 	attributes.clear();
 	tree* node_att = root_data.get();
 
-	node_att = &(*node_att)[0][6][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att = &(*node_att)[0][6][1]; // количество элементов
 	int CountAtt = node_att->get_value().ToInt();
 	int Delta = CountAtt - 2;
 	for (int i = 0; i < CountAtt; i++)
@@ -42,13 +40,13 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 			tree* node_att_att = root_data.get();
 			node_att_att = &(*node_att_att)[0][6][i+CountAtt-Delta][0][1][2];
 			String NameAtt = node_att_att->get_value();
-			attributes.push_back(NameAtt);  // Р·РґРµСЃСЊ СѓР¶Рµ РёРјРµРЅР°
+			attributes.push_back(NameAtt);  // здесь уже имена
 
 		} catch (...) {
 		}
 	}
 
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° С„РѕСЂРј
+	// Получаем имена форм
 	forms.clear();
 	tree* node = root_data.get();
 	node = &(*node)[0][3][0];
@@ -61,15 +59,15 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 		if (curNodeChild)
 		{
 			String NameForm = GetNameFormCatalogs(parent, curNodeChild->get_value());
-			forms.push_back(NameForm);  // Р·РґРµСЃСЊ СѓР¶Рµ РёРјРµРЅР°
+			forms.push_back(NameForm);  // здесь уже имена
 		}
 	}
 
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° РєРѕРјР°РЅРґ
+	// Получаем имена команд
 	comands.clear();
 	tree* node_att_c = root_data.get();
 
-	node_att_c = &(*node_att_c)[0][5][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att_c = &(*node_att_c)[0][5][1]; // количество элементов
 
 	int CountCom = node_att_c->get_value().ToInt();
 	int DeltaCom = CountCom - 2;
@@ -78,10 +76,10 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 		tree* node_com = root_data.get();
 		node_com = &(*node_com)[0][5][i+CountCom-DeltaCom][0][1][3][2][9][2];
 		String NameCom = node_com->get_value();
-		comands.push_back(NameCom);  // Р·РґРµСЃСЊ СѓР¶Рµ РёРјРµРЅР°
+		comands.push_back(NameCom);  // здесь уже имена
 	}
 
-	// РџРѕР»СѓС‡Р°РµРј РјР°РєРµС‚С‹
+	// Получаем макеты
 	moxels.clear();
 	tree* node_mox = root_data.get();
 	node_mox = &(*node_mox)[0][4][0];
@@ -94,7 +92,7 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 		if (curNodeChildMox)
 		{
 			String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
-			moxels.push_back(NameMox);  // Р·РґРµСЃСЊ СѓР¶Рµ РёРјРµРЅР°
+			moxels.push_back(NameMox);  // здесь уже имена
 		}
 
 	}

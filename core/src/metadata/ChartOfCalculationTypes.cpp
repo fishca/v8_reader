@@ -1,16 +1,14 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "ChartOfCalculationTypes.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 static MetadataTreePaths GetChartOfCalculationTypesPaths()
 {
 	MetadataTreePaths paths;
-	// TODO: РїСѓС‚Рё СЃРєРѕРїРёСЂРѕРІР°РЅС‹ РёР· Catalogs - РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРѕРІРµСЂРёС‚СЊ Рё РёСЃРїСЂР°РІРёС‚СЊ РґР»СЏ РџР’Р 
+	// TODO: пути скопированы из Catalogs - необходимо проверить и исправить для ПВР
 	paths.attIdx = 4;
 	paths.attItemPath = {0, 1, 1, 1, 2};
 	paths.tabIdx = 3;

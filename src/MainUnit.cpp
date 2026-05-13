@@ -1,4 +1,4 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #include <vcl.h>
 #pragma hdrstop
@@ -199,18 +199,18 @@ static void ConfigureModuleGeneralHighlighter(TSynGeneralSyn* highlighter)
 	highlighter->DetectPreprocessor = true;
 	highlighter->IdentifierChars =
 		L"_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		L"Р°Р±РІРіРґРµС‘Р¶Р·РёР№РєР»РјРЅРѕРїСЂСЃС‚СѓС„С…С†С‡С€С‰СЉС‹СЊСЌСЋСЏ"
-		L"РђР‘Р’Р“Р”Р•РЃР–Р—РР™РљР›РњРќРћРџР РЎРўРЈР¤РҐР¦Р§РЁР©РЄР«Р¬Р­Р®РЇ";
+		L"абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+		L"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
 	highlighter->KeyWords->Clear();
 	const wchar_t* keywords[] = {
-		L"Р•СЃР»Рё", L"РўРѕРіРґР°", L"РРЅР°С‡Рµ", L"РРЅР°С‡РµР•СЃР»Рё", L"РљРѕРЅРµС†Р•СЃР»Рё",
-		L"Р”Р»СЏ", L"РљР°Р¶РґРѕРіРѕ", L"РР·", L"РџРѕ", L"Р¦РёРєР»", L"РџРѕРєР°", L"РљРѕРЅРµС†Р¦РёРєР»Р°",
-		L"РџСЂРѕС†РµРґСѓСЂР°", L"РљРѕРЅРµС†РџСЂРѕС†РµРґСѓСЂС‹", L"Р¤СѓРЅРєС†РёСЏ", L"РљРѕРЅРµС†Р¤СѓРЅРєС†РёРё",
-		L"Р’РѕР·РІСЂР°С‚", L"Р­РєСЃРїРѕСЂС‚", L"РџРѕРїС‹С‚РєР°", L"РСЃРєР»СЋС‡РµРЅРёРµ", L"РљРѕРЅРµС†РџРѕРїС‹С‚РєРё",
-		L"Р’С‹Р·РІР°С‚СЊРСЃРєР»СЋС‡РµРЅРёРµ", L"РџСЂРѕРґРѕР»Р¶РёС‚СЊ", L"РџСЂРµСЂРІР°С‚СЊ", L"РџРµСЂРµР№С‚Рё",
-		L"РќРѕРІС‹Р№", L"РќРµРѕРїСЂРµРґРµР»РµРЅРѕ", L"РСЃС‚РёРЅР°", L"Р›РѕР¶СЊ", L"Р", L"РР»Рё", L"РќРµ",
-		L"Р’С‹РїРѕР»РЅРёС‚СЊ", L"РџРµСЂРµРј"
+		L"Если", L"Тогда", L"Иначе", L"ИначеЕсли", L"КонецЕсли",
+		L"Для", L"Каждого", L"Из", L"По", L"Цикл", L"Пока", L"КонецЦикла",
+		L"Процедура", L"КонецПроцедуры", L"Функция", L"КонецФункции",
+		L"Возврат", L"Экспорт", L"Попытка", L"Исключение", L"КонецПопытки",
+		L"ВызватьИсключение", L"Продолжить", L"Прервать", L"Перейти",
+		L"Новый", L"Неопределено", L"Истина", L"Ложь", L"И", L"Или", L"Не",
+		L"Выполнить", L"Перем"
 	};
 
 	for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i)
@@ -383,10 +383,10 @@ static bool LooksLike1CModuleFallbackText(const String& text)
 	return text.Length() > 20
 		&& (text.Pos(L"\n") > 0
 			|| text.Pos(L"\r") > 0
-			|| text.Pos(L"РџСЂРѕС†РµРґСѓСЂР°") > 0
-			|| text.Pos(L"Р¤СѓРЅРєС†РёСЏ") > 0
-			|| text.Pos(L"РљРѕРЅРµС†РџСЂРѕС†РµРґСѓСЂС‹") > 0
-			|| text.Pos(L"РљРѕРЅРµС†Р¤СѓРЅРєС†РёРё") > 0);
+			|| text.Pos(L"Процедура") > 0
+			|| text.Pos(L"Функция") > 0
+			|| text.Pos(L"КонецПроцедуры") > 0
+			|| text.Pos(L"КонецФункции") > 0);
 }
 
 static String ReadUnpackedModuleTextByObjectGuid(const String& sourceDir, const String& guid)
@@ -786,7 +786,7 @@ static bool TryReadV8FileBytes(v8file* file, TBytes& outBytes)
 	{
 		TBytes rawBuffer;
 		std::unique_ptr<TBytesStream> stream(new TBytesStream(rawBuffer));
-		file->SaveToStream(stream.get());
+		v8reader::vcl_bridge::SaveV8FileToVclStream(file, stream.get());
 		return ExtractBytesFromStream(stream.get(), outBytes);
 	}
 	catch (...)
@@ -969,7 +969,7 @@ void __fastcall TMainForm::ModuleMemoScanForFoldRanges(TObject *Sender,
 		bool startsMultiLineComment = !isLineComment && line.Pos(L"/*") > 0;
 		bool endsMultiLineComment = line.Pos(L"*/") > 0;
 
-		// --- folding РґР»СЏ РјРЅРѕРіРѕСЃС‚СЂРѕС‡РЅС‹С… РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ /* */ ---
+		// --- folding для многострочных комментариев /* */ ---
 		if (!inMultiLineComment && startsMultiLineComment)
 		{
 			if (endsMultiLineComment)
@@ -997,7 +997,7 @@ void __fastcall TMainForm::ModuleMemoScanForFoldRanges(TObject *Sender,
 			foldInfoSet = true;
 		}
 
-		// --- folding РґР»СЏ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅС‹С… // РєРѕРјРјРµРЅС‚Р°СЂРёРµРІ ---
+		// --- folding для последовательных // комментариев ---
 		if (!foldInfoSet)
 		{
 			if (isLineComment)
@@ -1022,7 +1022,7 @@ void __fastcall TMainForm::ModuleMemoScanForFoldRanges(TObject *Sender,
 			}
 		}
 
-		// --- folding РґР»СЏ procedure/function ---
+		// --- folding для procedure/function ---
 		if (!foldInfoSet)
 		{
 			if (line.IsEmpty())
@@ -1235,7 +1235,7 @@ void TMainForm::CreateHighlightSettingsTab()
 	TTabSheet* previousActivePage = pagesEdit ? pagesEdit->ActivePage : nullptr;
 	HighlightSettingsTab = new TTabSheet(this);
 	HighlightSettingsTab->PageControl = pagesEdit;
-	HighlightSettingsTab->Caption = L"РќР°СЃС‚СЂРѕР№РєР°";
+	HighlightSettingsTab->Caption = L"Настройка";
 
 	TPanel* panel = new TPanel(HighlightSettingsTab);
 	panel->Parent = HighlightSettingsTab;
@@ -1244,8 +1244,8 @@ void TMainForm::CreateHighlightSettingsTab()
 	panel->ParentColor = true;
 
 	const wchar_t* captions[] = {
-		L"РљР»СЋС‡РµРІС‹Рµ СЃР»РѕРІР°", L"РљРѕРјРјРµРЅС‚Р°СЂРёРё", L"РЎС‚СЂРѕРєРё",
-		L"Р§РёСЃР»Р°", L"Р”РёСЂРµРєС‚РёРІС‹ #", L"РЎРёРјРІРѕР»С‹", L"РђРЅРЅРѕС‚Р°С†РёРё &"
+		L"Ключевые слова", L"Комментарии", L"Строки",
+		L"Числа", L"Директивы #", L"Символы", L"Аннотации &"
 	};
 	TColorBox** boxes[] = {
 		&HighlightKeywordColorBox, &HighlightCommentColorBox, &HighlightStringColorBox,
@@ -1276,7 +1276,7 @@ void TMainForm::CreateHighlightSettingsTab()
 	HighlightKeywordBoldCheckBox->Left = 18;
 	HighlightKeywordBoldCheckBox->Top = 264;
 	HighlightKeywordBoldCheckBox->Width = 250;
-	HighlightKeywordBoldCheckBox->Caption = L"РљР»СЋС‡РµРІС‹Рµ СЃР»РѕРІР° Р¶РёСЂРЅС‹Рј";
+	HighlightKeywordBoldCheckBox->Caption = L"Ключевые слова жирным";
 	HighlightKeywordBoldCheckBox->Checked = true;
 	HighlightKeywordBoldCheckBox->OnClick = HighlightSettingsChanged;
 
@@ -1285,7 +1285,7 @@ void TMainForm::CreateHighlightSettingsTab()
 	HighlightCommentItalicCheckBox->Left = 18;
 	HighlightCommentItalicCheckBox->Top = 294;
 	HighlightCommentItalicCheckBox->Width = 250;
-	HighlightCommentItalicCheckBox->Caption = L"РљРѕРјРјРµРЅС‚Р°СЂРёРё РєСѓСЂСЃРёРІРѕРј";
+	HighlightCommentItalicCheckBox->Caption = L"Комментарии курсивом";
 	HighlightCommentItalicCheckBox->Checked = true;
 	HighlightCommentItalicCheckBox->OnClick = HighlightSettingsChanged;
 
@@ -1294,7 +1294,7 @@ void TMainForm::CreateHighlightSettingsTab()
 	UnpackCheckBox->Left = 18;
 	UnpackCheckBox->Top = 316;
 	UnpackCheckBox->Width = 250;
-	UnpackCheckBox->Caption = L"Р Р°СЃРїР°РєРѕРІС‹РІР°С‚СЊ РІ РёСЃС…РѕРґРЅРёРєРё";
+	UnpackCheckBox->Caption = L"Распаковывать в исходники";
 	UnpackCheckBox->Checked = false;
 	UnpackCheckBox->OnClick = HighlightSettingsChanged;
 
@@ -1303,7 +1303,7 @@ void TMainForm::CreateHighlightSettingsTab()
 	resetButton->Left = 18;
 	resetButton->Top = 336;
 	resetButton->Width = 150;
-	resetButton->Caption = L"РЎР±СЂРѕСЃРёС‚СЊ";
+	resetButton->Caption = L"Сбросить";
 	resetButton->OnClick = ResetHighlightSettingsClick;
 
 	HighlightPreviewMemo = new TSynMemo(panel);
@@ -1320,15 +1320,15 @@ void TMainForm::CreateHighlightSettingsTab()
 	HighlightPreviewMemo->OnScanForFoldRanges = ModuleMemoScanForFoldRanges;
 	HighlightPreviewMemo->UseCodeFolding = true;
 	HighlightPreviewMemo->Lines->Text =
-		L"#РћР±Р»Р°СЃС‚СЊ РџСЂРёРјРµСЂРљРѕРґР°\n"
-		L"&РќР°РЎРµСЂРІРµСЂРµ\n"
-		L"РџСЂРѕС†РµРґСѓСЂР° РћР±РЅРѕРІРёС‚СЊР”Р°РЅРЅС‹Рµ() Р­РєСЃРїРѕСЂС‚\n"
-		L"    // РљРѕРјРјРµРЅС‚Р°СЂРёР№\n"
-		L"    Р•СЃР»Рё Р—РЅР°С‡РµРЅРёРµ = 10 РўРѕРіРґР°\n"
-		L"        РЎРѕРѕР±С‰РёС‚СЊ(\"Р“РѕС‚РѕРІРѕ\");\n"
-		L"    РљРѕРЅРµС†Р•СЃР»Рё;\n"
-		L"РљРѕРЅРµС†РџСЂРѕС†РµРґСѓСЂС‹\n"
-		L"#РљРѕРЅРµС†РћР±Р»Р°СЃС‚Рё";
+		L"#Область ПримерКода\n"
+		L"&НаСервере\n"
+		L"Процедура ОбновитьДанные() Экспорт\n"
+		L"    // Комментарий\n"
+		L"    Если Значение = 10 Тогда\n"
+		L"        Сообщить(\"Готово\");\n"
+		L"    КонецЕсли;\n"
+		L"КонецПроцедуры\n"
+		L"#КонецОбласти";
 	HighlightPreviewMemo->Invalidate();
 
 	LoadHighlightSettings();
@@ -1371,30 +1371,30 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 	ConfigurationPopupMenu = new TPopupMenu(this);
 	ConfigurationPopupMenu->OnPopup = ConfigurationPopupMenuPopup;
 	OpenApplicationModuleMenuItem = new TMenuItem(ConfigurationPopupMenu);
-	OpenApplicationModuleMenuItem->Caption = L"РћС‚РєСЂС‹С‚СЊ РјРѕРґСѓР»СЊ РїСЂРёР»РѕР¶РµРЅРёСЏ";
+	OpenApplicationModuleMenuItem->Caption = L"Открыть модуль приложения";
 	OpenApplicationModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ApplicationModule);
 	OpenApplicationModuleMenuItem->OnClick = OpenConfigurationModuleMenuItemClick;
 	ConfigurationPopupMenu->Items->Add(OpenApplicationModuleMenuItem);
 	OpenSessionModuleMenuItem = new TMenuItem(ConfigurationPopupMenu);
-	OpenSessionModuleMenuItem->Caption = L"РћС‚РєСЂС‹С‚СЊ РјРѕРґСѓР»СЊ СЃРµР°РЅСЃР°";
+	OpenSessionModuleMenuItem->Caption = L"Открыть модуль сеанса";
 	OpenSessionModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::SessionModule);
 	OpenSessionModuleMenuItem->OnClick = OpenConfigurationModuleMenuItemClick;
 	ConfigurationPopupMenu->Items->Add(OpenSessionModuleMenuItem);
 	OpenExternalConnectionModuleMenuItem = new TMenuItem(ConfigurationPopupMenu);
-	OpenExternalConnectionModuleMenuItem->Caption = L"РћС‚РєСЂС‹С‚СЊ РјРѕРґСѓР»СЊ РІРЅРµС€РЅРµРіРѕ СЃРѕРµРґРёРЅРµРЅРёСЏ";
+	OpenExternalConnectionModuleMenuItem->Caption = L"Открыть модуль внешнего соединения";
 	OpenExternalConnectionModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ExternalConnectionModule);
 	OpenExternalConnectionModuleMenuItem->OnClick = OpenConfigurationModuleMenuItemClick;
 	ConfigurationPopupMenu->Items->Add(OpenExternalConnectionModuleMenuItem);
 	ConstantsModulesMenuItem = new TMenuItem(ConfigurationPopupMenu);
-	ConstantsModulesMenuItem->Caption = L"РњРѕРґСѓР»Рё РєРѕРЅСЃС‚Р°РЅС‚";
+	ConstantsModulesMenuItem->Caption = L"Модули констант";
 	ConfigurationPopupMenu->Items->Add(ConstantsModulesMenuItem);
 	OpenConstantsManagerModuleMenuItem = new TMenuItem(ConstantsModulesMenuItem);
-	OpenConstantsManagerModuleMenuItem->Caption = L"РћС‚РєСЂС‹С‚СЊ РјРѕРґСѓР»СЊ РјРµРЅРµРґР¶РµСЂР°";
+	OpenConstantsManagerModuleMenuItem->Caption = L"Открыть модуль менеджера";
 	OpenConstantsManagerModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ManagerModule);
 	OpenConstantsManagerModuleMenuItem->OnClick = OpenConstantsModuleMenuItemClick;
 	ConstantsModulesMenuItem->Add(OpenConstantsManagerModuleMenuItem);
 	OpenConstantsValueManagerModuleMenuItem = new TMenuItem(ConstantsModulesMenuItem);
-	OpenConstantsValueManagerModuleMenuItem->Caption = L"РћС‚РєСЂС‹С‚СЊ РјРѕРґСѓР»СЊ РјРµРЅРµРґР¶РµСЂР° Р·РЅР°С‡РµРЅРёСЏ";
+	OpenConstantsValueManagerModuleMenuItem->Caption = L"Открыть модуль менеджера значения";
 	OpenConstantsValueManagerModuleMenuItem->Tag = static_cast<int>(ModuleTextKind::ObjectModule);
 	OpenConstantsValueManagerModuleMenuItem->OnClick = OpenConstantsModuleMenuItemClick;
 	ConstantsModulesMenuItem->Add(OpenConstantsValueManagerModuleMenuItem);
@@ -1415,7 +1415,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner), HighlightSett
 		String appDir = ExtractFilePath(ParamStr(0));
 		String logfile = TPath::Combine(appDir, "v8reader.log");
 		mess->setlogfile(logfile);
-		AddConditionalInfoMessage(mess, L"Р¤Р°Р№Р»РѕРІРѕРµ Р»РѕРіРёСЂРѕРІР°РЅРёРµ РІРєР»СЋС‡РµРЅРѕ");
+		AddConditionalInfoMessage(mess, L"Файловое логирование включено");
 	}
 
 }
@@ -1487,7 +1487,7 @@ void __fastcall TMainForm::VirtualStringTreeValue1CInitNode(TBaseVirtualTree *Se
 	if(!ParentNode)
 	{
 		VirtualTreeData* d = (VirtualTreeData*)(Sender->GetNodeData(Node));
-		initNode(d, L"РўРёРїС‹ 1РЎ", TreeImage::Root, 0);
+		initNode(d, L"Типы 1С", TreeImage::Root, 0);
 	}
 }
 
@@ -1508,11 +1508,11 @@ void __fastcall TMainForm::VirtualStringTreeValue1CGetText(TBaseVirtualTree *Sen
 }
 //---------------------------------------------------------------------------
 
-void TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
+void TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode parentNode, const MetadataVector<MetadataEntity>& mdData, const String& md_name, int imgIndex)
 {
 	for(size_t i = 0; i < mdData.size(); i++)
 	{
-		TObject *CurCat = nullptr;
+		MetadataEntity *CurCat = nullptr;
 		if (md_name == md_Catalogs)
 			CurCat = dynamic_cast<TCatalogs*>(mdData[i].get());
 		else if(md_name == md_Documents)
@@ -1535,7 +1535,7 @@ void TMainForm::FillTreeMDConcrete(TVirtualStringTree *tree1C, PVirtualNode pare
 }
 
 
-void TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<TObject>& mdData, const String& md_name, int imgIndex)
+void TMainForm::FillTreeMD(PVirtualNode parentNode, const MetadataVector<MetadataEntity>& mdData, const String& md_name, int imgIndex)
 {
 static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Documents, md_Reports, md_DataProcessors, md_ChartsOfCharacteristicTypes, md_ChartOfCalculationTypes, md_BusinessProcesses, md_Tasks};
     static const std::unordered_set<String> journalTypes = {md_DocumentJournals};
@@ -1629,15 +1629,15 @@ static const std::unordered_set<String> catalogTypes = {md_Catalogs, md_Document
 }
 
 void TMainForm::FillVirtualTree() {
-    // Р”РѕР±Р°РІР»РµРЅРёРµ РєРѕРјР°РЅРґ Рё С„РѕСЂРј РїР»Р°РЅР° РѕР±РјРµРЅР°
+    // Добавление команд и форм плана обмена
     PVirtualNode exchangePlansNode = VirtualStringTreeValue1C->AddChild(nullptr);
     VirtualTreeData *exchangePlansData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(exchangePlansNode);
-    initNode(exchangePlansData, L"РџР»Р°РЅС‹ РѕР±РјРµРЅР°", 41, 25);
+    initNode(exchangePlansData, L"Планы обмена", 41, 25);
     VirtualStringTreeValue1C->Expanded[exchangePlansNode] = true;
 
 	struct CategoryData
 	{
-		const MetadataVector<TObject>* data;
+		const MetadataVector<MetadataEntity>* data;
 		const String name;
 		int imgIndex;
 		int age;
@@ -1698,7 +1698,7 @@ void TMainForm::FillVirtualTree() {
 
 
 
-	// РЎРѕР·РґР°РµРј РєРѕСЂРЅРµРІРѕР№ СѓР·РµР»
+	// Создаем корневой узел
 	VirtualStringTreeValue1C->Clear();
 	LastModuleNodeShown = nullptr;
 	PVirtualNode RootNode = VirtualStringTreeValue1C->AddChild(nullptr);
@@ -1706,7 +1706,7 @@ void TMainForm::FillVirtualTree() {
 
 	VirtualTreeData *RootData = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(RootNode);
 
-	// РћР±СЂР°Р±РѕС‚РєР° РєР°Р¶РґРѕР№ РєР°С‚РµРіРѕСЂРёРё
+	// Обработка каждой категории
 	for (const auto& category : md_categories)
 	{
 		PVirtualNode parentNode = VirtualStringTreeValue1C->AddChild(RootNode);
@@ -1716,7 +1716,7 @@ void TMainForm::FillVirtualTree() {
 		parentNodeData->Age = category.age;
 		parentNodeData->ImgIndex = category.imgIndex;
 
-		if (category.name == "РћР±С‰РёРµ")
+		if (category.name == "Общие")
 		{
 			std::unordered_set<String> nestedSubsystemGuids = collectChildSubsystemGuids(MainForm->GlobalCF.get(), MainForm->mdSubsystems);
 
@@ -1895,7 +1895,7 @@ void TMainForm::FillVirtualTree() {
 
 void TMainForm::TreeInit()
 {
-	// Р—Р°РіРѕС‚РѕРІРєР°
+	// Заготовка
 }
 
 
@@ -1945,15 +1945,15 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 	String filename = dlgOpenCF->FileName;
 	EditNameCF->Text = filename;
 	loadStartTick = GetTickCount64();
-	ResetLoadProgress(38, L"РџРѕРґРіРѕС‚РѕРІРєР° Рє Р·Р°РіСЂСѓР·РєРµ РєРѕРЅС„РёРіСѓСЂР°С†РёРё...");
-	AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: РЅР°С‡Р°Р»Рѕ РѕС‚РєСЂС‹С‚РёСЏ РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
-	AddConditionalInfoMessageParams(mess, L"ActionFileOpenExecute: РїР°СЂР°РјРµС‚СЂС‹ РѕС‚РєСЂС‹С‚РёСЏ",
+	ResetLoadProgress(38, L"Подготовка к загрузке конфигурации...");
+	AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: начало открытия конфигурации");
+	AddConditionalInfoMessageParams(mess, L"ActionFileOpenExecute: параметры открытия",
 		L"file", filename,
 		L"logfile", mess->getFileLoggingEnabled() ? mess->getlogfile() : L"disabled");
 
 	try
 	{
-		AdvanceLoadProgress(L"РћС‡РёСЃС‚РєР° РїСЂРµРґС‹РґСѓС‰РёС… РґР°РЅРЅС‹С…...");
+		AdvanceLoadProgress(L"Очистка предыдущих данных...");
 		GlobalCF.reset();
 
 		mdCatalogs.clear();
@@ -2005,16 +2005,16 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		mdIntegrationServices.clear();
 		mdSequences.clear();
 
-		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: СЃРѕР·РґР°РЅРёРµ v8catalog");
-		AdvanceLoadProgress(L"РћС‚РєСЂС‹С‚РёРµ С„Р°Р№Р»Р° РєРѕРЅС„РёРіСѓСЂР°С†РёРё...");
+		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: создание v8catalog");
+		AdvanceLoadProgress(L"Открытие файла конфигурации...");
 		GlobalCF = std::make_unique<v8catalog>(filename, true);
 
-		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: С‡С‚РµРЅРёРµ РјРµС‚Р°РґР°РЅРЅС‹С… РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
-		AdvanceLoadProgress(L"Р§С‚РµРЅРёРµ РјРµС‚Р°РґР°РЅРЅС‹С… РєРѕРЅС„РёРіСѓСЂР°С†РёРё...");
+		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: чтение метаданных конфигурации");
+		AdvanceLoadProgress(L"Чтение метаданных конфигурации...");
 		get_cf_name(GlobalCF.get(), mess);
 
-		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: РїРѕСЃС‚СЂРѕРµРЅРёРµ РґРµСЂРµРІР° РёРЅС‚РµСЂС„РµР№СЃР°");
-		AdvanceLoadProgress(L"РџРѕСЃС‚СЂРѕРµРЅРёРµ РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…...");
+		AddConditionalInfoMessage(mess, L"ActionFileOpenExecute: построение дерева интерфейса");
+		AdvanceLoadProgress(L"Построение дерева метаданных...");
 
 		const String sourceCfDir = TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF");
 
@@ -2035,14 +2035,14 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 		loadDurationMs = loadEndTick - loadStartTick;
 		String loadDurationMsStr = IntToStr((__int64)loadDurationMs);
 		String loadDurationSecStr = FormatFloat(L"0.000", (double)loadDurationMs / 1000.0);
-		CompleteLoadProgress(L"Р—Р°РіСЂСѓР·РєР° Р·Р°РІРµСЂС€РµРЅР°");
-		mess->Status(L"Р’СЂРµРјСЏ Р·Р°РіСЂСѓР·РєРё РєРѕРЅС„РёРіСѓСЂР°С†РёРё: " + loadDurationMsStr + L" РјСЃ (" + loadDurationSecStr + L" СЃРµРє)");
-		AddConditionalInfoMessageParams(mess, L"Р”РµС‚Р°Р»Рё Р·Р°РіСЂСѓР·РєРё РєРѕРЅС„РёРіСѓСЂР°С†РёРё",
+		CompleteLoadProgress(L"Загрузка завершена");
+		mess->Status(L"Время загрузки конфигурации: " + loadDurationMsStr + L" мс (" + loadDurationSecStr + L" сек)");
+		AddConditionalInfoMessageParams(mess, L"Детали загрузки конфигурации",
 			L"file", filename,
 			L"duration_ms", loadDurationMsStr,
 			L"duration_sec", loadDurationSecStr);
 		if (mess->getUiMessagesEnabled() && IsVerboseUiLoggingEnabled())
-			mess->AddMessage(L"ActionFileOpenExecute: РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ СѓСЃРїРµС€РЅРѕ РѕС‚РєСЂС‹С‚Р°", msSuccesfull);
+			mess->AddMessage(L"ActionFileOpenExecute: конфигурация успешно открыта", msSuccesfull);
 	}
 	catch (const Exception &e)
 	{
@@ -2057,7 +2057,7 @@ void __fastcall TMainForm::ActionFileOpenExecute(TObject *Sender)
 	{
 		LoadProgressBar->Visible = false;
 		if (mess->getUiMessagesEnabled())
-			mess->AddMessage_(L"ActionFileOpenExecute: РЅРµРёР·РІРµСЃС‚РЅРѕРµ РёСЃРєР»СЋС‡РµРЅРёРµ", msError,
+			mess->AddMessage_(L"ActionFileOpenExecute: неизвестное исключение", msError,
 				L"file", filename,
 				L"stage", L"open configuration");
 		throw;
@@ -2232,21 +2232,21 @@ static void get_cf_name(v8catalog* cf, Messager* mess)
 
 	if(!cf)
 	{
-		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° РѕС‚РєСЂС‹С‚РёСЏ С„Р°Р№Р»Р°");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка открытия файла");
 		return;
 	}
 
 	filedata = cf->GetFile(L"version");
 	if(!filedata)
 	{
-		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ С„Р°Р№Р»Р° root РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения файла root конфигурации");
 		return;
 	}
 
 	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
-		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° СЂР°Р·Р±РѕСЂР° С„Р°Р№Р»Р° root РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка разбора файла root конфигурации");
 		return;
 	}
 
@@ -2255,7 +2255,7 @@ static void get_cf_name(v8catalog* cf, Messager* mess)
 	node = &(*node)[0][0][0];
 	if(node->get_type() != nd_number)
 	{
-		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РІРµСЂСЃРёРё С„РѕСЂРјР°С‚Р° РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения версии формата конфигурации");
 		return;
 	}
 
@@ -2268,35 +2268,35 @@ static void get_cf_name(v8catalog* cf, Messager* mess)
 		filedata = cf->GetFile(L"metadata");
 		if(!filedata)
 		{
-			if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ С„Р°Р№Р»Р° metadata РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+			if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения файла metadata конфигурации");
 			return;
 		}
 
 		cat = filedata->GetCatalog();
 		if(!cat)
 		{
-			if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° РѕС‚РєСЂС‹С‚РёСЏ С„Р°Р№Р»Р° metadata РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+			if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка открытия файла metadata конфигурации");
 			return;
 		}
 
 	}
 	else
 	{
-		//8.1 РёР»Рё 8.2
+		//8.1 или 8.2
 		cat = cf;
 	}
 
 	filedata = cat->GetFile(L"root");
 	if(!filedata)
 	{
-		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ С„Р°Р№Р»Р° root РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения файла root конфигурации");
 		return;
 	}
 
 	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
-		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° СЂР°Р·Р±РѕСЂР° С„Р°Р№Р»Р° root РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка разбора файла root конфигурации");
 		return;
 	}
 
@@ -2305,7 +2305,7 @@ static void get_cf_name(v8catalog* cf, Messager* mess)
 
 	if(node->get_type() != nd_guid)
 	{
-		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё С„Р°Р№Р»Р° РјРµС‚Р°РґР°РЅРЅС‹С…");
+		if (mess && mess->getUiMessagesEnabled()) mess->AddError(L"Ошибка получения имени файла метаданных");
 		return;
 	}
 
@@ -2315,9 +2315,9 @@ static void get_cf_name(v8catalog* cf, Messager* mess)
 	filedata = cat->GetFile(meta);
 	if(!filedata)
 	{
-		s = L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ С„Р°Р№Р»Р° ";
+		s = L"Ошибка получения файла ";
 		s += meta;
-		s += L" РєРѕРЅС„РёРіСѓСЂР°С†РёРё";
+		s += L" конфигурации";
 		if (mess && mess->getUiMessagesEnabled()) mess->AddError(s);
 		return;
 	}
@@ -2325,9 +2325,9 @@ static void get_cf_name(v8catalog* cf, Messager* mess)
 	tr.reset(get_treeFromV8file(filedata));
 	if(!tr)
 	{
-		s = L"РћС€РёР±РєР° СЂР°Р·Р±РѕСЂР° С„Р°Р№Р»Р° ";
+		s = L"Ошибка разбора файла ";
 		s += meta;
-		s += L" РєРѕРЅС„РёРіСѓСЂР°С†РёРё";
+		s += L" конфигурации";
 		if (mess && mess->getUiMessagesEnabled()) mess->AddError(s);
 		return;
 	}
@@ -2361,7 +2361,7 @@ void fill_subsystem(tree* tr, std::vector<SubSys> &md_subsys)
 		if (curNode)
 		{
 			s = curNode->get_value();
-			String val = GetNameSubsystem(cf, s); // РёРјСЏ РїРѕРґСЃРёСЃС‚РµРјС‹
+			String val = GetNameSubsystem(cf, s); // имя подсистемы
 
 			std::vector<String> children;
 
@@ -2480,7 +2480,7 @@ namespace
 }
 
 
-// РџСЂРѕС†РµРґСѓСЂР° Р·Р°РїРѕР»РЅСЏРµС‚ РјРµС‚Р°РґР°РЅРЅС‹Рµ РїРѕ РєРѕСЂРЅРµРІРѕРјСѓ РіСѓРёРґСѓ
+// Процедура заполняет метаданные по корневому гуиду
 void fill_md(tree* tr, String guid_md)
 {
 	v8file *filedata;
@@ -2489,9 +2489,9 @@ void fill_md(tree* tr, String guid_md)
 	String s;
 
 	v8catalog *cf = MainForm->GlobalCF.get();
-	msreg->AddMessage(L"fill_md: РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё GUID: " + guid_md, MessageState::msInfo);
+	msreg->AddMessage(L"fill_md: Начало обработки GUID: " + guid_md, MessageState::msInfo);
 
-	// РљР°СЂС‚Р° РїСѓС‚РµР№ РґР»СЏ РёР·РІР»РµС‡РµРЅРёСЏ РёРјРµРЅ
+	// Карта путей для извлечения имен
 	std::unordered_map<String, std::vector<int>> namePaths = {
 		{GUID_Catalogs,          {0,1,9,1,2}},
 		{GUID_Languages,         {0,1,1,2}},
@@ -2567,18 +2567,18 @@ void fill_md(tree* tr, String guid_md)
 	};
 
 	if (pathIt == namePaths.end()) {
-		// GUID РЅРµ РЅР°Р№РґРµРЅ РІ РєР°СЂС‚Рµ РїСѓС‚РµР№, РїСЂРѕРїСѓСЃС‚РёС‚СЊ
-		msreg->AddMessage(L"fill_md: GUID РЅРµ РЅР°Р№РґРµРЅ РІ РєР°СЂС‚Рµ РїСѓС‚РµР№: " + guid_md, MessageState::msWarning);
+		// GUID не найден в карте путей, пропустить
+		msreg->AddMessage(L"fill_md: GUID не найден в карте путей: " + guid_md, MessageState::msWarning);
 		return;
 	}
 
-	msreg->AddMessage(L"fill_md: РџРѕРёСЃРє СѓР·Р»Р° РїРѕ GUID", MessageState::msInfo);
+	msreg->AddMessage(L"fill_md: Поиск узла по GUID", MessageState::msInfo);
 	tree* node_md = find_metadata_node_by_guid(tr, guid_md);
 	if (!node_md) {
-		msreg->AddMessage(L"fill_md: РЈР·РµР» РЅРµ РЅР°Р№РґРµРЅ РїРѕ GUID: " + guid_md, MessageState::msWarning);
-		return; // Р—Р°С‰РёС‚Р° РѕС‚ nullptr
+		msreg->AddMessage(L"fill_md: Узел не найден по GUID: " + guid_md, MessageState::msWarning);
+		return; // Защита от nullptr
 	}
-	msreg->AddMessage(L"fill_md: РЈР·РµР» РЅР°Р№РґРµРЅ", MessageState::msInfo);
+	msreg->AddMessage(L"fill_md: Узел найден", MessageState::msInfo);
 
 	const std::vector<int>& path = pathIt->second;
 
@@ -2586,7 +2586,7 @@ void fill_md(tree* tr, String guid_md)
 	{
 		std::vector<String> referenceGuids;
 		CollectMetadataSectionGuids(tr, GUID_WSReferences, referenceGuids);
-		msreg->AddMessage(L"fill_md: WS-СЃСЃС‹Р»РѕРє РЅР°Р№РґРµРЅРѕ СЃС‚СЂСѓРєС‚СѓСЂРЅС‹Рј РїРѕРёСЃРєРѕРј: " + String((int)referenceGuids.size()), MessageState::msInfo);
+		msreg->AddMessage(L"fill_md: WS-ссылок найдено структурным поиском: " + String((int)referenceGuids.size()), MessageState::msInfo);
 
 		for (const auto& referenceGuid : referenceGuids)
 		{
@@ -2594,21 +2594,21 @@ void fill_md(tree* tr, String guid_md)
 			if (val.IsEmpty())
 				val = referenceGuid;
 
-			msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ WS-СЃСЃС‹Р»РєРё: " + val, MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Создание WS-ссылки: " + val, MessageState::msInfo);
 			MainForm->mdWSReferences.push_back(std::make_unique<TWSReferences>(cf, referenceGuid, val));
 		}
 
 		return;
 	}
 
-	msreg->AddMessage(L"fill_md: РџРѕР»СѓС‡РµРЅРёРµ РєРѕР»РёС‡РµСЃС‚РІР° СЌР»РµРјРµРЅС‚РѕРІ", MessageState::msInfo);
+	msreg->AddMessage(L"fill_md: Получение количества элементов", MessageState::msInfo);
 	tree* nextNode = node_md->get_next();
 	if (!nextNode) {
-		msreg->AddMessage(L"fill_md: РћС€РёР±РєР° - СЃР»РµРґСѓСЋС‰РёР№ СѓР·РµР» СЂР°РІРµРЅ null", MessageState::msError);
+		msreg->AddMessage(L"fill_md: Ошибка - следующий узел равен null", MessageState::msError);
 		return;
 	}
 	int CountMD = nextNode->get_value().ToInt();
-	msreg->AddMessage(L"fill_md: РљРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ: " + String(CountMD), MessageState::msInfo);
+	msreg->AddMessage(L"fill_md: Количество элементов: " + String(CountMD), MessageState::msInfo);
 
 	if (guid_md == GUID_ExternalDataSources)
 	{
@@ -2622,10 +2622,10 @@ void fill_md(tree* tr, String guid_md)
 
 			processedExternalCount++;
 			String sourceGuid = sourceNode->get_value();
-			msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ РёСЃС‚РѕС‡РЅРёРєР° РґР°РЅРЅС‹С… РёР· СЃРїРёСЃРєР° GUID: " + sourceGuid, MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Создание внешнего источника данных из списка GUID: " + sourceGuid, MessageState::msInfo);
 			MainForm->mdExternalDataSources.push_back(std::make_unique<TExternalDataSources>(cf, sourceGuid));
 		}
-		msreg->AddMessage(L"fill_md: Р’РЅРµС€РЅРёС… РёСЃС‚РѕС‡РЅРёРєРѕРІ РґР°РЅРЅС‹С… СЃРѕР·РґР°РЅРѕ: " + String((int)MainForm->mdExternalDataSources.size()), MessageState::msInfo);
+		msreg->AddMessage(L"fill_md: Внешних источников данных создано: " + String((int)MainForm->mdExternalDataSources.size()), MessageState::msInfo);
 		return;
 	}
 
@@ -2640,60 +2640,60 @@ void fill_md(tree* tr, String guid_md)
 		{
 			processedCount++;
 			String curNodeValue = curNode->get_value();
-			msreg->AddMessage(L"fill_md: РћР±СЂР°Р±РѕС‚РєР° СЌР»РµРјРµРЅС‚Р° " + String(processedCount) + L" РёР· " + String(CountMD) + L", С„Р°Р№Р»: " + curNodeValue, MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Обработка элемента " + String(processedCount) + L" из " + String(CountMD) + L", файл: " + curNodeValue, MessageState::msInfo);
 			if ((processedCount == 1) || (processedCount % 25 == 0))
-				LogHeapStatus(L"fill_md: СЃРѕСЃС‚РѕСЏРЅРёРµ РїР°РјСЏС‚Рё РїРµСЂРµРґ С‡С‚РµРЅРёРµРј СЌР»РµРјРµРЅС‚Р°", guid_md, curNodeValue, processedCount, CountMD);
+				LogHeapStatus(L"fill_md: состояние памяти перед чтением элемента", guid_md, curNodeValue, processedCount, CountMD);
 
 			filedata = cf->GetFile(curNodeValue);
 			if(!filedata)
 			{
-				s = L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ С„Р°Р№Р»Р° ";
+				s = L"Ошибка получения файла ";
 				s += curNodeValue;
-				s += L" РєРѕРЅС„РёРіСѓСЂР°С†РёРё";
+				s += L" конфигурации";
 				msreg->AddMessage(s, MessageState::msError);
 				//msreg->AddError(s);
 				//return;
-				continue; // РџСЂРѕРґРѕР»Р¶РёС‚СЊ СЃ СЃР»РµРґСѓСЋС‰РёРј
+				continue; // Продолжить с следующим
 			}
-			msreg->AddMessage(L"fill_md: Р¤Р°Р№Р» РїРѕР»СѓС‡РµРЅ СѓСЃРїРµС€РЅРѕ", MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Файл получен успешно", MessageState::msInfo);
 
-			msreg->AddMessage(L"fill_md: Р Р°Р·Р±РѕСЂ РґРµСЂРµРІР° С„Р°Р№Р»Р°", MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Разбор дерева файла", MessageState::msInfo);
 			try
 			{
 				tree_md = get_treeFromV8file(filedata);
 			}
 			catch (const Exception &e)
 			{
-				msreg->AddMessage_(L"fill_md: VCL exception РїСЂРё СЂР°Р·Р±РѕСЂРµ РґРµСЂРµРІР° С„Р°Р№Р»Р°", msError,
+				msreg->AddMessage_(L"fill_md: VCL exception при разборе дерева файла", msError,
 					L"GUID", guid_md,
 					L"File", curNodeValue,
 					L"Message", e.Message);
-				LogHeapStatus(L"fill_md: РїР°РјСЏС‚СЊ РїСЂРё VCL exception СЂР°Р·Р±РѕСЂР° С„Р°Р№Р»Р°", guid_md, curNodeValue, processedCount, CountMD);
+				LogHeapStatus(L"fill_md: память при VCL exception разбора файла", guid_md, curNodeValue, processedCount, CountMD);
 				continue;
 			}
 			catch (...)
 			{
-				msreg->AddMessage_(L"fill_md: РЅРµРёР·РІРµСЃС‚РЅРѕРµ РёСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё СЂР°Р·Р±РѕСЂРµ РґРµСЂРµРІР° С„Р°Р№Р»Р°", msError,
+				msreg->AddMessage_(L"fill_md: неизвестное исключение при разборе дерева файла", msError,
 					L"GUID", guid_md,
 					L"File", curNodeValue);
-				LogHeapStatus(L"fill_md: РїР°РјСЏС‚СЊ РїСЂРё РЅРµРёР·РІРµСЃС‚РЅРѕРј exception СЂР°Р·Р±РѕСЂР° С„Р°Р№Р»Р°", guid_md, curNodeValue, processedCount, CountMD);
+				LogHeapStatus(L"fill_md: память при неизвестном exception разбора файла", guid_md, curNodeValue, processedCount, CountMD);
 				continue;
 			}
 			if(!tree_md)
 			{
-				LogHeapStatus(L"fill_md: РїР°РјСЏС‚СЊ РІРѕ РІСЂРµРјСЏ РѕС€РёР±РєРё СЂР°Р·Р±РѕСЂР° С„Р°Р№Р»Р°", guid_md, curNodeValue, processedCount, CountMD);
-				s = L"РћС€РёР±РєР° СЂР°Р·Р±РѕСЂР° С„Р°Р№Р»Р° ";
+				LogHeapStatus(L"fill_md: память во время ошибки разбора файла", guid_md, curNodeValue, processedCount, CountMD);
+				s = L"Ошибка разбора файла ";
 				s += curNodeValue;
-				s += L" РєРѕРЅС„РёРіСѓСЂР°С†РёРё";
+				s += L" конфигурации";
 				msreg->AddMessage(s, MessageState::msError);
 				//msreg->AddError(s);
 				//return;
 				continue;
 			}
-			msreg->AddMessage(L"fill_md: Р”РµСЂРµРІРѕ СЂР°Р·РѕР±СЂР°РЅРѕ СѓСЃРїРµС€РЅРѕ", MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Дерево разобрано успешно", MessageState::msInfo);
 
 			node = nullptr;
-			msreg->AddMessage(L"fill_md: РќР°РІРёРіР°С†РёСЏ РїРѕ РїСѓС‚Рё", MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Навигация по пути", MessageState::msInfo);
 			try {
 				std::vector<std::vector<int>> candidatePaths = {path};
 
@@ -2711,315 +2711,315 @@ void fill_md(tree* tr, String guid_md)
 				for (size_t candidateIndex = 0; candidateIndex < candidatePaths.size() && !node; candidateIndex++)
 				{
 					const std::vector<int>& candidatePath = candidatePaths[candidateIndex];
-					msreg->AddMessage(L"fill_md: РџРѕРїС‹С‚РєР° РїСѓС‚Рё #" + String((int)candidateIndex + 1), MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Попытка пути #" + String((int)candidateIndex + 1), MessageState::msInfo);
 					node = tryGetNodeByPath(tree_md, candidatePath);
 				}
 			}
 			catch (...) {
-				msreg->AddMessage(L"fill_md: РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РЅР°РІРёРіР°С†РёРё РїРѕ РїСѓС‚Рё РґР»СЏ С„Р°Р№Р»Р°: " + curNodeValue, MessageState::msError);
-				LogHeapStatus(L"fill_md: РїР°РјСЏС‚СЊ РїСЂРё РёСЃРєР»СЋС‡РµРЅРёРё РЅР°РІРёРіР°С†РёРё", guid_md, curNodeValue, processedCount, CountMD);
+				msreg->AddMessage(L"fill_md: Исключение при навигации по пути для файла: " + curNodeValue, MessageState::msError);
+				LogHeapStatus(L"fill_md: память при исключении навигации", guid_md, curNodeValue, processedCount, CountMD);
 				delete tree_md;
 				continue;
 			}
 
 			if (!node) {
-				msreg->AddMessage(L"fill_md: РџСЂРѕРїСѓСЃРє СЌР»РµРјРµРЅС‚Р° РёР·-Р·Р° null СѓР·Р»Р°: " + curNodeValue, MessageState::msError);
+				msreg->AddMessage(L"fill_md: Пропуск элемента из-за null узла: " + curNodeValue, MessageState::msError);
 				delete tree_md;
 				continue;
 			}
 
-			// РџСЂРѕРІРµСЂРєР° С‚РёРїР° СѓР·Р»Р° РїРµСЂРµРґ РїРѕР»СѓС‡РµРЅРёРµРј Р·РЅР°С‡РµРЅРёСЏ
-			msreg->AddMessage(L"fill_md: РўРёРї СѓР·Р»Р° РїРµСЂРµРґ РїРѕР»СѓС‡РµРЅРёРµРј Р·РЅР°С‡РµРЅРёСЏ: " + String(node->get_type()), MessageState::msInfo);
+			// Проверка типа узла перед получением значения
+			msreg->AddMessage(L"fill_md: Тип узла перед получением значения: " + String(node->get_type()), MessageState::msInfo);
 			if (node->get_type() == nd_empty || node->get_type() == nd_unknown) {
-				msreg->AddMessage(L"fill_md: РџСЂРѕРїСѓСЃРє СЌР»РµРјРµРЅС‚Р° - РїСѓСЃС‚РѕР№ РёР»Рё РЅРµРёР·РІРµСЃС‚РЅС‹Р№ С‚РёРї СѓР·Р»Р°: " + curNodeValue + L", С‚РёРї: " + String(node->get_type()), MessageState::msError);
+				msreg->AddMessage(L"fill_md: Пропуск элемента - пустой или неизвестный тип узла: " + curNodeValue + L", тип: " + String(node->get_type()), MessageState::msError);
 				delete tree_md;
 				continue;
 			}
 
 			String val = node->get_value();
-			msreg->AddMessage(L"fill_md: РџРѕР»СѓС‡РµРЅРѕ Р·РЅР°С‡РµРЅРёРµ РґР»РёРЅРѕР№: " + String(val.Length()), MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Получено значение длиной: " + String(val.Length()), MessageState::msInfo);
 			if (val.Length() == 0) {
 				if (guid_md == GUID_ExternalDataSources)
 				{
 					val = curNodeValue;
-					msreg->AddMessage(L"fill_md: РРјСЏ РІРЅРµС€РЅРµРіРѕ РёСЃС‚РѕС‡РЅРёРєР° РґР°РЅРЅС‹С… РїСѓСЃС‚РѕРµ, РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ GUID С„Р°Р№Р»Р°: " + val, MessageState::msWarning);
+					msreg->AddMessage(L"fill_md: Имя внешнего источника данных пустое, используется GUID файла: " + val, MessageState::msWarning);
 				}
 				else
 				{
-					msreg->AddMessage(L"fill_md: РџСЂРѕРїСѓСЃРє СЌР»РµРјРµРЅС‚Р° - РїСѓСЃС‚РѕРµ Р·РЅР°С‡РµРЅРёРµ: " + curNodeValue, MessageState::msError);
+					msreg->AddMessage(L"fill_md: Пропуск элемента - пустое значение: " + curNodeValue, MessageState::msError);
 					delete tree_md;
 					continue;
 				}
 			}
-			msreg->AddMessage(L"fill_md: РџРѕР»СѓС‡РµРЅРѕ РёРјСЏ: " + val, MessageState::msInfo);
+			msreg->AddMessage(L"fill_md: Получено имя: " + val, MessageState::msInfo);
 
 			if ((processedCount == 1) || (processedCount % 25 == 0))
-				LogHeapStatus(L"fill_md: СЃРѕСЃС‚РѕСЏРЅРёРµ РїР°РјСЏС‚Рё РїРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј РѕР±СЉРµРєС‚Р°", guid_md, curNodeValue, processedCount, CountMD);
+				LogHeapStatus(L"fill_md: состояние памяти перед созданием объекта", guid_md, curNodeValue, processedCount, CountMD);
 
-			// РЎРѕР·РґР°РЅРёРµ РѕР±СЉРµРєС‚РѕРІ РґР»СЏ СЃРїРµС†РёС„РёС‡РµСЃРєРёС… С‚РёРїРѕРІ
+			// Создание объектов для специфических типов
 			try {
 				if (guid_md == GUID_Catalogs)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЃРїСЂР°РІРѕС‡РЅРёРєР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание справочника: " + val, MessageState::msInfo);
 					MainForm->mdCatalogs.push_back(std::make_unique<TCatalogs>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Languages)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЏР·С‹РєР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание языка: " + val, MessageState::msInfo);
 					MainForm->mdLanguages.push_back(std::make_unique<TLangs>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CommonModules)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕР±С‰РµРіРѕ РјРѕРґСѓР»СЏ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание общего модуля: " + val, MessageState::msInfo);
 					MainForm->mdCommonModules.push_back(std::make_unique<TCommonModules>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Roles)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЂРѕР»Рё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание роли: " + val, MessageState::msInfo);
 					MainForm->mdRoles.push_back(std::make_unique<TRoles>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CommonTemplates)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕР±С‰РµРіРѕ РјР°РєРµС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание общего макета: " + val, MessageState::msInfo);
 					MainForm->mdCommonTemplates.push_back(std::make_unique<TCommonTemplates>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_HTTPServices)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ HTTP-СЃРµСЂРІРёСЃР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание HTTP-сервиса: " + val, MessageState::msInfo);
 					MainForm->mdHTTPServices.push_back(std::make_unique<THTTPServices>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_ScheduledJobs)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЂРµРіР»Р°РјРµРЅС‚РЅРѕРіРѕ Р·Р°РґР°РЅРёСЏ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание регламентного задания: " + val, MessageState::msInfo);
 					MainForm->mdScheduledJobs.push_back(std::make_unique<TScheduledJobs>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CommonAttributes)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕР±С‰РµРіРѕ СЂРµРєРІРёР·РёС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание общего реквизита: " + val, MessageState::msInfo);
 					MainForm->mdCommonAttributes.push_back(std::make_unique<TCommonAttributes>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_SessionParameters)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР° СЃРµР°РЅСЃР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание параметра сеанса: " + val, MessageState::msInfo);
 					MainForm->mdSessionParameters.push_back(std::make_unique<TSessionParameters>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_FunctionalOptionsParameters)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР° С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕР№ РѕРїС†РёРё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание параметра функциональной опции: " + val, MessageState::msInfo);
 					MainForm->mdFunctionalOptionsParameters.push_back(std::make_unique<TFunctionalOptionsParameters>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Subsystems)
 				{
-					//msreg->AddMessage(L"fill_md: РџСЂРѕРїСѓСЃРє РїРѕРґСЃРёСЃС‚РµРјС‹: " + val, MessageState::msInfo);
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїРѕРґСЃРёСЃС‚РµРјС‹: " + val, MessageState::msInfo);
+					//msreg->AddMessage(L"fill_md: Пропуск подсистемы: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание подсистемы: " + val, MessageState::msInfo);
 					MainForm->mdSubsystems.push_back(std::make_unique<TSubsystem>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Interfaces)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РёРЅС‚РµСЂС„РµР№СЃР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание интерфейса: " + val, MessageState::msInfo);
 					MainForm->mdInterfaces.push_back(std::make_unique<TInterfaces>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Styles)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЃС‚РёР»СЏ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание стиля: " + val, MessageState::msInfo);
 					MainForm->mdStyles.push_back(std::make_unique<TStyles>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_FilterCriteria)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РєСЂРёС‚РµСЂРёСЏ РѕС‚Р±РѕСЂР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание критерия отбора: " + val, MessageState::msInfo);
 					MainForm->mdFilterCriteria.push_back(std::make_unique<TFilterCriteria>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_SettingsStorages)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание хранилища настроек: " + val, MessageState::msInfo);
 					MainForm->mdSettingsStorages.push_back(std::make_unique<TSettingsStorages>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_StyleItems)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЌР»РµРјРµРЅС‚Р° СЃС‚РёР»СЏ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание элемента стиля: " + val, MessageState::msInfo);
 					MainForm->mdStyleItems.push_back(std::make_unique<TStyleItems>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CommonPictures)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕР±С‰РµР№ РєР°СЂС‚РёРЅРєРё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание общей картинки: " + val, MessageState::msInfo);
 					MainForm->mdCommonPictures.push_back(std::make_unique<TCommonPictures>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_ExchangePlans)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїР»Р°РЅР° РѕР±РјРµРЅР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание плана обмена: " + val, MessageState::msInfo);
 					MainForm->mdExchangePlans.push_back(std::make_unique<TExchangePlans>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_EventSubscriptions)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёРµ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание подписки на событие: " + val, MessageState::msInfo);
 					MainForm->mdEventSubscriptions.push_back(std::make_unique<TEventSubscriptions>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_WebServices)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РІРµР±-СЃРµСЂРІРёСЃР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание веб-сервиса: " + val, MessageState::msInfo);
 					MainForm->mdWebServices.push_back(std::make_unique<TWebServices>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_FunctionalOptions)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕР№ РѕРїС†РёРё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание функциональной опции: " + val, MessageState::msInfo);
 					MainForm->mdFunctionalOptions.push_back(std::make_unique<TFunctionalOptions>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_DefinedTypes)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕРїСЂРµРґРµР»СЏРµРјРѕРіРѕ С‚РёРїР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание определяемого типа: " + val, MessageState::msInfo);
 					MainForm->mdDefinedTypes.push_back(std::make_unique<TDefinedTypes>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_XDTOPackages)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ XDTO-РїР°РєРµС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание XDTO-пакета: " + val, MessageState::msInfo);
 					MainForm->mdXDTOPackages.push_back(std::make_unique<TXDTOPackages>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_WSReferences)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ WS-СЃСЃС‹Р»РєРё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание WS-ссылки: " + val, MessageState::msInfo);
 					MainForm->mdWSReferences.push_back(std::make_unique<TWSReferences>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_WebSocketClients)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ WebSocket-РєР»РёРµРЅС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание WebSocket-клиента: " + val, MessageState::msInfo);
 					MainForm->mdWebSocketClients.push_back(std::make_unique<TWebSocketClients>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_IntegrationServices)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЃРµСЂРІРёСЃР° РёРЅС‚РµРіСЂР°С†РёРё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание сервиса интеграции: " + val, MessageState::msInfo);
 					MainForm->mdIntegrationServices.push_back(std::make_unique<TIntegrationServices>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Constants)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РєРѕРЅСЃС‚Р°РЅС‚С‹: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание константы: " + val, MessageState::msInfo);
 					MainForm->mdConstants.push_back(std::make_unique<TConstants>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Documents)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РґРѕРєСѓРјРµРЅС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание документа: " + val, MessageState::msInfo);
 					MainForm->mdDocuments.push_back(std::make_unique<TDocuments>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CommonForms)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕР±С‰РµР№ С„РѕСЂРјС‹: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание общей формы: " + val, MessageState::msInfo);
 					MainForm->mdCommonForms.push_back(std::make_unique<TCommonForms>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_InformationRegisters)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЂРµРіРёСЃС‚СЂР° СЃРІРµРґРµРЅРёР№: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание регистра сведений: " + val, MessageState::msInfo);
 					MainForm->mdInformationRegisters.push_back(std::make_unique<TInformationRegisters>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CalculationRegisters)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЂРµРіРёСЃС‚СЂР° СЂР°СЃС‡РµС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание регистра расчета: " + val, MessageState::msInfo);
 					MainForm->mdCalculationRegisters.push_back(std::make_unique<TCalculationRegisters>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_BusinessProcesses)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ Р±РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание бизнес-процесса: " + val, MessageState::msInfo);
 					MainForm->mdBusinessProcesses.push_back(std::make_unique<TBusinessProceses>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Tasks)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ Р·Р°РґР°С‡Рё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание задачи: " + val, MessageState::msInfo);
 					MainForm->mdTasks.push_back(std::make_unique<TTasks>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_AccountingRegisters)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЂРµРіРёСЃС‚СЂР° Р±СѓС…РіР°Р»С‚РµСЂРёРё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание регистра бухгалтерии: " + val, MessageState::msInfo);
 					MainForm->mdAccountingRegisters.push_back(std::make_unique<TAccountingRegisters>(cf, curNode->get_value(), val));
-					msreg->AddMessage(L"fill_md: Р РµРіРёСЃС‚СЂ Р±СѓС…РіР°Р»С‚РµСЂРёРё СЃРѕР·РґР°РЅ СѓСЃРїРµС€РЅРѕ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Регистр бухгалтерии создан успешно: " + val, MessageState::msInfo);
 				}
 				else if (guid_md == GUID_CommandGroups)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание группы команд: " + val, MessageState::msInfo);
 					MainForm->mdCommandGroups.push_back(std::make_unique<TCommandGroups>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_CommonCommands)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕР±С‰РµР№ РєРѕРјР°РЅРґС‹: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание общей команды: " + val, MessageState::msInfo);
 					MainForm->mdCommonCommands.push_back(std::make_unique<TCommonCommands>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Numerators)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РЅСѓРјРµСЂР°С‚РѕСЂР°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание нумератора: " + val, MessageState::msInfo);
 					MainForm->mdDocumentNumerators.push_back(std::make_unique<TNumerators>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_JournDocuments)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ Р¶СѓСЂРЅР°Р»Р° РґРѕРєСѓРјРµРЅС‚РѕРІ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание журнала документов: " + val, MessageState::msInfo);
 					MainForm->mdDocumentJournals.push_back(std::make_unique<TJournals>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Reports)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕС‚С‡РµС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание отчета: " + val, MessageState::msInfo);
 					MainForm->mdReports.push_back(std::make_unique<TReports>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_ChartOfCharacteristicTypes)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РџР’РҐ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание ПВХ: " + val, MessageState::msInfo);
 					MainForm->mdChartsOfCharacteristicTypes.push_back(std::make_unique<TChartOfCharacteristicTypes>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_ChartsOfAccounts)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїР»Р°РЅР° СЃС‡РµС‚РѕРІ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание плана счетов: " + val, MessageState::msInfo);
 					MainForm->mdChartOfAccounts.push_back(std::make_unique<TChartOfAccounts>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_ChartsOfCalculationTypes)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РџР’Р : " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание ПВР: " + val, MessageState::msInfo);
 					MainForm->mdChartOfCalculationTypes.push_back(std::make_unique<TChartOfCalculationTypes>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_AccumulationRegisters)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ СЂРµРіРёСЃС‚СЂР° РЅР°РєРѕРїР»РµРЅРёСЏ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание регистра накопления: " + val, MessageState::msInfo);
 					MainForm->mdAccumulationRegisters.push_back(std::make_unique<TAccumulationRegisters>(cf, curNode->get_value(), val));
-					msreg->AddMessage(L"fill_md: Р РµРіРёСЃС‚СЂ РЅР°РєРѕРїР»РµРЅРёСЏ СЃРѕР·РґР°РЅ СѓСЃРїРµС€РЅРѕ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Регистр накопления создан успешно: " + val, MessageState::msInfo);
 				}
 				else if (guid_md == GUID_Sequences)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚Рё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание последовательности: " + val, MessageState::msInfo);
 					MainForm->mdSequences.push_back(std::make_unique<TSequences>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_DataProcessors)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РѕР±СЂР°Р±РѕС‚РєРё: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание обработки: " + val, MessageState::msInfo);
 					MainForm->mdDataProcessors.push_back(std::make_unique<TDataProcessors>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Enums)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РїРµСЂРµС‡РёСЃР»РµРЅРёСЏ: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание перечисления: " + val, MessageState::msInfo);
 					MainForm->mdEnums.push_back(std::make_unique<TEnums>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_Bots)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ Р±РѕС‚Р°: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание бота: " + val, MessageState::msInfo);
 					MainForm->mdBots.push_back(std::make_unique<TBots>(cf, curNode->get_value(), val));
 				}
 				else if (guid_md == GUID_ExternalDataSources)
 				{
-					msreg->AddMessage(L"fill_md: РЎРѕР·РґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ РёСЃС‚РѕС‡РЅРёРєР° РґР°РЅРЅС‹С…: " + val, MessageState::msInfo);
+					msreg->AddMessage(L"fill_md: Создание внешнего источника данных: " + val, MessageState::msInfo);
 					MainForm->mdExternalDataSources.push_back(std::make_unique<TExternalDataSources>(cf, curNode->get_value(), val));
 				}
 				else
 				{
-					msreg->AddMessage(L"fill_md: РќРµРёР·РІРµСЃС‚РЅС‹Р№ GUID РґР»СЏ РѕР±СЉРµРєС‚Р°: " + val, MessageState::msWarning);
+					msreg->AddMessage(L"fill_md: Неизвестный GUID для объекта: " + val, MessageState::msWarning);
 				}
 			}
 			catch (const Exception &e) {
-				msreg->AddMessage_(L"fill_md: VCL exception РїСЂРё СЃРѕР·РґР°РЅРёРё РѕР±СЉРµРєС‚Р°", msError,
+				msreg->AddMessage_(L"fill_md: VCL exception при создании объекта", msError,
 						L"Name", val,
 						L"GUID", guid_md,
 						L"File", curNodeValue,
 						L"Message", e.Message);
-				LogHeapStatus(L"fill_md: РїР°РјСЏС‚СЊ РїСЂРё VCL exception СЃРѕР·РґР°РЅРёСЏ РѕР±СЉРµРєС‚Р°", guid_md, curNodeValue, processedCount, CountMD);
+				LogHeapStatus(L"fill_md: память при VCL exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
 			}
 			catch (...) {
-				msreg->AddMessage_(L"fill_md: РЅРµРёР·РІРµСЃС‚РЅРѕРµ РёСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё СЃРѕР·РґР°РЅРёРё РѕР±СЉРµРєС‚Р°", msError,
+				msreg->AddMessage_(L"fill_md: неизвестное исключение при создании объекта", msError,
 						L"Name", val,
 						L"GUID", guid_md,
 						L"File", curNodeValue);
-				LogHeapStatus(L"fill_md: РїР°РјСЏС‚СЊ РїСЂРё РЅРµРёР·РІРµСЃС‚РЅРѕРј exception СЃРѕР·РґР°РЅРёСЏ РѕР±СЉРµРєС‚Р°", guid_md, curNodeValue, processedCount, CountMD);
+				LogHeapStatus(L"fill_md: память при неизвестном exception создания объекта", guid_md, curNodeValue, processedCount, CountMD);
 			}
 			delete tree_md;
 			//md_list.push_back(val);
@@ -3053,527 +3053,527 @@ static void get_cf_name(tree* tr, Messager* mess)
 	node3 = tr;
 
 	if (MainForm)
-		MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІ...");
+		MainForm->AdvanceLoadProgress(L"Обработка справочников...");
 
-        // Р—Р°РїРѕР»РЅСЏРµРј СЃРїСЂР°РІРѕС‡РЅРёРєРё
-		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІ", MessageState::msInfo);
+        // Заполняем справочники
+		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage(L"Начало обработки справочников", MessageState::msInfo);
         fill_md(tr, GUID_Catalogs);
-		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage(L"РЎРїСЂР°РІРѕС‡РЅРёРєРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage(L"Справочники обработаны", MessageState::msInfo);
 
-        // Р—Р°РїРѕР»РЅСЏРµРј СЏР·С‹РєРё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЏР·С‹РєРѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЏР·С‹РєРѕРІ", MessageState::msInfo);
+        // Заполняем языки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка языков...");
+        mess->AddMessage(L"Начало обработки языков", MessageState::msInfo);
         fill_md(tr, GUID_Languages);
-        mess->AddMessage(L"РЇР·С‹РєРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Языки обработаны", MessageState::msInfo);
 
-        // Р—Р°РїРѕР»РЅСЏРµРј СЂРµРіРёСЃС‚СЂС‹ РЅР°РєРѕРїР»РµРЅРёСЏ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЂРµРіРёСЃС‚СЂРѕРІ РЅР°РєРѕРїР»РµРЅРёСЏ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЂРµРіРёСЃС‚СЂРѕРІ РЅР°РєРѕРїР»РµРЅРёСЏ", MessageState::msInfo);
+        // Заполняем регистры накопления
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров накопления...");
+        mess->AddMessage(L"Начало обработки регистров накопления", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_AccumulationRegisters);
         }
         catch (...) {
-				mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЂРµРіРёСЃС‚СЂРѕРІ РЅР°РєРѕРїР»РµРЅРёСЏ", MessageState::msError);
+				mess->AddMessage(L"Исключение при обработке регистров накопления", MessageState::msError);
         }
-        mess->AddMessage(L"Р РµРіРёСЃС‚СЂС‹ РЅР°РєРѕРїР»РµРЅРёСЏ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Регистры накопления обработаны", MessageState::msInfo);
 
-        // Р—Р°РїРѕР»РЅСЏРµРј СЂРµРіРёСЃС‚СЂС‹ Р±СѓС…РіР°Р»С‚РµСЂРёРё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЂРµРіРёСЃС‚СЂРѕРІ Р±СѓС…РіР°Р»С‚РµСЂРёРё...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЂРµРіРёСЃС‚СЂРѕРІ Р±СѓС…РіР°Р»С‚РµСЂРёРё", MessageState::msInfo);
+        // Заполняем регистры бухгалтерии
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров бухгалтерии...");
+        mess->AddMessage(L"Начало обработки регистров бухгалтерии", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_AccountingRegisters);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЂРµРіРёСЃС‚СЂРѕРІ Р±СѓС…РіР°Р»С‚РµСЂРёРё", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке регистров бухгалтерии", MessageState::msError);
         }
-        mess->AddMessage(L"Р РµРіРёСЃС‚СЂС‹ Р±СѓС…РіР°Р»С‚РµСЂРёРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Регистры бухгалтерии обработаны", MessageState::msInfo);
 
-        // Р—Р°РїРѕР»РЅСЏРµРј СЂРµРіРёСЃС‚СЂС‹ СЂР°СЃС‡РµС‚Р°
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЂРµРіРёСЃС‚СЂРѕРІ СЂР°СЃС‡РµС‚Р°...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЂРµРіРёСЃС‚СЂРѕРІ СЂР°СЃС‡РµС‚Р°", MessageState::msInfo);
+        // Заполняем регистры расчета
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров расчета...");
+        mess->AddMessage(L"Начало обработки регистров расчета", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CalculationRegisters);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЂРµРіРёСЃС‚СЂРѕРІ СЂР°СЃС‡РµС‚Р°", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке регистров расчета", MessageState::msError);
         }
-        mess->AddMessage(L"Р РµРіРёСЃС‚СЂС‹ СЂР°СЃС‡РµС‚Р° РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Регистры расчета обработаны", MessageState::msInfo);
 
-        // Р—Р°РїРѕР»РЅСЏРµРј Р±РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° Р±РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃРѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё Р±РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃРѕРІ", MessageState::msInfo);
+        // Заполняем бизнес-процессы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка бизнес-процессов...");
+        mess->AddMessage(L"Начало обработки бизнес-процессов", MessageState::msInfo);
 		try {
                 fill_md(tr, GUID_BusinessProcesses);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ Р±РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃРѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке бизнес-процессов", MessageState::msError);
         }
-        mess->AddMessage(L"Р‘РёР·РЅРµСЃ-РїСЂРѕС†РµСЃСЃС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Бизнес-процессы обработаны", MessageState::msInfo);
 
-        // РџР’РҐ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїР»Р°РЅРѕРІ РІРёРґРѕРІ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїР»Р°РЅРѕРІ РІРёРґРѕРІ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє", MessageState::msInfo);
+        // ПВХ
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов видов характеристик...");
+        mess->AddMessage(L"Начало обработки планов видов характеристик", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ChartOfCharacteristicTypes);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РџР’РҐ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке ПВХ", MessageState::msError);
         }
-        mess->AddMessage(L"РџР»Р°РЅС‹ РІРёРґРѕРІ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Планы видов характеристик обработаны", MessageState::msInfo);
 
 
-        // РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РіСЂСѓРїРї РєРѕРјР°РЅРґ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РіСЂСѓРїРї РєРѕРјР°РЅРґ", MessageState::msInfo);
+        // группы команд
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка групп команд...");
+        mess->AddMessage(L"Начало обработки групп команд", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommandGroups);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РіСЂСѓРїРї РєРѕРјР°РЅРґ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке групп команд", MessageState::msError);
         }
-		mess->AddMessage(L"Р“СЂСѓРїРїС‹ РєРѕРјР°РЅРґ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+		mess->AddMessage(L"Группы команд обработаны", MessageState::msInfo);
 
 
-        // РѕР±С‰РёРµ СЂРµРєРІРёР·РёС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕР±С‰РёС… СЂРµРєРІРёР·РёС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕР±С‰РёС… СЂРµРєРІРёР·РёС‚РѕРІ", MessageState::msInfo);
+        // общие реквизиты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих реквизитов...");
+        mess->AddMessage(L"Начало обработки общих реквизитов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonAttributes);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕР±С‰РёС… СЂРµРєРІРёР·РёС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке общих реквизитов", MessageState::msError);
         }
-        mess->AddMessage(L"РћР±С‰РёРµ СЂРµРєРІРёР·РёС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Общие реквизиты обработаны", MessageState::msInfo);
 
-        // РѕР±С‰РёРµ РєРѕРјР°РЅРґС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕР±С‰РёС… РєРѕРјР°РЅРґ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕР±С‰РёС… РєРѕРјР°РЅРґ", MessageState::msInfo);
+        // общие команды
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих команд...");
+        mess->AddMessage(L"Начало обработки общих команд", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonCommands);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕР±С‰РёС… РєРѕРјР°РЅРґ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке общих команд", MessageState::msError);
         }
-        mess->AddMessage(L"РћР±С‰РёРµ РєРѕРјР°РЅРґС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Общие команды обработаны", MessageState::msInfo);
 
-        // РѕР±С‰РёРµ С„РѕСЂРјС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕР±С‰РёС… С„РѕСЂРј...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕР±С‰РёС… С„РѕСЂРј", MessageState::msInfo);
+        // общие формы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих форм...");
+        mess->AddMessage(L"Начало обработки общих форм", MessageState::msInfo);
         try {
 				fill_md(tr, GUID_CommonForms);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕР±С‰РёС… С„РѕСЂРј", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке общих форм", MessageState::msError);
         }
-        mess->AddMessage(L"РћР±С‰РёРµ С„РѕСЂРјС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Общие формы обработаны", MessageState::msInfo);
 
-        // РѕР±С‰РёРµ РјРѕРґСѓР»Рё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕР±С‰РёС… РјРѕРґСѓР»РµР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕР±С‰РёС… РјРѕРґСѓР»РµР№", MessageState::msInfo);
+        // общие модули
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих модулей...");
+        mess->AddMessage(L"Начало обработки общих модулей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonModules);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕР±С‰РёС… РјРѕРґСѓР»РµР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке общих модулей", MessageState::msError);
         }
-        mess->AddMessage(L"РћР±С‰РёРµ РјРѕРґСѓР»Рё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Общие модули обработаны", MessageState::msInfo);
 
 
-        // РѕР±С‰РёРµ РєР°СЂС‚РёРЅРєРё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕР±С‰РёС… РєР°СЂС‚РёРЅРѕРє...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕР±С‰РёС… РєР°СЂС‚РёРЅРѕРє", MessageState::msInfo);
+        // общие картинки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих картинок...");
+        mess->AddMessage(L"Начало обработки общих картинок", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonPictures);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕР±С‰РёС… РєР°СЂС‚РёРЅРѕРє", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке общих картинок", MessageState::msError);
         }
-        mess->AddMessage(L"РћР±С‰РёРµ РєР°СЂС‚РёРЅРєРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Общие картинки обработаны", MessageState::msInfo);
 
-        // РѕР±С‰РёРµ РјР°РєРµС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕР±С‰РёС… РјР°РєРµС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕР±С‰РёС… РјР°РєРµС‚РѕРІ", MessageState::msInfo);
+        // общие макеты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка общих макетов...");
+        mess->AddMessage(L"Начало обработки общих макетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_CommonTemplates);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕР±С‰РёС… РјР°РєРµС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке общих макетов", MessageState::msError);
         }
-        mess->AddMessage(L"РћР±С‰РёРµ РјР°РєРµС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Общие макеты обработаны", MessageState::msInfo);
 
-        // РєРѕРЅСЃС‚Р°РЅС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РєРѕРЅСЃС‚Р°РЅС‚...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РєРѕРЅСЃС‚Р°РЅС‚", MessageState::msInfo);
+        // константы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка констант...");
+        mess->AddMessage(L"Начало обработки констант", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Constants);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РєРѕРЅСЃС‚Р°РЅС‚", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке констант", MessageState::msError);
         }
-        mess->AddMessage(L"РљРѕРЅСЃС‚Р°РЅС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹: ", MessageState::msInfo);
+        mess->AddMessage(L"Константы обработаны: ", MessageState::msInfo);
 
-        // РѕР±СЂР°Р±РѕС‚РєРё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕР±СЂР°Р±РѕС‚РѕРє...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕР±СЂР°Р±РѕС‚РѕРє", MessageState::msInfo);
+        // обработки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка обработок...");
+        mess->AddMessage(L"Начало обработки обработок", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_DataProcessors);
         }
 		catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕР±СЂР°Р±РѕС‚РѕРє", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке обработок", MessageState::msError);
         }
-        mess->AddMessage(L"РћР±СЂР°Р±РѕС‚РєРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Обработки обработаны", MessageState::msInfo);
 
-        // РѕРїСЂРµРґРµР»СЏРµРјС‹Рµ С‚РёРїС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕРїСЂРµРґРµР»СЏРµРјС‹С… С‚РёРїРѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕРїСЂРµРґРµР»СЏРµРјС‹С… С‚РёРїРѕРІ", MessageState::msInfo);
+        // определяемые типы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка определяемых типов...");
+        mess->AddMessage(L"Начало обработки определяемых типов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_DefinedTypes);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕРїСЂРµРґРµР»СЏРµРјС‹С… С‚РёРїРѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке определяемых типов", MessageState::msError);
         }
-        mess->AddMessage(L"РћРїСЂРµРґРµР»СЏРµРјС‹Рµ С‚РёРїС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Определяемые типы обработаны", MessageState::msInfo);
 
-        // Р¶СѓСЂРЅР°Р»С‹ РґРѕРєСѓРјРµРЅС‚РѕРІ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° Р¶СѓСЂРЅР°Р»РѕРІ РґРѕРєСѓРјРµРЅС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё Р¶СѓСЂРЅР°Р»РѕРІ РґРѕРєСѓРјРµРЅС‚РѕРІ", MessageState::msInfo);
+        // журналы документов
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка журналов документов...");
+        mess->AddMessage(L"Начало обработки журналов документов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_JournDocuments);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ Р¶СѓСЂРЅР°Р»РѕРІ РґРѕРєСѓРјРµРЅС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке журналов документов", MessageState::msError);
         }
-        mess->AddMessage(L"Р–СѓСЂРЅР°Р»С‹ РґРѕРєСѓРјРµРЅС‚РѕРІ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Журналы документов обработаны", MessageState::msInfo);
 
-        // РЅСѓРјРµСЂР°С‚РѕСЂС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РЅСѓРјРµСЂР°С‚РѕСЂРѕРІ...");
-		mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РЅСѓРјРµСЂР°С‚РѕСЂРѕРІ", MessageState::msInfo);
+        // нумераторы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка нумераторов...");
+		mess->AddMessage(L"Начало обработки нумераторов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Numerators);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РЅСѓРјРµСЂР°С‚РѕСЂРѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке нумераторов", MessageState::msError);
         }
-        mess->AddMessage(L"РќСѓРјРµСЂР°С‚РѕСЂС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Нумераторы обработаны", MessageState::msInfo);
 
-        // РґРѕРєСѓРјРµРЅС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РґРѕРєСѓРјРµРЅС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РґРѕРєСѓРјРµРЅС‚РѕРІ", MessageState::msInfo);
+        // документы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка документов...");
+        mess->AddMessage(L"Начало обработки документов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Documents);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РґРѕРєСѓРјРµРЅС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке документов", MessageState::msError);
         }
-        mess->AddMessage(L"Р”РѕРєСѓРјРµРЅС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Документы обработаны", MessageState::msInfo);
 
-        // РїРµСЂРµС‡РёСЃР»РµРЅРёСЏ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїРµСЂРµС‡РёСЃР»РµРЅРёР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїРµСЂРµС‡РёСЃР»РµРЅРёР№", MessageState::msInfo);
+        // перечисления
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка перечислений...");
+        mess->AddMessage(L"Начало обработки перечислений", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Enums);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїРµСЂРµС‡РёСЃР»РµРЅРёР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке перечислений", MessageState::msError);
         }
-		mess->AddMessage(L"РџРµСЂРµС‡РёСЃР»РµРЅРёСЏ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+		mess->AddMessage(L"Перечисления обработаны", MessageState::msInfo);
 
-        // РїРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёСЏ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїРѕРґРїРёСЃРѕРє РЅР° СЃРѕР±С‹С‚РёСЏ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїРѕРґРїРёСЃРѕРє РЅР° СЃРѕР±С‹С‚РёСЏ", MessageState::msInfo);
+        // подписки на события
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка подписок на события...");
+        mess->AddMessage(L"Начало обработки подписок на события", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_EventSubscriptions);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїРѕРґРїРёСЃРѕРє РЅР° СЃРѕР±С‹С‚РёСЏ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке подписок на события", MessageState::msError);
         }
-        mess->AddMessage(L"РџРѕРґРїРёСЃРєРё РЅР° СЃРѕР±С‹С‚РёСЏ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Подписки на события обработаны", MessageState::msInfo);
 
-        // РїР»Р°РЅС‹ РѕР±РјРµРЅР°
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїР»Р°РЅРѕРІ РѕР±РјРµРЅР°...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїР»Р°РЅРѕРІ РѕР±РјРµРЅР°", MessageState::msInfo);
+        // планы обмена
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов обмена...");
+        mess->AddMessage(L"Начало обработки планов обмена", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ExchangePlans);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїР»Р°РЅРѕРІ РѕР±РјРµРЅР°", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке планов обмена", MessageState::msError);
         }
-        mess->AddMessage(L"РџР»Р°РЅС‹ РѕР±РјРµРЅР° РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Планы обмена обработаны", MessageState::msInfo);
 
-        // РїР»Р°РЅС‹ СЃС‡РµС‚РѕРІ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїР»Р°РЅРѕРІ СЃС‡РµС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїР»Р°РЅРѕРІ СЃС‡РµС‚РѕРІ", MessageState::msInfo);
+        // планы счетов
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов счетов...");
+        mess->AddMessage(L"Начало обработки планов счетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ChartsOfAccounts);
 		}
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїР»Р°РЅРѕРІ СЃС‡РµС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке планов счетов", MessageState::msError);
         }
-        mess->AddMessage(L"РџР»Р°РЅС‹ СЃС‡РµС‚РѕРІ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Планы счетов обработаны", MessageState::msInfo);
 
-        // РїР»Р°РЅС‹ РІРёРґРѕРІ СЂР°СЃС‡РµС‚Р°
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїР»Р°РЅРѕРІ РІРёРґРѕРІ СЂР°СЃС‡РµС‚Р°...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїР»Р°РЅРѕРІ РІРёРґРѕРІ СЂР°СЃС‡РµС‚Р°", MessageState::msInfo);
+        // планы видов расчета
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка планов видов расчета...");
+        mess->AddMessage(L"Начало обработки планов видов расчета", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ChartsOfCalculationTypes);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїР»Р°РЅРѕРІ РІРёРґРѕРІ СЂР°СЃС‡РµС‚Р°", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке планов видов расчета", MessageState::msError);
         }
-        mess->AddMessage(L"РџР»Р°РЅС‹ РІРёРґРѕРІ СЂР°СЃС‡РµС‚Р° РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Планы видов расчета обработаны", MessageState::msInfo);
 
-        // РІРЅРµС€РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРё РґР°РЅРЅС‹С…
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РІРЅРµС€РЅРёС… РёСЃС‚РѕС‡РЅРёРєРѕРІ РґР°РЅРЅС‹С…...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РІРЅРµС€РЅРёС… РёСЃС‚РѕС‡РЅРёРєРѕРІ РґР°РЅРЅС‹С…", MessageState::msInfo);
+        // внешние источники данных
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка внешних источников данных...");
+        mess->AddMessage(L"Начало обработки внешних источников данных", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ExternalDataSources);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РІРЅРµС€РЅРёС… РёСЃС‚РѕС‡РЅРёРєРѕРІ РґР°РЅРЅС‹С…", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке внешних источников данных", MessageState::msError);
         }
-        mess->AddMessage(L"Р’РЅРµС€РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРё РґР°РЅРЅС‹С… РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Внешние источники данных обработаны", MessageState::msInfo);
 
-        // РєСЂРёС‚РµСЂРёРё РѕС‚Р±РѕСЂР°
-		if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РєСЂРёС‚РµСЂРёРµРІ РѕС‚Р±РѕСЂР°...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РєСЂРёС‚РµСЂРёРµРІ РѕС‚Р±РѕСЂР°", MessageState::msInfo);
+        // критерии отбора
+		if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка критериев отбора...");
+        mess->AddMessage(L"Начало обработки критериев отбора", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_FilterCriteria);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РєСЂРёС‚РµСЂРёРµРІ РѕС‚Р±РѕСЂР°", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке критериев отбора", MessageState::msError);
         }
-        mess->AddMessage(L"РљСЂРёС‚РµСЂРёРё РѕС‚Р±РѕСЂР° РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Критерии отбора обработаны", MessageState::msInfo);
 
-        // С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹Рµ РѕРїС†РёРё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№", MessageState::msInfo);
+        // функциональные опции
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка функциональных опций...");
+        mess->AddMessage(L"Начало обработки функциональных опций", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_FunctionalOptions);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке функциональных опций", MessageState::msError);
         }
-        mess->AddMessage(L"Р¤СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹Рµ РѕРїС†РёРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Функциональные опции обработаны", MessageState::msInfo);
 
-        // РїР°СЂР°РјРµС‚СЂС‹ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїР°СЂР°РјРµС‚СЂРѕРІ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїР°СЂР°РјРµС‚СЂРѕРІ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№", MessageState::msInfo);
+        // параметры функциональных опций
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка параметров функциональных опций...");
+        mess->AddMessage(L"Начало обработки параметров функциональных опций", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_FunctionalOptionsParameters);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїР°СЂР°РјРµС‚СЂРѕРІ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке параметров функциональных опций", MessageState::msError);
 		}
-        mess->AddMessage(L"РџР°СЂР°РјРµС‚СЂС‹ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹С… РѕРїС†РёР№ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Параметры функциональных опций обработаны", MessageState::msInfo);
 
-        // http - СЃРµСЂРІРёСЃС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° HTTP-СЃРµСЂРІРёСЃРѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё HTTP-СЃРµСЂРІРёСЃРѕРІ", MessageState::msInfo);
+        // http - сервисы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка HTTP-сервисов...");
+        mess->AddMessage(L"Начало обработки HTTP-сервисов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_HTTPServices);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ HTTP-СЃРµСЂРІРёСЃРѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке HTTP-сервисов", MessageState::msError);
         }
-        mess->AddMessage(L"http - СЃРµСЂРІРёСЃС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"http - сервисы обработаны", MessageState::msInfo);
 
-        // СЂРµРіРёСЃС‚СЂС‹ СЃРІРµРґРµРЅРёР№
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЂРµРіРёСЃС‚СЂРѕРІ СЃРІРµРґРµРЅРёР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЂРµРіРёСЃС‚СЂРѕРІ СЃРІРµРґРµРЅРёР№", MessageState::msInfo);
+        // регистры сведений
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регистров сведений...");
+        mess->AddMessage(L"Начало обработки регистров сведений", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_InformationRegisters);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЂРµРіРёСЃС‚СЂРѕРІ СЃРІРµРґРµРЅРёР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке регистров сведений", MessageState::msError);
         }
-        mess->AddMessage(L"Р РµРіРёСЃС‚СЂС‹ СЃРІРµРґРµРЅРёР№ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Регистры сведений обработаны", MessageState::msInfo);
 
-        // РёРЅС‚РµСЂС„РµР№СЃС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РёРЅС‚РµСЂС„РµР№СЃРѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РёРЅС‚РµСЂС„РµР№СЃРѕРІ", MessageState::msInfo);
+        // интерфейсы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка интерфейсов...");
+        mess->AddMessage(L"Начало обработки интерфейсов", MessageState::msInfo);
         try {
 				fill_md(tr, GUID_Interfaces);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РёРЅС‚РµСЂС„РµР№СЃРѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке интерфейсов", MessageState::msError);
         }
-        mess->AddMessage(L"РРЅС‚РµСЂС„РµР№СЃС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Интерфейсы обработаны", MessageState::msInfo);
 
-        // РѕС‚С‡РµС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РѕС‚С‡РµС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РѕС‚С‡РµС‚РѕРІ", MessageState::msInfo);
+        // отчеты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка отчетов...");
+        mess->AddMessage(L"Начало обработки отчетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Reports);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РѕС‚С‡РµС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке отчетов", MessageState::msError);
         }
-        mess->AddMessage(L"РћС‚С‡РµС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Отчеты обработаны", MessageState::msInfo);
 
-        // СЂРѕР»Рё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЂРѕР»РµР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЂРѕР»РµР№", MessageState::msInfo);
+        // роли
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка ролей...");
+        mess->AddMessage(L"Начало обработки ролей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Roles);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЂРѕР»РµР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке ролей", MessageState::msError);
         }
-        mess->AddMessage(L"Р РѕР»Рё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Роли обработаны", MessageState::msInfo);
 
-		// РїР°СЂР°РјРµС‚СЂС‹ СЃРµР°РЅСЃР°
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїР°СЂР°РјРµС‚СЂРѕРІ СЃРµР°РЅСЃР°...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїР°СЂР°РјРµС‚СЂРѕРІ СЃРµР°РЅСЃР°", MessageState::msInfo);
+		// параметры сеанса
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка параметров сеанса...");
+        mess->AddMessage(L"Начало обработки параметров сеанса", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_SessionParameters);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїР°СЂР°РјРµС‚СЂРѕРІ СЃРµР°РЅСЃР°", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке параметров сеанса", MessageState::msError);
         }
-        mess->AddMessage(L"РџР°СЂР°РјРµС‚СЂС‹ СЃРµР°РЅСЃР° РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Параметры сеанса обработаны", MessageState::msInfo);
 
-        // С…СЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° С…СЂР°РЅРёР»РёС‰ РЅР°СЃС‚СЂРѕРµРє...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё С…СЂР°РЅРёР»РёС‰ РЅР°СЃС‚СЂРѕРµРє", MessageState::msInfo);
+        // хранилища настроек
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка хранилищ настроек...");
+        mess->AddMessage(L"Начало обработки хранилищ настроек", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_SettingsStorages);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ С…СЂР°РЅРёР»РёС‰ РЅР°СЃС‚СЂРѕРµРє", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке хранилищ настроек", MessageState::msError);
         }
-        mess->AddMessage(L"РҐСЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Хранилища настроек обработаны", MessageState::msInfo);
 
-        // СЌР»РµРјРµРЅС‚С‹ СЃС‚РёР»СЏ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЌР»РµРјРµРЅС‚РѕРІ СЃС‚РёР»СЏ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЌР»РµРјРµРЅС‚РѕРІ СЃС‚РёР»СЏ", MessageState::msInfo);
+        // элементы стиля
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка элементов стиля...");
+        mess->AddMessage(L"Начало обработки элементов стиля", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_StyleItems);
         }
         catch (...) {
-				mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЌР»РµРјРµРЅС‚РѕРІ СЃС‚РёР»СЏ", MessageState::msError);
+				mess->AddMessage(L"Исключение при обработке элементов стиля", MessageState::msError);
         }
-        mess->AddMessage(L"Р­Р»РµРјРµРЅС‚С‹ СЃС‚РёР»СЏ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Элементы стиля обработаны", MessageState::msInfo);
 
-        // СЃС‚РёР»Рё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЃС‚РёР»РµР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЃС‚РёР»РµР№", MessageState::msInfo);
+        // стили
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка стилей...");
+        mess->AddMessage(L"Начало обработки стилей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Styles);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЃС‚РёР»РµР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке стилей", MessageState::msError);
         }
-        mess->AddMessage(L"РЎС‚РёР»Рё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Стили обработаны", MessageState::msInfo);
 
-        // РїРѕРґСЃРёСЃС‚РµРјС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїРѕРґСЃРёСЃС‚РµРј...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїРѕРґСЃРёСЃС‚РµРј", MessageState::msInfo);
+        // подсистемы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка подсистем...");
+        mess->AddMessage(L"Начало обработки подсистем", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Subsystems);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїРѕРґСЃРёСЃС‚РµРј", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке подсистем", MessageState::msError);
         }
-        mess->AddMessage(L"РџРѕРґСЃРёСЃС‚РµРјС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Подсистемы обработаны", MessageState::msInfo);
 
-        // Р·Р°РґР°С‡Рё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° Р·Р°РґР°С‡...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё Р·Р°РґР°С‡", MessageState::msInfo);
+        // задачи
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка задач...");
+        mess->AddMessage(L"Начало обработки задач", MessageState::msInfo);
 		try {
                 fill_md(tr, GUID_Tasks);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ Р·Р°РґР°С‡", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке задач", MessageState::msError);
         }
-        mess->AddMessage(L"Р—Р°РґР°С‡Рё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Задачи обработаны", MessageState::msInfo);
 
-        // РІРµР±-СЃРµСЂРІРёСЃС‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РІРµР±-СЃРµСЂРІРёСЃРѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РІРµР±-СЃРµСЂРІРёСЃРѕРІ", MessageState::msInfo);
+        // веб-сервисы
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка веб-сервисов...");
+        mess->AddMessage(L"Начало обработки веб-сервисов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_WebServices);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РІРµР±-СЃРµСЂРІРёСЃРѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке веб-сервисов", MessageState::msError);
         }
-        mess->AddMessage(L"РІРµР±-СЃРµСЂРІРёСЃС‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"веб-сервисы обработаны", MessageState::msInfo);
 
-        // ws-СЃСЃС‹Р»РєРё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° WS-СЃСЃС‹Р»РѕРє...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё WS-СЃСЃС‹Р»РѕРє", MessageState::msInfo);
+        // ws-ссылки
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка WS-ссылок...");
+        mess->AddMessage(L"Начало обработки WS-ссылок", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_WSReferences);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ WS-СЃСЃС‹Р»РѕРє", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке WS-ссылок", MessageState::msError);
         }
-        mess->AddMessage(L"ws-СЃСЃС‹Р»РєРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"ws-ссылки обработаны", MessageState::msInfo);
 
-        // websocket-РєР»РёРµРЅС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° WebSocket-РєР»РёРµРЅС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё WebSocket-РєР»РёРµРЅС‚РѕРІ", MessageState::msInfo);
+        // websocket-клиенты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка WebSocket-клиентов...");
+        mess->AddMessage(L"Начало обработки WebSocket-клиентов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_WebSocketClients);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ WebSocket-РєР»РёРµРЅС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке WebSocket-клиентов", MessageState::msError);
         }
-        mess->AddMessage(L"WebSocket-РєР»РёРµРЅС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"WebSocket-клиенты обработаны", MessageState::msInfo);
 
-        // СЃРµСЂРІРёСЃС‹ РёРЅС‚РµРіСЂР°С†РёРё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЃРµСЂРІРёСЃРѕРІ РёРЅС‚РµРіСЂР°С†РёРё...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЃРµСЂРІРёСЃРѕРІ РёРЅС‚РµРіСЂР°С†РёРё", MessageState::msInfo);
+        // сервисы интеграции
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка сервисов интеграции...");
+        mess->AddMessage(L"Начало обработки сервисов интеграции", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_IntegrationServices);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЃРµСЂРІРёСЃРѕРІ РёРЅС‚РµРіСЂР°С†РёРё", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке сервисов интеграции", MessageState::msError);
         }
-        mess->AddMessage(L"РЎРµСЂРІРёСЃС‹ РёРЅС‚РµРіСЂР°С†РёРё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Сервисы интеграции обработаны", MessageState::msInfo);
 
-        // xdto-РїР°РєРµС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° XDTO-РїР°РєРµС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё XDTO-РїР°РєРµС‚РѕРІ", MessageState::msInfo);
+        // xdto-пакеты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка XDTO-пакетов...");
+        mess->AddMessage(L"Начало обработки XDTO-пакетов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_XDTOPackages);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ XDTO-РїР°РєРµС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке XDTO-пакетов", MessageState::msError);
         }
-        mess->AddMessage(L"xdto-РїР°РєРµС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"xdto-пакеты обработаны", MessageState::msInfo);
 
-        // СЂРµРіР» Р·Р°РґР°РЅРёСЏ
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° СЂРµРіР»Р°РјРµРЅС‚РЅС‹С… Р·Р°РґР°РЅРёР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё СЂРµРіР»Р°РјРµРЅС‚РЅС‹С… Р·Р°РґР°РЅРёР№", MessageState::msInfo);
+        // регл задания
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка регламентных заданий...");
+        mess->AddMessage(L"Начало обработки регламентных заданий", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_ScheduledJobs);
         }
         catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ СЂРµРіР»Р°РјРµРЅС‚РЅС‹С… Р·Р°РґР°РЅРёР№", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке регламентных заданий", MessageState::msError);
         }
-        mess->AddMessage(L"Р РµРіР»Р°РјРµРЅС‚РЅС‹Рµ Р·Р°РґР°РЅРёСЏ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Регламентные задания обработаны", MessageState::msInfo);
 
-        // Р±РѕС‚С‹
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° Р±РѕС‚РѕРІ...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё Р±РѕС‚РѕРІ", MessageState::msInfo);
+        // боты
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка ботов...");
+        mess->AddMessage(L"Начало обработки ботов", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Bots);
         }
 		catch (...) {
-                mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ Р±РѕС‚РѕРІ", MessageState::msError);
+                mess->AddMessage(L"Исключение при обработке ботов", MessageState::msError);
         }
-        mess->AddMessage(L"Р‘РѕС‚С‹ РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+        mess->AddMessage(L"Боты обработаны", MessageState::msInfo);
 
-        // РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚Рё
-        if (MainForm) MainForm->AdvanceLoadProgress(L"РћР±СЂР°Р±РѕС‚РєР° РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚РµР№...");
-        mess->AddMessage(L"РќР°С‡Р°Р»Рѕ РѕР±СЂР°Р±РѕС‚РєРё РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚РµР№", MessageState::msInfo);
+        // последовательности
+        if (MainForm) MainForm->AdvanceLoadProgress(L"Обработка последовательностей...");
+        mess->AddMessage(L"Начало обработки последовательностей", MessageState::msInfo);
         try {
                 fill_md(tr, GUID_Sequences);
 		}
 		catch (...) {
-				mess->AddMessage(L"РСЃРєР»СЋС‡РµРЅРёРµ РїСЂРё РѕР±СЂР°Р±РѕС‚РєРµ РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚РµР№", MessageState::msError);
+				mess->AddMessage(L"Исключение при обработке последовательностей", MessageState::msError);
 		}
-		mess->AddMessage(L"РџРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚Рё РѕР±СЂР°Р±РѕС‚Р°РЅС‹", MessageState::msInfo);
+		mess->AddMessage(L"Последовательности обработаны", MessageState::msInfo);
 
 	structver = (*node)[0].get_value().ToInt();
 
@@ -3592,13 +3592,13 @@ static void get_cf_name(tree* tr, Messager* mess)
 
 	if(node2->get_type() != nd_list)
 	{
-		mess->AddError(L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ СЃРёРЅРѕРЅРёРјР° РёРјРµРЅРё РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+		mess->AddError(L"Ошибка получения синонима имени конфигурации");
 		delete tr;
 		return;
 	}
 	if((*node2)[0].get_type() != nd_number)
 	{
-		mess->AddError(L"РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ СЃРёРЅРѕРЅРёРјР° РёРјРµРЅРё РєРѕРЅС„РёРіСѓСЂР°С†РёРё");
+		mess->AddError(L"Ошибка получения синонима имени конфигурации");
 		delete tr;
 		return;
 	}
@@ -3630,13 +3630,13 @@ static void get_cf_name(tree* tr, Messager* mess)
 	//mess->AddMessage(cf_synonym + " (" + cf_version + ")", msEmpty);
 	MainForm->ConfigName = cf_synonym + " (" + cf_version + ")";
 	//ConfigName = cf_synonym + " (" + cf_version + ")";
-		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage("РџСЂРѕС‡РёС‚Р°РЅР° РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ: " + cf_synonym + " (" + cf_version + ")", msInfo);
+		if (mess && mess->getUiMessagesEnabled()) mess->AddMessage("Прочитана конфигурация: " + cf_synonym + " (" + cf_version + ")", msInfo);
 
 }
 
 void __fastcall TMainForm::FormDestroy(TObject *Sender)
 {
-	// GlobalCF Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё СѓРґР°Р»СЏРµС‚СЃСЏ С‡РµСЂРµР· std::unique_ptr
+	// GlobalCF автоматически удаляется через std::unique_ptr
 }
 //---------------------------------------------------------------------------
 
@@ -3698,19 +3698,19 @@ String TMainForm::BuildModuleTabTitle(const String& objectName, ModuleTextKind k
 	{
 		switch (kind)
 		{
-			case ModuleTextKind::ObjectModule: modulePart = L"РњРѕРґСѓР»СЊ РѕР±СЉРµРєС‚Р°"; break;
-			case ModuleTextKind::ManagerModule: modulePart = L"РњРѕРґСѓР»СЊ РјРµРЅРµРґР¶РµСЂР°"; break;
-			case ModuleTextKind::FormModule: modulePart = L"РњРѕРґСѓР»СЊ С„РѕСЂРјС‹"; break;
-			case ModuleTextKind::CommandModule: modulePart = L"РњРѕРґСѓР»СЊ РєРѕРјР°РЅРґС‹"; break;
-			case ModuleTextKind::ApplicationModule: modulePart = L"РњРѕРґСѓР»СЊ РїСЂРёР»РѕР¶РµРЅРёСЏ"; break;
-			case ModuleTextKind::SessionModule: modulePart = L"РњРѕРґСѓР»СЊ СЃРµР°РЅСЃР°"; break;
-			case ModuleTextKind::ExternalConnectionModule: modulePart = L"РњРѕРґСѓР»СЊ РІРЅРµС€РЅРµРіРѕ СЃРѕРµРґРёРЅРµРЅРёСЏ"; break;
-			default: modulePart = L"РњРѕРґСѓР»СЊ"; break;
+			case ModuleTextKind::ObjectModule: modulePart = L"Модуль объекта"; break;
+			case ModuleTextKind::ManagerModule: modulePart = L"Модуль менеджера"; break;
+			case ModuleTextKind::FormModule: modulePart = L"Модуль формы"; break;
+			case ModuleTextKind::CommandModule: modulePart = L"Модуль команды"; break;
+			case ModuleTextKind::ApplicationModule: modulePart = L"Модуль приложения"; break;
+			case ModuleTextKind::SessionModule: modulePart = L"Модуль сеанса"; break;
+			case ModuleTextKind::ExternalConnectionModule: modulePart = L"Модуль внешнего соединения"; break;
+			default: modulePart = L"Модуль"; break;
 		}
 	}
 
 	if (!objectName.IsEmpty())
-		return objectName + L" В· " + modulePart;
+		return objectName + L" · " + modulePart;
 	return modulePart;
 }
 //---------------------------------------------------------------------------
@@ -3820,10 +3820,10 @@ bool TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePro
 
 	if (forcePrompt)
 	{
-		const String tabName = state.title.IsEmpty() ? L"РјРѕРґСѓР»СЊ" : state.title;
+		const String tabName = state.title.IsEmpty() ? L"модуль" : state.title;
 		int answer = Application->MessageBox(
-			(L"РўРµРєСЃС‚ \"" + tabName + L"\" РёР·РјРµРЅРµРЅ. РЎРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ SourceCF?").c_str(),
-			L"РЎРѕС…СЂР°РЅРµРЅРёРµ РјРѕРґСѓР»СЏ",
+			(L"Текст \"" + tabName + L"\" изменен. Сохранить изменения в SourceCF?").c_str(),
+			L"Сохранение модуля",
 			MB_YESNOCANCEL | MB_ICONQUESTION);
 		if (answer == IDCANCEL)
 			return false;
@@ -3848,8 +3848,8 @@ bool TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePro
 			: state.metadataObject->SaveEditableModuleText(state.kind, newText, errorText));
 	if (!saved)
 	{
-		Application->MessageBox((L"РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РјРѕРґСѓР»СЊ:\r\n" + errorText).c_str(),
-			L"РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ", MB_OK | MB_ICONERROR);
+		Application->MessageBox((L"Не удалось сохранить модуль:\r\n" + errorText).c_str(),
+			L"Ошибка сохранения", MB_OK | MB_ICONERROR);
 		return false;
 	}
 
@@ -3865,7 +3865,7 @@ bool TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePro
 		}
 	}
 	if (mess)
-		mess->Status(L"РњРѕРґСѓР»СЊ СЃРѕС…СЂР°РЅРµРЅ: " + ModuleTextStorage::DescribeLocation(state.location));
+		mess->Status(L"Модуль сохранен: " + ModuleTextStorage::DescribeLocation(state.location));
 	return true;
 }
 //---------------------------------------------------------------------------
@@ -3886,7 +3886,7 @@ void __fastcall TMainForm::MemoObjectChange(TObject *Sender)
 	}
 
 	if (state->dirty && mess)
-		mess->Status(L"РњРѕРґСѓР»СЊ РёР·РјРµРЅРµРЅ: " + ModuleTextStorage::DescribeLocation(state->location));
+		mess->Status(L"Модуль изменен: " + ModuleTextStorage::DescribeLocation(state->location));
 	SyncCurrentModuleFromTab(GetActiveModuleTabState());
 }
 //---------------------------------------------------------------------------
@@ -4065,7 +4065,7 @@ void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 	if (constantsMetadataGuid.IsEmpty())
 	{
 		if (mess)
-			mess->Status(caption + L": РЅРµ РЅР°Р№РґРµРЅ GUID РѕР±СЉРµРєС‚Р° РєРѕРЅСЃС‚Р°РЅС‚");
+			mess->Status(caption + L": не найден GUID объекта констант");
 		return;
 	}
 
@@ -4110,7 +4110,7 @@ void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 		if (!location.IsEmpty())
 			mess->Status(caption + L": " + location);
 		else
-			mess->Status(caption + L": РјРѕРґСѓР»СЊ РЅРµ РЅР°Р№РґРµРЅ");
+			mess->Status(caption + L": модуль не найден");
 	}
 }
 //---------------------------------------------------------------------------
@@ -4131,7 +4131,7 @@ void TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& capti
 
 	ModuleTextDocument document = ModuleTextStorage::LoadConfigurationModule(GlobalCF.get(), kind);
 	const String moduleText = document.text;
-	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(L"РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ", kind, caption));
+	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(L"Конфигурация", kind, caption));
 	ModuleEditorTabState* state = &ModuleTabs[tab];
 	state->node = node;
 	state->metadataObject = nullptr;
@@ -4151,7 +4151,7 @@ void TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& capti
 		if (!location.IsEmpty())
 			mess->Status(caption + L": " + location);
 		else
-			mess->Status(caption + L": РјРѕРґСѓР»СЊ РЅРµ РЅР°Р№РґРµРЅ");
+			mess->Status(caption + L": модуль не найден");
 	}
 }
 //---------------------------------------------------------------------------
@@ -4173,7 +4173,7 @@ void TMainForm::EnsureCommonPicturePreviewControls()
 		CommonPicturePreviewInfoLabel->Margins->Top = 8;
 		CommonPicturePreviewInfoLabel->Margins->Right = 8;
 		CommonPicturePreviewInfoLabel->Margins->Bottom = 8;
-		CommonPicturePreviewInfoLabel->Caption = L"Р’С‹Р±РµСЂРёС‚Рµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ РІ СЃРїРёСЃРєРµ \"РћР±С‰РёРµ РєР°СЂС‚РёРЅРєРё\".";
+		CommonPicturePreviewInfoLabel->Caption = L"Выберите изображение в списке \"Общие картинки\".";
 		CommonPicturePreviewInfoLabel->Height = 42;
 	}
 
@@ -4295,7 +4295,7 @@ bool TMainForm::ShowCommonPicturePreviewForNode(VirtualTreeData* data)
 	if (pictureMetadata->root_data && TryExtractImageBytesFromTree(pictureMetadata->root_data.get(), imageBytes))
 	{
 		loaded = true;
-		loadedFrom = L"РґР°РЅРЅС‹Рµ РјРµС‚Р°РґР°РЅРЅС‹С…";
+		loadedFrom = L"данные метаданных";
 	}
 
 	if (!loaded && pictureMetadata->parent)
@@ -4355,7 +4355,7 @@ bool TMainForm::ShowCommonPicturePreviewForNode(VirtualTreeData* data)
 
 	if (!loaded || imageBytes.empty())
 	{
-		ClearCommonPicturePreview(L"РР·РѕР±СЂР°Р¶РµРЅРёРµ РЅРµ РЅР°Р№РґРµРЅРѕ РґР»СЏ: " + data->Name);
+		ClearCommonPicturePreview(L"Изображение не найдено для: " + data->Name);
 		return true;
 	}
 
@@ -4380,7 +4380,7 @@ bool TMainForm::ShowCommonPicturePreviewForNode(VirtualTreeData* data)
 			}
 			else
 			{
-				ClearCommonPicturePreview(L"РќРµ СѓРґР°Р»РѕСЃСЊ РґРµРєРѕРґРёСЂРѕРІР°С‚СЊ РєР°СЂС‚РёРЅРєСѓ: " + data->Name);
+				ClearCommonPicturePreview(L"Не удалось декодировать картинку: " + data->Name);
 				return true;
 			}
 		}
@@ -4393,7 +4393,7 @@ bool TMainForm::ShowCommonPicturePreviewForNode(VirtualTreeData* data)
 		{
 			if (!CommonPicturePreviewSvg)
 			{
-				ClearCommonPicturePreview(L"SVG РЅРµ РїРѕРґРґРµСЂР¶Р°РЅ РІ С‚РµРєСѓС‰РµР№ СЃР±РѕСЂРєРµ: " + data->Name);
+				ClearCommonPicturePreview(L"SVG не поддержан в текущей сборке: " + data->Name);
 				return true;
 			}
 
@@ -4425,13 +4425,13 @@ bool TMainForm::ShowCommonPicturePreviewForNode(VirtualTreeData* data)
 		}
 		CenterCommonPicturePreviewContent();
 		CommonPicturePreviewInfoLabel->Caption =
-			L"РљР°СЂС‚РёРЅРєР°: " + data->Name + L", СЂР°Р·РјРµСЂ: " + IntToStr(imageBytes.Length)
-			+ L" Р±Р°Р№С‚, РёСЃС‚РѕС‡РЅРёРє: " + loadedFrom;
+			L"Картинка: " + data->Name + L", размер: " + IntToStr(imageBytes.Length)
+			+ L" байт, источник: " + loadedFrom;
 		return true;
 	}
 	catch (...)
 	{
-		ClearCommonPicturePreview(L"РќРµ СѓРґР°Р»РѕСЃСЊ РґРµРєРѕРґРёСЂРѕРІР°С‚СЊ РєР°СЂС‚РёРЅРєСѓ: " + data->Name);
+		ClearCommonPicturePreview(L"Не удалось декодировать картинку: " + data->Name);
 		return true;
 	}
 }
@@ -4533,7 +4533,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 	if (moduleTextSelected && mess)
 	{
 		String nodeName = Data ? Data->Name : L"";
-		mess->Status(L"РњРѕРґСѓР»СЊ: " + nodeName + L", РґР»РёРЅР° С‚РµРєСЃС‚Р°: " + IntToStr(moduleText.Length()));
+		mess->Status(L"Модуль: " + nodeName + L", длина текста: " + IntToStr(moduleText.Length()));
 	}
 
 	BaseMetadataObject* editableObject = Data ? dynamic_cast<BaseMetadataObject*>(Data->MetadataObject) : nullptr;
@@ -4565,7 +4565,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 	}
 
 	String objectName = editableObject ? editableObject->GetName() : L"";
-	String moduleName = Data ? Data->Name : L"РњРѕРґСѓР»СЊ";
+	String moduleName = Data ? Data->Name : L"Модуль";
 	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(objectName, editableKind, moduleName));
 	ModuleEditorTabState* state = &ModuleTabs[tab];
 	state->node = Node;
@@ -4583,7 +4583,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 		Data->moduleEditable = state->location.editable;
 		state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
 		if (mess && Data->moduleEditable)
-			mess->Status(L"РњРѕРґСѓР»СЊ РѕС‚РєСЂС‹С‚ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
+			mess->Status(L"Модуль открыт для редактирования: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
 	}
 	else if (editableObject && editableExists)
 	{
@@ -4597,7 +4597,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 		Data->moduleEditable = Data->moduleLocation.editable;
 		state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
 		if (mess && Data->moduleEditable)
-			mess->Status(L"РњРѕРґСѓР»СЊ РѕС‚РєСЂС‹С‚ РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
+			mess->Status(L"Модуль открыт для редактирования: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
 	}
 	else
 	{
@@ -4677,8 +4677,8 @@ void __fastcall TMainForm::ActionSaveCFExecute(TObject *Sender)
 	if (!TDirectory::Exists(sourceCfDir))
 	{
 		Application->MessageBox(
-			L"РљР°С‚Р°Р»РѕРі SourceCF РЅРµ РЅР°Р№РґРµРЅ. РћС‚РєСЂРѕР№С‚Рµ Рё СЂР°СЃРїР°РєСѓР№С‚Рµ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ РїРµСЂРµРґ СЃР±РѕСЂРєРѕР№.",
-			L"РЎР±РѕСЂРєР° cf",
+			L"Каталог SourceCF не найден. Откройте и распакуйте конфигурацию перед сборкой.",
+			L"Сборка cf",
 			MB_OK | MB_ICONWARNING);
 		return;
 	}
@@ -4691,17 +4691,18 @@ void __fastcall TMainForm::ActionSaveCFExecute(TObject *Sender)
 	if (result.ok())
 	{
 		if (mess)
-			mess->AddMessage(L"Р¤Р°Р№Р» РєРѕРЅС„РёРіСѓСЂР°С†РёРё СЃРѕР±СЂР°РЅ: " + outFileName, msSuccesfull);
+			mess->AddMessage(L"Файл конфигурации собран: " + outFileName, msSuccesfull);
 	}
 	else
 	{
 		Application->MessageBox(
-			(L"РћС€РёР±РєР° СЃР±РѕСЂРєРё cf. РљРѕРґ: " + IntToStr(result.code)).c_str(),
-			L"РЎР±РѕСЂРєР° cf",
+			(L"Ошибка сборки cf. Код: " + IntToStr(result.code)).c_str(),
+			L"Сборка cf",
 			MB_OK | MB_ICONERROR);
 	}
 }
 //---------------------------------------------------------------------------
+
 
 
 

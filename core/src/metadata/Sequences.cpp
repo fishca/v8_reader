@@ -1,11 +1,9 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "Sequences.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 
 TSequences::TSequences()
@@ -19,7 +17,7 @@ TSequences::TSequences(v8catalog *_parent, const String& _guid)
 {
 	guid      = _guid;
 	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
+	root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
 }
 
 TSequences::TSequences(v8catalog *_parent, const String& _guid, const String& _name)
@@ -27,7 +25,7 @@ TSequences::TSequences(v8catalog *_parent, const String& _guid, const String& _n
     name      = _name;
 	guid      = _guid;
 	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile(_guid)));
+	root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
 
 }
 

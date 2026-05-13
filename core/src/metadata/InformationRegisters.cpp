@@ -1,21 +1,19 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "InformationRegisters.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 static InfoRegisterTreePaths GetInformationRegistersPaths()
 {
 	InfoRegisterTreePaths paths;
-	// TODO: РїСѓС‚Рё СЃРєРѕРїРёСЂРѕРІР°РЅС‹ РїРѕ Р°РЅР°Р»РѕРіРёРё СЃ Catalogs - РЅРµРѕР±С…РѕРґРёРјРѕ РїСЂРѕРІРµСЂРёС‚СЊ Рё РёСЃРїСЂР°РІРёС‚СЊ РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ СЃРІРµРґРµРЅРёР№
+	// TODO: пути скопированы по аналогии с Catalogs - необходимо проверить и исправить для регистров сведений
 	paths.attIdx = 7;
 	paths.attItemPath = {0, 1, 1, 1, 2};
-	paths.dimIdx = 4;   // РёР·РјРµСЂРµРЅРёСЏ
+	paths.dimIdx = 4;   // измерения
 	paths.dimItemPath = {0, 1, 1, 1, 2};
-	paths.resIdx = 3;   // СЂРµСЃСѓСЂСЃС‹
+	paths.resIdx = 3;   // ресурсы
 	paths.resItemPath = {0, 1, 1, 1, 2};
 	paths.formsIdx = 5;
 	paths.cmdIdx = 8;

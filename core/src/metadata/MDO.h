@@ -3,7 +3,9 @@
 #ifndef MDOH
 #define MDOH
 //---------------------------------------------------------------------------
-class TMDO : public TObject
+#include "MetadataEntity.h"
+
+class TMDO : public MetadataEntity
 {
 public:
 	String name;

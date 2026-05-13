@@ -19,7 +19,7 @@ class CommonMetadataObject : public MetaObject {
 public:
     // Конструкторы и деструктор
     CommonMetadataObject();
-	CommonMetadataObject(const String& name, const String& synonym = "", const String& comment = "");
+	CommonMetadataObject(const std::string& name, const std::string& synonym = "", const std::string& comment = "");
     virtual ~CommonMetadataObject() = default;
 
 //    // Запрет копирования, разрешение перемещения

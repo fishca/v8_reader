@@ -1,12 +1,10 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "ChartOfAccounts.h"
 #include "ModuleTextStorage.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 namespace
 {
@@ -58,11 +56,11 @@ void TChartOfAccounts::initializeFromTree()
 {
 	if (!root_data) return;
 
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° СЂРµРєРІРёР·РёС‚РѕРІ
+	// Получаем имена реквизитов
 	attributes.clear();
 	tree* node_att = root_data.get();
 
-	node_att = &(*node_att)[0][7][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att = &(*node_att)[0][7][1]; // количество элементов
 	int CountAtt = node_att->get_value().ToInt();
 	int Delta = CountAtt - 2;
 	for (int i = 0; i < CountAtt; i++)
@@ -76,10 +74,10 @@ void TChartOfAccounts::initializeFromTree()
 		}
 	}
 
-	// РїРѕР»СѓС‡Р°РµРј РїСЂРёР·РЅР°РєРё СѓС‡РµС‚Р°
+	// получаем признаки учета
 	accflags.clear();
 	tree* node_acc = root_data.get();
-	node_acc = &(*node_acc)[0][8][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_acc = &(*node_acc)[0][8][1]; // количество элементов
 	int CountAcc = node_acc->get_value().ToInt();
 	int DeltaAcc = CountAcc - 2;
 	for (int i = 0; i < CountAcc; i++)
@@ -90,10 +88,10 @@ void TChartOfAccounts::initializeFromTree()
 		accflags.push_back(std::make_unique<TAccountingFlag>(NameAcc, ""));
 	}
 
-	// РїРѕР»СѓС‡Р°РµРј РїСЂРёР·РЅР°РєРё СѓС‡РµС‚Р° СЃСѓР±РєРѕРЅС‚Рѕ
+	// получаем признаки учета субконто
 	dimaccflags.clear();
 	tree* node_acc_dim = root_data.get();
-	node_acc_dim = &(*node_acc_dim)[0][9][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_acc_dim = &(*node_acc_dim)[0][9][1]; // количество элементов
 	int CountAcc_dim = node_acc_dim->get_value().ToInt();
 	int DeltaAcc_dim = CountAcc_dim - 2;
 	for (int i = 0; i < CountAcc_dim; i++)
@@ -105,10 +103,10 @@ void TChartOfAccounts::initializeFromTree()
 	}
 
 
-	// РџРѕР»СѓС‡Р°РµРј С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+	// Получаем табличные части
 	tabulars.clear();
 	tree* node_att_t = root_data.get();
-	node_att_t = &(*node_att_t)[0][5][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att_t = &(*node_att_t)[0][5][1]; // количество элементов
 	int CountAttTab = node_att_t->get_value().ToInt();
 	int DeltaTab = CountAttTab - 2;
 	for (int i = 0; i < CountAttTab; i++)
@@ -127,7 +125,7 @@ void TChartOfAccounts::initializeFromTree()
 		std::unique_ptr<tree> tabularRootData;
 		if (parent && !GuidAttTab.IsEmpty())
 		{
-			v8file* tabularFile = parent->GetFile(GuidAttTab);
+			v8file* tabularFile = parent->GetFile16(V8Utf16FromString(GuidAttTab));
 			if (tabularFile)
 				tabularRootData.reset(get_treeFromV8file(tabularFile));
 		}
@@ -136,7 +134,7 @@ void TChartOfAccounts::initializeFromTree()
 		tabulars.push_back(std::move(tabular));
 	}
 
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° С„РѕСЂРј
+	// Получаем имена форм
 	forms.clear();
 	tree* node = root_data.get();
 	node = &(*node)[0][6][0];
@@ -154,11 +152,11 @@ void TChartOfAccounts::initializeFromTree()
 		}
 	}
 
-	// РџРѕР»СѓС‡Р°РµРј РёРјРµРЅР° РєРѕРјР°РЅРґ
+	// Получаем имена команд
 	comands.clear();
 	tree* node_att_c = root_data.get();
 
-	node_att_c = &(*node_att_c)[0][3][1]; // РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ
+	node_att_c = &(*node_att_c)[0][3][1]; // количество элементов
 
 	int CountCom = node_att_c->get_value().ToInt();
 	int DeltaCom = CountCom - 2;
@@ -170,7 +168,7 @@ void TChartOfAccounts::initializeFromTree()
 		String NameCom = node_com->get_value();
 		comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
 	}
-	// РџРѕР»СѓС‡Р°РµРј РјР°РєРµС‚С‹
+	// Получаем макеты
 	moxels.clear();
 	tree* node_mox = root_data.get();
 	node_mox = &(*node_mox)[0][4][0];

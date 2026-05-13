@@ -1,4 +1,4 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 #ifndef MetadataTreeBuilderH
 #define MetadataTreeBuilderH
 //---------------------------------------------------------------------------
@@ -21,7 +21,7 @@
 #include "APIcfBase_vcl_adapter.h"
 
 //---------------------------------------------------------------------------
-// РРЅРґРµРєСЃС‹ РёРєРѕРЅРѕРє РґРµСЂРµРІР° РјРµС‚Р°РґР°РЅРЅС‹С…
+// Индексы иконок дерева метаданных
 namespace TreeImage
 {
 	constexpr int Root             = 72;
@@ -40,7 +40,7 @@ namespace TreeImage
 constexpr int DefaultTreeNodeAge = 30;
 
 //---------------------------------------------------------------------------
-// Р‘Р°Р·РѕРІС‹Рµ РѕРїРµСЂР°С†РёРё СЃ СѓР·Р»Р°РјРё РґРµСЂРµРІР°
+// Базовые операции с узлами дерева
 
 void initNode(VirtualTreeData* data, const String& name, int imageIndex, int age = DefaultTreeNodeAge);
 
@@ -57,14 +57,14 @@ void addSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sec
 void addTabularSections(TVirtualStringTree* tree, PVirtualNode parent, const std::vector<std::unique_ptr<TTabular>>& items, int age = DefaultTreeNodeAge);
 
 //---------------------------------------------------------------------------
-// РЎРµРєС†РёРё РґР»СЏ СЃС‚Р°РЅРґР°СЂС‚РЅС‹С… РѕР±СЉРµРєС‚РѕРІ Рё СЂРµРіРёСЃС‚СЂРѕРІ
+// Секции для стандартных объектов и регистров
 
 void fillStandardMetadataSections(TVirtualStringTree* tree, PVirtualNode childNode, BaseMetadataObject* metadataObject);
 
 void fillInformationRegisterSections(TVirtualStringTree* tree, PVirtualNode childNode, MetadataObjectInformationRegister* metadataObject);
 
 //---------------------------------------------------------------------------
-// fill*Tree вЂ” Р·Р°РїРѕР»РЅРµРЅРёРµ СѓР·Р»Р° РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ С‚РёРїР° РјРµС‚Р°РґР°РЅРЅС‹С…
+// fill*Tree — заполнение узла конкретного типа метаданных
 
 void fillCatalogsTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData, int imgIndex, BaseMetadataObject* metadataObject);
 
@@ -87,7 +87,7 @@ void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeD
 void fillExternalDataSourceTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeData* childData, int imgIndex, TExternalDataSources* metadataObject);
 
 //---------------------------------------------------------------------------
-// Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ С„СѓРЅРєС†РёРё РґР»СЏ РїРѕРґСЃРёСЃС‚РµРј
+// Вспомогательные функции для подсистем
 
 String normalizeGuid(const String& guid);
 
@@ -95,15 +95,16 @@ String GetNameSubsystem(v8catalog* cf, String& guid_md);
 String GetSubsystemInnerGuid(v8catalog* cf, String& guid_md);
 void GetListChildrenSubsystem(v8catalog* cf, String& guid_md, std::vector<String>& child);
 
-TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& guid);
+TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, const String& guid);
 
-String getSubsystemDisplayNameByGuid(v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& guid);
+String getSubsystemDisplayNameByGuid(v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, const String& guid);
 
-void addSubsystemChildrenToTree(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, TSubsystem* parentSubsystem, int imgIndex);
+void addSubsystemChildrenToTree(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, TSubsystem* parentSubsystem, int imgIndex);
 
-void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<TObject>& subsystems, const String& parentGuid, int imgIndex);
+void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode parentNode, v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems, const String& parentGuid, int imgIndex);
 
-std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const MetadataVector<TObject>& subsystems);
+std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems);
 
 //---------------------------------------------------------------------------
 #endif
+

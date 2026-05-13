@@ -14,11 +14,12 @@
 #include "Tabular.h"
 #include "Form.h"
 #include "ModuleTextStorage.h"
+#include "MetadataEntity.h"
 
 //---------------------------------------------------------------------------
 // Абстрактный базовый класс для всех объектов метаданных
 // Предоставляет общий интерфейс и базовую функциональность
-class BaseMetadataObject : public TObject
+class BaseMetadataObject : public MetadataEntity
 {
 public:
     // Общие поля

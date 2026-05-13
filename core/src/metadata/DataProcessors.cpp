@@ -1,11 +1,9 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Common.h"
 #include "DataProcessors.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 static MetadataTreePaths GetDataProcessorsPaths()
 {

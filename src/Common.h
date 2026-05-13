@@ -6,7 +6,6 @@
 //#include <vcl.h>
 #include <vector>
 #include "APIcfBase_vcl_adapter.h"
-#include <System.Classes.hpp>
 
 //---------------------------------------------------------------------------
 void time1CD_to_FileTime(FILETIME* ft, unsigned char* time1CD);

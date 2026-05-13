@@ -1,24 +1,22 @@
-п»ї//---------------------------------------------------------------------------
-#pragma hdrstop
+//---------------------------------------------------------------------------
 
 #include "Common.h"
 #include "AccountingRegisters.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
-// РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РїСѓС‚РµР№ РІ РґРµСЂРµРІРµ РїР°СЂСЃРёРЅРіР° РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ Р±СѓС…РіР°Р»С‚РµСЂРёРё
+// Конфигурация путей в дереве парсинга для регистров бухгалтерии
 static InfoRegisterTreePaths GetAccountingRegistersPaths()
 {
     InfoRegisterTreePaths paths;
     
-	// РџСѓС‚Рё РґР»СЏ СЂРµРіРёСЃС‚СЂРѕРІ Р±СѓС…РіР°Р»С‚РµСЂРёРё
+	// Пути для регистров бухгалтерии
     paths.attIdx = 7;
     paths.attItemPath = {0, 1, 1, 1, 2};
 
-    paths.dimIdx = 3;   // РёР·РјРµСЂРµРЅРёСЏ
+    paths.dimIdx = 3;   // измерения
     paths.dimItemPath = {0, 1, 1, 1, 2};
 
-    paths.resIdx = 5;   // СЂРµСЃСѓСЂСЃС‹
+    paths.resIdx = 5;   // ресурсы
     paths.resItemPath = {0, 1, 1, 1, 2};
 
     paths.formsIdx = 8;
@@ -57,11 +55,11 @@ TAccountingRegisters::~TAccountingRegisters()
 
 void TAccountingRegisters::initializeFromTree()
 {
-    // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃС‚Р°РЅРґР°СЂС‚РЅС‹Рµ РїРѕР»СЏ (СЂРµРєРІРёР·РёС‚С‹, РёР·РјРµСЂРµРЅРёСЏ, СЂРµСЃСѓСЂСЃС‹, С„РѕСЂРјС‹, РєРѕРјР°РЅРґС‹, РјР°РєРµС‚С‹)
-    // AccountingFlags Рё DimensionAccountingFlags Р±СѓРґСѓС‚ Р·Р°РіСЂСѓР¶РµРЅС‹ РѕС‚РґРµР»СЊРЅРѕ
+    // Инициализируем стандартные поля (реквизиты, измерения, ресурсы, формы, команды, макеты)
+    // AccountingFlags и DimensionAccountingFlags будут загружены отдельно
     MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetAccountingRegistersPaths());
 
-    // TODO: Р—Р°РіСЂСѓР·РєР° AccountingFlags Рё DimensionAccountingFlags
-    // РџСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РґРѕР±Р°РІРёС‚СЊ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅСѓСЋ Р»РѕРіРёРєСѓ Р·Р°РіСЂСѓР·РєРё
+    // TODO: Загрузка AccountingFlags и DimensionAccountingFlags
+    // При необходимости добавить дополнительную логику загрузки
 }
 

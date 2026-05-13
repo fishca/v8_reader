@@ -8,17 +8,13 @@
 #ifndef APIcfBaseH
 #define APIcfBaseH
 
-#include <System.Classes.hpp>
+#include <System.hpp>
 #include <cstdint>
 #include <filesystem>
 #include <mutex>
 #include <string>
 #include <vector>
 #include <map>
-
-//#include "Zip.h"
-
-#pragma package(smart_init)
 
 #ifndef _DELPHI_STRING_UNICODE
 	#define UnicodeString AnsiString
@@ -41,6 +37,9 @@
 typedef System::DynamicArray<System::Byte> ByteArr;
 using ByteVector = std::vector<std::uint8_t>;
 using Utf16String = std::u16string;
+
+Utf16String V8Utf16FromString(const String& value);
+String V8StringFromUtf16(const Utf16String& value);
 
 namespace v8reader::core::io
 {
@@ -148,7 +147,7 @@ class v8file
 
 	V8RecursiveMutex *Lock;
 
-	TStream* data;
+	v8reader::core::io::IByteStream* data;
 
 	v8catalog* parent;
 
@@ -195,10 +194,6 @@ class v8file
     // перезапись целиком
 	int Write(const void* Buffer, int Length);
     // дозапись/перезапись частично
-	int Write(TStream* Stream, int Start, int Length);
-    // перезапись целиком
-	int Write(TStream* Stream);
-    // дозапись/перезапись частично
 	int Write(v8reader::core::io::IByteStream& Stream, int Start, int Length);
     // перезапись целиком
 	int Write(v8reader::core::io::IByteStream& Stream);
@@ -206,6 +201,7 @@ class v8file
 	String GetFileName();
 	Utf16String GetFileName16();
 	String GetFullName();
+	Utf16String GetFullName16();
 
 	void SetFileName(const String& _name);
 	void SetFileName16(const Utf16String& _name);
@@ -220,8 +216,6 @@ class v8file
 	void Close();
 
     // перезапись целиком и закрытие файла (для экономии памяти не используется data файла)
-	int WriteAndClose(TStream* Stream, int Length = -1);
-    // перезапись целиком и закрытие файла через core-stream API
 	int WriteAndClose(v8reader::core::io::IByteStream& Stream, int Length = -1);
 
 	void GetTimeCreate(FILETIME* ft);
@@ -231,9 +225,8 @@ class v8file
 
 	void SaveToFile(const String& FileName);
 	void SaveToFile(const std::filesystem::path& filePath);
-	void SaveToStream(TStream* stream);
 	void SaveToByteStream(v8reader::core::io::IByteStream& stream);
-	//TStream* get_data();
+	//v8reader::core::io::IByteStream* get_data();
 
 	void Flush();
 };
@@ -248,8 +241,8 @@ class v8catalog
 
 	v8file* file; // файл, которым является каталог. Для корневого каталога NULL
 
-	TStream* data; // поток каталога. Если file не NULL (каталог не корневой), совпадает с file->data
-	TStream* cfu;  // поток файла cfu. Существует только при is_cfu == true
+	v8reader::core::io::IByteStream* data; // поток каталога. Если file не NULL (каталог не корневой), совпадает с file->data
+	v8reader::core::io::IByteStream* cfu;  // поток файла cfu. Существует только при is_cfu == true
 
 	void initialize(int Offset = 0);
 
@@ -280,12 +273,12 @@ class v8catalog
 	void free_block(int start);
 
     // возвращает адрес начала блока
-	int write_block(TStream* block, int start, bool use_page_size, int len = -1);
+	int write_block(v8reader::core::io::IByteStream& block, int start, bool use_page_size, int len = -1);
 
     // возвращает адрес начала блока
-	int write_datablock(TStream* block, int start, bool _zipped = false, int len = -1);
+	int write_datablock(v8reader::core::io::IByteStream& block, int start, bool _zipped = false, int len = -1);
 
-	TStream* read_datablock(int start, int offset = 0);
+	v8reader::core::io::IByteStream* read_datablock(int start, int offset = 0);
 
 	int get_nextblock(int start);
 
@@ -300,19 +293,23 @@ class v8catalog
 	v8catalog(String name, bool _zipped); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
 	v8catalog(const std::filesystem::path& path); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
 	v8catalog(const std::filesystem::path& path, bool _zipped); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
-	v8catalog(TStream* stream, bool _zipped, bool leave_stream = false); // создать каталог из потока
+	v8catalog(v8reader::core::io::IByteStream* stream, bool _zipped, bool leave_stream = false); // создать каталог из потока
 
 	~v8catalog();
 
 	bool IsCatalog();
     bool Is8316();
 	v8file* GetFile(const String& FileName);
+	v8file* GetFile16(const Utf16String& fileName);
 	v8file* GetFirst();
 
     // CreateFile в win64 определяется как CreateFileW, пришлось заменить на маленькую букву
 	v8file* createFile(const String& FileName, bool _selfzipped = false);
+	v8file* createFile16(const Utf16String& fileName, bool _selfzipped = false);
 	v8catalog* CreateCatalog(const String& FileName, bool _selfzipped = false);
+	v8catalog* CreateCatalog16(const Utf16String& fileName, bool _selfzipped = false);
 	void DeleteFile(const String& FileName);
+	void DeleteFile16(const Utf16String& fileName);
 	v8catalog* GetParentCatalog();
 	//void Defrag(bool Recursively);
 	v8file* GetSelfFile();

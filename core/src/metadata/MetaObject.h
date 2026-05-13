@@ -13,7 +13,6 @@
 #include <map>
 #include <optional>
 #include <variant>
-#include <System.hpp>
 
 // Forward declarations
 class Visitor;
@@ -83,7 +82,7 @@ public:
 	 * @param synonym Синоним
 	 * @param comment Комментарий
 	 */
-	MetaObject(const String& name, const String& synonym = "", const String& comment = "");
+	MetaObject(const std::string& name, const std::string& synonym = "", const std::string& comment = "");
 
 	/**
 	 * @brief Виртуальный деструктор
@@ -99,9 +98,9 @@ public:
 	// ========== Идентификация и информация о типе ==========
 
 	virtual ObjectType getType() const = 0;
-	virtual String getTypeName() const = 0;
-	virtual String getFullName() const;
-	String getUUID() const;
+	virtual std::string getTypeName() const = 0;
+	virtual std::string getFullName() const;
+	std::string getUUID() const;
 	virtual bool isSameType(const MetaObject& other) const;
 
 	template<typename T>
@@ -114,12 +113,12 @@ public:
 	const T* as() const;
 
 	// ========== Основные свойства ==========
-	void setName(const String& name);
-	String getName() const;
-	void setSynonym(const String& synonym);
-	String getSynonym() const;
-	void setComment(const String& comment);
-	String getComment() const;
+	void setName(const std::string& name);
+	std::string getName() const;
+	void setSynonym(const std::string& synonym);
+	std::string getSynonym() const;
+	void setComment(const std::string& comment);
+	std::string getComment() const;
 	// ========== Паттерн Prototype ==========
 
 	/**
@@ -295,14 +294,14 @@ public:
 
 protected:
 	// Основные свойства
-	String name;
-	String synonym;
-	String comment;
+	std::string name;
+	std::string synonym;
+	std::string comment;
 	std::chrono::system_clock::time_point created;
 	std::chrono::system_clock::time_point modified;
 
 	// Идентификатор
-	String uuid;
+	std::string uuid;
 
 	// Состояние
 	ObjectState state;
@@ -327,10 +326,10 @@ protected:
 	void notifyStateChanged(ObjectState oldState, ObjectState newState);
 
 	// Генерация UUID
-	static String generateUUID();
+	static std::string generateUUID();
 
 	// Проверка и нормализация имени
-	static String normalizeName(const String& name);
+	static std::string normalizeName(const std::string& name);
 
 private:
 	// Фабрика типов

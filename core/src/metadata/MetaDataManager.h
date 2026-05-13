@@ -58,6 +58,8 @@ private:
 	std::vector<std::shared_ptr<TSettingsStorages>> SettingsStorages;
 	std::vector<std::shared_ptr<TInterfaces>> Interfaces;
 public:
+	v8catalog* loadFromFile(const std::filesystem::path& filename);
+	v8catalog* loadFromFile16(const Utf16String& filename);
 	v8catalog* loadFromFile(const String& filename);
 	bool Initialize(v8catalog* cf);
     void fill_md(v8catalog *cf, tree* tr, String guid_md);

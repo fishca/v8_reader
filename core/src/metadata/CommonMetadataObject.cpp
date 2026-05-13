@@ -1,10 +1,8 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "CommonMetadataObject.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 //#include "Column.h"
 //#include "Visitor.h"
@@ -16,7 +14,7 @@
 #include <sstream>
 #include <iterator>
 
-// Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ Р·Р°РіРѕР»РѕРІРєРё
+// Вспомогательные заголовки
 #ifdef USE_TINYXML2
 #include <tinyxml2.h>
 using namespace tinyxml2;
@@ -27,16 +25,16 @@ using namespace tinyxml2;
 using json = nlohmann::json;
 #endif
 
-// ========== РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹ ==========
+// ========== Конструкторы ==========
 
 //CommonMetadataObject::CommonMetadataObject()
 //    : MetaObject(), indexesDirty(true) {
-//    // Р‘Р°Р·РѕРІС‹Р№ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+//    // Базовый конструктор
 //}
 
 CommonMetadataObject::CommonMetadataObject()
 	: MetaObject() {
-	// Р‘Р°Р·РѕРІС‹Р№ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
+	// Базовый конструктор
 }
 
 
@@ -44,16 +42,16 @@ CommonMetadataObject::CommonMetadataObject()
 //										 const std::string& synonym,
 //										 const std::string& comment)
 //	: MetaObject(name, synonym, comment), indexesDirty(true) {
-//	// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё
+//	// Инициализация с параметрами
 //}
 
-CommonMetadataObject::CommonMetadataObject(const String& name, const String& synonym, const String& comment)
+CommonMetadataObject::CommonMetadataObject(const std::string& name, const std::string& synonym, const std::string& comment)
 	: MetaObject(name, synonym, comment) {
-	// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё
+	// Инициализация с параметрами
 }
 
 
-//// ========== РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ СЂРµРєРІРёР·РёС‚Р°РјРё ==========
+//// ========== Методы управления реквизитами ==========
 //
 //Requisite& CommonMetadataObject::addRequisite(std::unique_ptr<Requisite> requisite) {
 //    if (!requisite) {
@@ -68,7 +66,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    Requisite& ref = *requisite;
 //    requisites.push_back(std::move(requisite));
 //
-//    // РћР±РЅРѕРІР»СЏРµРј РёРЅРґРµРєСЃС‹
+//    // Обновляем индексы
 //    if (!indexesDirty) {
 //        requisiteIndex[name] = &ref;
 //    } else {
@@ -130,7 +128,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        Requisite* requisite = it->second;
 //        beforeRequisiteRemoved(*requisite);
 //
-//        // РЈРґР°Р»СЏРµРј РёР· РІРµРєС‚РѕСЂР°
+//        // Удаляем из вектора
 //        auto vecIt = std::remove_if(requisites.begin(), requisites.end(),
 //            [name](const std::unique_ptr<Requisite>& req) {
 //                return req->getName() == name;
@@ -150,7 +148,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return requisites.size();
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ С„РѕСЂРјР°РјРё ==========
+//// ========== Методы управления формами ==========
 //
 //Form& CommonMetadataObject::addForm(std::unique_ptr<Form> form) {
 //    if (!form) {
@@ -238,7 +236,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return forms.size();
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ РєРѕРјР°РЅРґР°РјРё ==========
+//// ========== Методы управления командами ==========
 //
 //Command& CommonMetadataObject::addCommand(std::unique_ptr<Command> command) {
 //    if (!command) {
@@ -313,7 +311,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return commands.size();
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ РјР°РєРµС‚Р°РјРё ==========
+//// ========== Методы управления макетами ==========
 //
 //Layout& CommonMetadataObject::addLayout(std::unique_ptr<Layout> layout) {
 //    if (!layout) {
@@ -397,7 +395,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return layouts.size();
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ С‚Р°Р±Р»РёС‡РЅС‹РјРё С‡Р°СЃС‚СЏРјРё ==========
+//// ========== Методы управления табличными частями ==========
 //
 //TablePart& CommonMetadataObject::addTablePart(std::unique_ptr<TablePart> tablePart) {
 //    if (!tablePart) {
@@ -470,7 +468,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return tableParts.size();
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ РєРѕР»РѕРЅРєР°РјРё ==========
+//// ========== Методы управления колонками ==========
 //
 //Column& CommonMetadataObject::addColumn(std::unique_ptr<Column> column) {
 //    if (!column) {
@@ -545,17 +543,17 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return columns.size();
 //}
 //
-//// ========== РЎРµСЂРёР°Р»РёР·Р°С†РёСЏ XML ==========
+//// ========== Сериализация XML ==========
 //
 //void CommonMetadataObject::toXML(tinyxml2::XMLElement* parent) const {
-//    // РЎРЅР°С‡Р°Р»Р° РІС‹Р·С‹РІР°РµРј Р±Р°Р·РѕРІС‹Р№ РјРµС‚РѕРґ
+//    // Сначала вызываем базовый метод
 //    MetaObject::toXML(parent);
 //
 //    if (parent) {
 //        XMLElement* root = parent->GetDocument()->NewElement("CommonProperties");
 //        parent->InsertEndChild(root);
 //
-//        // РЎРµСЂРёР°Р»РёР·СѓРµРј СЂРµРєРІРёР·РёС‚С‹
+//        // Сериализуем реквизиты
 //        if (!requisites.empty()) {
 //            XMLElement* requisitesElem = parent->GetDocument()->NewElement("Requisites");
 //            for (const auto& req : requisites) {
@@ -566,7 +564,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //            root->InsertEndChild(requisitesElem);
 //        }
 //
-//        // РЎРµСЂРёР°Р»РёР·СѓРµРј С„РѕСЂРјС‹
+//        // Сериализуем формы
 //        if (!forms.empty()) {
 //            XMLElement* formsElem = parent->GetDocument()->NewElement("Forms");
 //            for (const auto& form : forms) {
@@ -577,7 +575,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //            root->InsertEndChild(formsElem);
 //        }
 //
-//        // РЎРµСЂРёР°Р»РёР·СѓРµРј РєРѕРјР°РЅРґС‹
+//        // Сериализуем команды
 //        if (!commands.empty()) {
 //            XMLElement* commandsElem = parent->GetDocument()->NewElement("Commands");
 //            for (const auto& cmd : commands) {
@@ -588,7 +586,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //            root->InsertEndChild(commandsElem);
 //        }
 //
-//        // РЎРµСЂРёР°Р»РёР·СѓРµРј РјР°РєРµС‚С‹
+//        // Сериализуем макеты
 //        if (!layouts.empty()) {
 //            XMLElement* layoutsElem = parent->GetDocument()->NewElement("Layouts");
 //            for (const auto& layout : layouts) {
@@ -599,7 +597,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //            root->InsertEndChild(layoutsElem);
 //        }
 //
-//        // РЎРµСЂРёР°Р»РёР·СѓРµРј С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+//        // Сериализуем табличные части
 //        if (!tableParts.empty()) {
 //            XMLElement* tablePartsElem = parent->GetDocument()->NewElement("TableParts");
 //            for (const auto& tp : tableParts) {
@@ -610,7 +608,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //            root->InsertEndChild(tablePartsElem);
 //        }
 //
-//        // РЎРµСЂРёР°Р»РёР·СѓРµРј РєРѕР»РѕРЅРєРё
+//        // Сериализуем колонки
 //        if (!columns.empty()) {
 //            XMLElement* columnsElem = parent->GetDocument()->NewElement("Columns");
 //            for (const auto& col : columns) {
@@ -628,10 +626,10 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        return false;
 //    }
 //
-//    // РћС‡РёС‰Р°РµРј СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРµ СЃРІРѕР№СЃС‚РІР°
+//    // Очищаем существующие свойства
 //    clearAllProperties();
 //
-//    // РџР°СЂСЃРёРј СЂРµРєРІРёР·РёС‚С‹
+//    // Парсим реквизиты
 //    const XMLElement* requisitesElem = element->FirstChildElement("Requisites");
 //    if (requisitesElem) {
 //        const XMLElement* reqElem = requisitesElem->FirstChildElement("Requisite");
@@ -644,7 +642,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // РџР°СЂСЃРёРј С„РѕСЂРјС‹
+//    // Парсим формы
 //    const XMLElement* formsElem = element->FirstChildElement("Forms");
 //    if (formsElem) {
 //        const XMLElement* formElem = formsElem->FirstChildElement("Form");
@@ -657,7 +655,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // РџР°СЂСЃРёРј РєРѕРјР°РЅРґС‹
+//    // Парсим команды
 //    const XMLElement* commandsElem = element->FirstChildElement("Commands");
 //    if (commandsElem) {
 //        const XMLElement* cmdElem = commandsElem->FirstChildElement("Command");
@@ -670,7 +668,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // РџР°СЂСЃРёРј РјР°РєРµС‚С‹
+//    // Парсим макеты
 //    const XMLElement* layoutsElem = element->FirstChildElement("Layouts");
 //    if (layoutsElem) {
 //        const XMLElement* layoutElem = layoutsElem->FirstChildElement("Layout");
@@ -683,7 +681,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // РџР°СЂСЃРёРј С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+//    // Парсим табличные части
 //    const XMLElement* tablePartsElem = element->FirstChildElement("TableParts");
 //    if (tablePartsElem) {
 //        const XMLElement* tpElem = tablePartsElem->FirstChildElement("TablePart");
@@ -696,7 +694,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // РџР°СЂСЃРёРј РєРѕР»РѕРЅРєРё
+//    // Парсим колонки
 //    const XMLElement* columnsElem = element->FirstChildElement("Columns");
 //    if (columnsElem) {
 //        const XMLElement* colElem = columnsElem->FirstChildElement("Column");
@@ -713,15 +711,15 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return true;
 //}
 //
-//// ========== РЎРµСЂРёР°Р»РёР·Р°С†РёСЏ JSON ==========
+//// ========== Сериализация JSON ==========
 //
 //nlohmann::json CommonMetadataObject::toJSON() const {
 //    json j = MetaObject::toJSON();
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј РѕР±С‰РёРµ СЃРІРѕР№СЃС‚РІР°
+//    // Добавляем общие свойства
 //    j["type"] = "CommonMetadataObject";
 //
-//    // Р РµРєРІРёР·РёС‚С‹
+//    // Реквизиты
 //    if (!requisites.empty()) {
 //        json requisitesArray = json::array();
 //        for (const auto& req : requisites) {
@@ -730,7 +728,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        j["requisites"] = requisitesArray;
 //    }
 //
-//    // Р¤РѕСЂРјС‹
+//    // Формы
 //    if (!forms.empty()) {
 //        json formsArray = json::array();
 //        for (const auto& form : forms) {
@@ -739,7 +737,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        j["forms"] = formsArray;
 //    }
 //
-//    // РљРѕРјР°РЅРґС‹
+//    // Команды
 //    if (!commands.empty()) {
 //        json commandsArray = json::array();
 //        for (const auto& cmd : commands) {
@@ -748,7 +746,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        j["commands"] = commandsArray;
 //    }
 //
-//    // РњР°РєРµС‚С‹
+//    // Макеты
 //    if (!layouts.empty()) {
 //        json layoutsArray = json::array();
 //        for (const auto& layout : layouts) {
@@ -757,7 +755,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        j["layouts"] = layoutsArray;
 //    }
 //
-//    // РўР°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+//    // Табличные части
 //    if (!tableParts.empty()) {
 //        json tablePartsArray = json::array();
 //        for (const auto& tp : tableParts) {
@@ -766,7 +764,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        j["tableParts"] = tablePartsArray;
 //    }
 //
-//    // РљРѕР»РѕРЅРєРё
+//    // Колонки
 //    if (!columns.empty()) {
 //        json columnsArray = json::array();
 //        for (const auto& col : columns) {
@@ -783,10 +781,10 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        return false;
 //    }
 //
-//    // РћС‡РёС‰Р°РµРј СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёРµ СЃРІРѕР№СЃС‚РІР°
+//    // Очищаем существующие свойства
 //    clearAllProperties();
 //
-//    // Р—Р°РіСЂСѓР¶Р°РµРј СЂРµРєРІРёР·РёС‚С‹
+//    // Загружаем реквизиты
 //    if (json.contains("requisites") && json["requisites"].is_array()) {
 //        for (const auto& reqJson : json["requisites"]) {
 //            auto requisite = std::make_unique<Requisite>();
@@ -796,7 +794,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р—Р°РіСЂСѓР¶Р°РµРј С„РѕСЂРјС‹
+//    // Загружаем формы
 //    if (json.contains("forms") && json["forms"].is_array()) {
 //        for (const auto& formJson : json["forms"]) {
 //            auto form = std::make_unique<Form>();
@@ -806,7 +804,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р—Р°РіСЂСѓР¶Р°РµРј РєРѕРјР°РЅРґС‹
+//    // Загружаем команды
 //    if (json.contains("commands") && json["commands"].is_array()) {
 //        for (const auto& cmdJson : json["commands"]) {
 //            auto command = std::make_unique<Command>();
@@ -816,7 +814,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р—Р°РіСЂСѓР¶Р°РµРј РјР°РєРµС‚С‹
+//    // Загружаем макеты
 //    if (json.contains("layouts") && json["layouts"].is_array()) {
 //        for (const auto& layoutJson : json["layouts"]) {
 //            auto layout = std::make_unique<Layout>();
@@ -826,7 +824,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р—Р°РіСЂСѓР¶Р°РµРј С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+//    // Загружаем табличные части
 //    if (json.contains("tableParts") && json["tableParts"].is_array()) {
 //        for (const auto& tpJson : json["tableParts"]) {
 //            auto tablePart = std::make_unique<TablePart>();
@@ -836,7 +834,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р—Р°РіСЂСѓР¶Р°РµРј РєРѕР»РѕРЅРєРё
+//    // Загружаем колонки
 //    if (json.contains("columns") && json["columns"].is_array()) {
 //        for (const auto& colJson : json["columns"]) {
 //            auto column = std::make_unique<Column>();
@@ -850,17 +848,17 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return true;
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ UI ==========
+//// ========== Методы для работы с UI ==========
 //
 //void CommonMetadataObject::populateTreeView(TTreeNode* parent, TTreeView* treeView) const {
 //    if (!parent || !treeView) return;
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј Р±Р°Р·РѕРІСѓСЋ РёРЅС„РѕСЂРјР°С†РёСЋ
+//    // Добавляем базовую информацию
 //    MetaObject::populateTreeView(parent, treeView);
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј СЂРµРєРІРёР·РёС‚С‹ РєР°Рє РґРѕС‡РµСЂРЅРёРµ СѓР·Р»С‹
+//    // Добавляем реквизиты как дочерние узлы
 //    if (!requisites.empty()) {
-//        TTreeNode* reqNode = treeView->Items->AddChild(parent, "Р РµРєРІРёР·РёС‚С‹");
+//        TTreeNode* reqNode = treeView->Items->AddChild(parent, "Реквизиты");
 //        reqNode->ImageIndex = ICON_REQUISITES;
 //        reqNode->SelectedIndex = ICON_REQUISITES;
 //
@@ -868,13 +866,13 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //            TTreeNode* childNode = treeView->Items->AddChild(reqNode, req->getName().c_str());
 //            childNode->ImageIndex = ICON_REQUISITE;
 //            childNode->SelectedIndex = ICON_REQUISITE;
-//            childNode->Data = (void*)req.get();  // РЎРѕС…СЂР°РЅСЏРµРј СѓРєР°Р·Р°С‚РµР»СЊ
+//            childNode->Data = (void*)req.get();  // Сохраняем указатель
 //        }
 //    }
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј С„РѕСЂРјС‹
+//    // Добавляем формы
 //    if (!forms.empty()) {
-//        TTreeNode* formsNode = treeView->Items->AddChild(parent, "Р¤РѕСЂРјС‹");
+//        TTreeNode* formsNode = treeView->Items->AddChild(parent, "Формы");
 //        formsNode->ImageIndex = ICON_FORMS;
 //        formsNode->SelectedIndex = ICON_FORMS;
 //
@@ -887,9 +885,9 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј РєРѕРјР°РЅРґС‹
+//    // Добавляем команды
 //    if (!commands.empty()) {
-//        TTreeNode* commandsNode = treeView->Items->AddChild(parent, "РљРѕРјР°РЅРґС‹");
+//        TTreeNode* commandsNode = treeView->Items->AddChild(parent, "Команды");
 //        commandsNode->ImageIndex = ICON_COMMANDS;
 //        commandsNode->SelectedIndex = ICON_COMMANDS;
 //
@@ -901,9 +899,9 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј РјР°РєРµС‚С‹
+//    // Добавляем макеты
 //    if (!layouts.empty()) {
-//        TTreeNode* layoutsNode = treeView->Items->AddChild(parent, "РњР°РєРµС‚С‹");
+//        TTreeNode* layoutsNode = treeView->Items->AddChild(parent, "Макеты");
 //        layoutsNode->ImageIndex = ICON_LAYOUTS;
 //        layoutsNode->SelectedIndex = ICON_LAYOUTS;
 //
@@ -916,9 +914,9 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+//    // Добавляем табличные части
 //    if (!tableParts.empty()) {
-//        TTreeNode* tablePartsNode = treeView->Items->AddChild(parent, "РўР°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё");
+//        TTreeNode* tablePartsNode = treeView->Items->AddChild(parent, "Табличные части");
 //        tablePartsNode->ImageIndex = ICON_TABLE_PARTS;
 //        tablePartsNode->SelectedIndex = ICON_TABLE_PARTS;
 //
@@ -930,9 +928,9 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        }
 //    }
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј РєРѕР»РѕРЅРєРё
+//    // Добавляем колонки
 //    if (!columns.empty()) {
-//        TTreeNode* columnsNode = treeView->Items->AddChild(parent, "РљРѕР»РѕРЅРєРё");
+//        TTreeNode* columnsNode = treeView->Items->AddChild(parent, "Колонки");
 //        columnsNode->ImageIndex = ICON_COLUMNS;
 //        columnsNode->SelectedIndex = ICON_COLUMNS;
 //
@@ -948,14 +946,14 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //std::vector<std::pair<std::string, std::string>> CommonMetadataObject::getProperties() const {
 //    auto props = MetaObject::getProperties();
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј СЃС‚Р°С‚РёСЃС‚РёРєСѓ
-//    props.push_back({"РћР±С‰РµРµ РєРѕР»РёС‡РµСЃС‚РІРѕ СЃРІРѕР№СЃС‚РІ", std::to_string(getTotalPropertiesCount())});
-//    props.push_back({"РљРѕР»РёС‡РµСЃС‚РІРѕ СЂРµРєРІРёР·РёС‚РѕРІ", std::to_string(getRequisiteCount())});
-//    props.push_back({"РљРѕР»РёС‡РµСЃС‚РІРѕ С„РѕСЂРј", std::to_string(getFormCount())});
-//    props.push_back({"РљРѕР»РёС‡РµСЃС‚РІРѕ РєРѕРјР°РЅРґ", std::to_string(getCommandCount())});
-//    props.push_back({"РљРѕР»РёС‡РµСЃС‚РІРѕ РјР°РєРµС‚РѕРІ", std::to_string(getLayoutCount())});
-//    props.push_back({"РљРѕР»РёС‡РµСЃС‚РІРѕ С‚Р°Р±Р»РёС‡РЅС‹С… С‡Р°СЃС‚РµР№", std::to_string(getTablePartCount())});
-//    props.push_back({"РљРѕР»РёС‡РµСЃС‚РІРѕ РєРѕР»РѕРЅРѕРє", std::to_string(getColumnCount())});
+//    // Добавляем статистику
+//    props.push_back({"Общее количество свойств", std::to_string(getTotalPropertiesCount())});
+//    props.push_back({"Количество реквизитов", std::to_string(getRequisiteCount())});
+//    props.push_back({"Количество форм", std::to_string(getFormCount())});
+//    props.push_back({"Количество команд", std::to_string(getCommandCount())});
+//    props.push_back({"Количество макетов", std::to_string(getLayoutCount())});
+//    props.push_back({"Количество табличных частей", std::to_string(getTablePartCount())});
+//    props.push_back({"Количество колонок", std::to_string(getColumnCount())});
 //
 //    return props;
 //}
@@ -1026,7 +1024,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return result;
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ РїРѕРёСЃРєР° Рё С„РёР»СЊС‚СЂР°С†РёРё ==========
+//// ========== Методы поиска и фильтрации ==========
 //
 //std::vector<const Requisite*> CommonMetadataObject::searchRequisites(
 //    const std::string& searchText, bool caseSensitive) const {
@@ -1107,30 +1105,30 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return result;
 //}
 //
-//// ========== Р’Р°Р»РёРґР°С†РёСЏ ==========
+//// ========== Валидация ==========
 //
 //bool CommonMetadataObject::validate(std::vector<std::string>& errors) const {
 //    bool valid = MetaObject::validate(errors);
 //
-//    // РџСЂРѕРІРµСЂСЏРµРј СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚СЊ РёРјРµРЅ СЂРµРєРІРёР·РёС‚РѕРІ
+//    // Проверяем уникальность имен реквизитов
 //    if (!validateRequisiteNames(errors)) {
 //        valid = false;
 //    }
 //
-//    // РџСЂРѕРІРµСЂСЏРµРј СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚СЊ РёРјРµРЅ С„РѕСЂРј
+//    // Проверяем уникальность имен форм
 //    std::unordered_set<std::string> formNames;
 //    for (const auto& form : forms) {
 //        if (!formNames.insert(form->getName()).second) {
-//            errors.push_back("Р”СѓР±Р»РёСЂСѓСЋС‰РµРµСЃСЏ РёРјСЏ С„РѕСЂРјС‹: " + form->getName());
+//            errors.push_back("Дублирующееся имя формы: " + form->getName());
 //            valid = false;
 //        }
 //    }
 //
-//    // РџСЂРѕРІРµСЂСЏРµРј РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РїРѕР»СЏ
+//    // Проверяем обязательные поля
 //    for (const auto& req : requisites) {
 //        if (req->isRequired() && req->getDefaultValue().empty()) {
-//            errors.push_back("РћР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ СЂРµРєРІРёР·РёС‚ '" + req->getName() +
-//                            "' РЅРµ РёРјРµРµС‚ Р·РЅР°С‡РµРЅРёСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ");
+//            errors.push_back("Обязательный реквизит '" + req->getName() +
+//                            "' не имеет значения по умолчанию");
 //            valid = false;
 //        }
 //    }
@@ -1144,7 +1142,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //
 //    for (const auto& req : requisites) {
 //        if (!names.insert(req->getName()).second) {
-//            errors.push_back("Р”СѓР±Р»РёСЂСѓСЋС‰РµРµСЃСЏ РёРјСЏ СЂРµРєРІРёР·РёС‚Р°: " + req->getName());
+//            errors.push_back("Дублирующееся имя реквизита: " + req->getName());
 //            valid = false;
 //        }
 //    }
@@ -1152,82 +1150,82 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return valid;
 //}
 //
-//// ========== РџР°С‚С‚РµСЂРЅ Visitor ==========
+//// ========== Паттерн Visitor ==========
 //
 //void CommonMetadataObject::accept(Visitor* visitor) {
 //    if (visitor) {
 //        visitor->visitCommonMetadataObject(this);
 //
-//        // РџРѕСЃРµС‰Р°РµРј РІСЃРµ СЂРµРєРІРёР·РёС‚С‹
+//        // Посещаем все реквизиты
 //        for (const auto& req : requisites) {
 //            req->accept(visitor);
 //        }
 //
-//        // РџРѕСЃРµС‰Р°РµРј РІСЃРµ С„РѕСЂРјС‹
+//        // Посещаем все формы
 //        for (const auto& form : forms) {
 //            form->accept(visitor);
 //        }
 //
-//        // РџРѕСЃРµС‰Р°РµРј РІСЃРµ РєРѕРјР°РЅРґС‹
+//        // Посещаем все команды
 //        for (const auto& cmd : commands) {
 //            cmd->accept(visitor);
 //        }
 //
-//        // РџРѕСЃРµС‰Р°РµРј РІСЃРµ РјР°РєРµС‚С‹
+//        // Посещаем все макеты
 //        for (const auto& layout : layouts) {
 //            layout->accept(visitor);
 //        }
 //
-//        // РџРѕСЃРµС‰Р°РµРј РІСЃРµ С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+//        // Посещаем все табличные части
 //        for (const auto& tp : tableParts) {
 //            tp->accept(visitor);
 //        }
 //
-//        // РџРѕСЃРµС‰Р°РµРј РІСЃРµ РєРѕР»РѕРЅРєРё
+//        // Посещаем все колонки
 //        for (const auto& col : columns) {
 //            col->accept(visitor);
 //        }
 //    }
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ РєР»РѕРЅРёСЂРѕРІР°РЅРёСЏ ==========
+//// ========== Методы клонирования ==========
 //
 //std::unique_ptr<CommonMetadataObject> CommonMetadataObject::clone() const {
 //    auto cloneObj = std::make_unique<CommonMetadataObject>();
 //
-//    // РљРѕРїРёСЂСѓРµРј Р±Р°Р·РѕРІС‹Рµ СЃРІРѕР№СЃС‚РІР°
+//    // Копируем базовые свойства
 //    cloneObj->setName(getName());
 //    cloneObj->setSynonym(getSynonym());
 //    cloneObj->setComment(getComment());
 //    cloneObj->setCreated(getCreated());
 //    cloneObj->setModified(getModified());
 //
-//    // РљР»РѕРЅРёСЂСѓРµРј СЂРµРєРІРёР·РёС‚С‹
+//    // Клонируем реквизиты
 //    for (const auto& req : requisites) {
 //        cloneObj->addRequisite(req->clone());
 //    }
 //
-//    // РљР»РѕРЅРёСЂСѓРµРј С„РѕСЂРјС‹
+//    // Клонируем формы
 //    for (const auto& form : forms) {
 //        cloneObj->addForm(form->clone());
 //    }
 //
-//    // РљР»РѕРЅРёСЂСѓРµРј РєРѕРјР°РЅРґС‹
+//    // Клонируем команды
 //    for (const auto& cmd : commands) {
 //        cloneObj->addCommand(cmd->clone());
 //    }
 //
-//    // РљР»РѕРЅРёСЂСѓРµРј РјР°РєРµС‚С‹
+//    // Клонируем макеты
 //    for (const auto& layout : layouts) {
 //        cloneObj->addLayout(layout->clone());
 //    }
 //
-//    // РљР»РѕРЅРёСЂСѓРµРј С‚Р°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+//    // Клонируем табличные части
 //    for (const auto& tp : tableParts) {
 //        cloneObj->addTablePart(tp->clone());
 //    }
 //
-//    // РљР»РѕРЅРёСЂСѓРµРј РєРѕР»РѕРЅРєРё
+//    // Клонируем колонки
 //    for (const auto& col : columns) {
 //        cloneObj->addColumn(col->clone());
 //    }
@@ -1243,7 +1241,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return cloneObj;
 //}
 //
-//// ========== РЎС‚Р°С‚РёСЃС‚РёРєР° ==========
+//// ========== Статистика ==========
 //
 //size_t CommonMetadataObject::getTotalPropertiesCount() const {
 //    return getRequisiteCount() + getFormCount() + getCommandCount() +
@@ -1253,7 +1251,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //size_t CommonMetadataObject::getTotalElementsCount() const {
 //    size_t count = getTotalPropertiesCount();
 //
-//    // Р”РѕР±Р°РІР»СЏРµРј СЌР»РµРјРµРЅС‚С‹ РІРЅСѓС‚СЂРё С‚Р°Р±Р»РёС‡РЅС‹С… С‡Р°СЃС‚РµР№
+//    // Добавляем элементы внутри табличных частей
 //    for (const auto& tp : tableParts) {
 //        count += tp->getColumnCount();
 //    }
@@ -1261,7 +1259,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return count;
 //}
 //
-//// ========== РњРµС‚РѕРґС‹ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєРѕРЅС‚РµР№РЅРµСЂР°РјРё ==========
+//// ========== Методы для работы с контейнерами ==========
 //
 //void CommonMetadataObject::clearAllProperties() {
 //    requisites.clear();
@@ -1298,7 +1296,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //void CommonMetadataObject::sortForms() {
 //    std::sort(forms.begin(), forms.end(),
 //        [](const std::unique_ptr<Form>& a, const std::unique_ptr<Form>& b) {
-//            // РЎРЅР°С‡Р°Р»Р° РїРѕ С‚РёРїСѓ, Р·Р°С‚РµРј РїРѕ РёРјРµРЅРё
+//            // Сначала по типу, затем по имени
 //            if (a->getFormType() != b->getFormType()) {
 //                return a->getFormType() < b->getFormType();
 //            }
@@ -1308,7 +1306,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    indexesDirty = true;
 //}
 //
-//// ========== РРјРїРѕСЂС‚/Р­РєСЃРїРѕСЂС‚ ==========
+//// ========== Импорт/Экспорт ==========
 //
 //bool CommonMetadataObject::importRequisitesFromCSV(const std::string& filename) {
 //    std::ifstream file(filename);
@@ -1317,7 +1315,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    }
 //
 //    std::string line;
-//    // РџСЂРѕРїСѓСЃРєР°РµРј Р·Р°РіРѕР»РѕРІРѕРє
+//    // Пропускаем заголовок
 //    std::getline(file, line);
 //
 //    while (std::getline(file, line)) {
@@ -1349,7 +1347,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //        return false;
 //    }
 //
-//    // Р—Р°РіРѕР»РѕРІРѕРє
+//    // Заголовок
 //    file << "Name,Type,Description,Required,DefaultValue" << std::endl;
 //
 //    for (const auto& req : requisites) {
@@ -1364,7 +1362,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    return true;
 //}
 //
-//// ========== РРЅРґРµРєСЃР°С†РёСЏ ==========
+//// ========== Индексация ==========
 //
 //void CommonMetadataObject::rebuildIndexes() {
 //    rebuildIndex(requisiteIndex, requisites);
@@ -1379,8 +1377,8 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //
 //void CommonMetadataObject::updateIndexes() const {
 //    if (indexesDirty) {
-//        // РљРѕРЅСЃС‚Р°РЅС‚РЅС‹Р№ РјРµС‚РѕРґ, РЅРѕ РЅР°Рј РЅСѓР¶РЅРѕ РѕР±РЅРѕРІРёС‚СЊ РёРЅРґРµРєСЃС‹
-//        // РСЃРїРѕР»СЊР·СѓРµРј const_cast РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РєСЌС€Р°
+//        // Константный метод, но нам нужно обновить индексы
+//        // Используем const_cast для обновления кэша
 //        const_cast<CommonMetadataObject*>(this)->rebuildIndexes();
 //    }
 //}
@@ -1394,26 +1392,26 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    }
 //}
 //
-//// ========== Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ ==========
+//// ========== Вспомогательные методы ==========
 //
 //void CommonMetadataObject::afterRequisiteAdded(Requisite& requisite) {
-//    // Р’РёСЂС‚СѓР°Р»СЊРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅРёСЏ РІ РїРѕС‚РѕРјРєР°С…
-//    // РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј
+//    // Виртуальный метод для переопределения в потомках
+//    // По умолчанию ничего не делаем
 //}
 //
 //void CommonMetadataObject::beforeRequisiteRemoved(Requisite& requisite) {
-//    // Р’РёСЂС‚СѓР°Р»СЊРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅРёСЏ РІ РїРѕС‚РѕРјРєР°С…
+//    // Виртуальный метод для переопределения в потомках
 //}
 //
 //void CommonMetadataObject::afterFormAdded(Form& form) {
-//    // Р’РёСЂС‚СѓР°Р»СЊРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅРёСЏ РІ РїРѕС‚РѕРјРєР°С…
+//    // Виртуальный метод для переопределения в потомках
 //}
 //
 //void CommonMetadataObject::beforeFormRemoved(Form& form) {
-//    // Р’РёСЂС‚СѓР°Р»СЊРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅРёСЏ РІ РїРѕС‚РѕРјРєР°С…
+//    // Виртуальный метод для переопределения в потомках
 //}
 //
-//// ========== РС‚РµСЂР°С‚РѕСЂ ==========
+//// ========== Итератор ==========
 //
 //CommonMetadataObjectIterator::CommonMetadataObjectIterator(const CommonMetadataObject* obj)
 //    : object(obj) {}
@@ -1432,7 +1430,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //                   object->getColumnCount());
 //}
 //
-//// Р РµР°Р»РёР·Р°С†РёСЏ РјРµС‚РѕРґРѕРІ Iterator
+//// Реализация методов Iterator
 //CommonMetadataObjectIterator::Iterator::Iterator(const CommonMetadataObject* obj,
 //                                               size_t reqIdx, size_t formIdx,
 //                                               size_t cmdIdx, size_t layoutIdx,
@@ -1441,7 +1439,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //      commandIndex(cmdIdx), layoutIndex(layoutIdx),
 //      tablePartIndex(tpIdx), columnIndex(colIdx) {
 //
-//    // РџСЂРѕРїСѓСЃРєР°РµРј РїСѓСЃС‚С‹Рµ РїРѕР·РёС†РёРё
+//    // Пропускаем пустые позиции
 //    if (requisiteIndex >= object->getRequisiteCount()) {
 //        advance();
 //    }
@@ -1504,7 +1502,7 @@ CommonMetadataObject::CommonMetadataObject(const String& name, const String& syn
 //    if (requisiteIndex < object->getRequisiteCount()) {
 //        requisiteIndex++;
 //        if (requisiteIndex >= object->getRequisiteCount()) {
-//            // РџРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµРјСѓ С‚РёРїСѓ СЃРІРѕР№СЃС‚РІ
+//            // Переходим к следующему типу свойств
 //            requisiteIndex = object->getRequisiteCount();
 //        }
 //    } else if (formIndex < object->getFormCount()) {

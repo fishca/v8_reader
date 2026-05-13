@@ -1,14 +1,12 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "Property.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 #include "MetaObject.h"
 
-// Р”Р»СЏ СЂР°Р±РѕС‚С‹ СЃ UUID
+// Для работы с UUID
 #ifdef _WIN32
 #include <objbase.h>
 #pragma comment(lib, "ole32.lib")
@@ -16,7 +14,7 @@
 #include <uuid/uuid.h>
 #endif
 
-// Р”Р»СЏ СЂР°Р±РѕС‚С‹ СЃ РґР°С‚Р°РјРё Рё СЃС‚СЂРѕРєР°РјРё
+// Для работы с датами и строками
 #include <iomanip>
 #include <sstream>
 #include <ctime>
@@ -25,19 +23,19 @@
 #include <regex>
 #include <cmath>
 
-// Р”Р»СЏ XML СЃРµСЂРёР°Р»РёР·Р°С†РёРё
+// Для XML сериализации
 #ifdef USE_TINYXML2
 #include <tinyxml2.h>
 using namespace tinyxml2;
 #endif
 
-// Р”Р»СЏ JSON СЃРµСЂРёР°Р»РёР·Р°С†РёРё
+// Для JSON сериализации
 #ifdef USE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 #endif
 
-// ========== РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹ Рё РґРµСЃС‚СЂСѓРєС‚РѕСЂ ==========
+// ========== Конструкторы и деструктор ==========
 
 Property::Property()
     : propertyType(PropertyType::Unknown),
@@ -62,7 +60,7 @@ Property::Property(const std::string& name,
 }
 
 Property::~Property() {
-    // РЈРІРµРґРѕРјР»СЏРµРј РѕР± СѓРґР°Р»РµРЅРёРё СЃРІРѕР№СЃС‚РІР°
+    // Уведомляем об удалении свойства
     notifyPropertyModified();
 }
 
@@ -92,7 +90,7 @@ Property::Property(Property&& other) noexcept
       regExp(std::move(other.regExp)),
       attributes(std::move(other.attributes)),
       signalData(std::move(other.signalData)) {
-    // РџСЂРё РїРµСЂРµРјРµС‰РµРЅРёРё СЃРѕС…СЂР°РЅСЏРµРј UUID
+    // При перемещении сохраняем UUID
 }
 
 Property& Property::operator=(Property&& other) noexcept {
@@ -131,13 +129,13 @@ void Property::initialize() {
     created = now;
     modified = now;
 
-    // Р“РµРЅРµСЂРёСЂСѓРµРј UUID С‚РѕР»СЊРєРѕ РµСЃР»Рё РѕРЅ РµС‰Рµ РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ
+    // Генерируем UUID только если он еще не установлен
     if (uuid.empty()) {
         uuid = generateUUID();
     }
 }
 
-// ========== РРґРµРЅС‚РёС„РёРєР°С†РёСЏ Рё РёРЅС„РѕСЂРјР°С†РёСЏ Рѕ С‚РёРїРµ ==========
+// ========== Идентификация и информация о типе ==========
 
 std::string Property::getUUID() const {
     return uuid;
@@ -162,12 +160,12 @@ const T* Property::as() const {
     return dynamic_cast<const T*>(this);
 }
 
-// РЇРІРЅР°СЏ СЃРїРµС†РёР°Р»РёР·Р°С†РёСЏ С€Р°Р±Р»РѕРЅРѕРІ
+// Явная специализация шаблонов
 template bool Property::isInstanceOf<Property>() const;
 template Property* Property::as<Property>();
 template const Property* Property::as<Property>() const;
 
-// ========== РћСЃРЅРѕРІРЅС‹Рµ СЃРІРѕР№СЃС‚РІР° ==========
+// ========== Основные свойства ==========
 
 void Property::setName(const std::string& name) {
     std::string normalized = normalizeName(name);
@@ -357,15 +355,15 @@ std::string Property::getModifiedString(const std::string& format) const {
     return ss.str();
 }
 
-// ========== Р—РЅР°С‡РµРЅРёСЏ Рё РІР°Р»РёРґР°С†РёСЏ ==========
+// ========== Значения и валидация ==========
 
 bool Property::setValue(const std::string& value) {
-    // РџСЂРѕРІРµСЂСЏРµРј, РјРѕР¶РЅРѕ Р»Рё РёР·РјРµРЅСЏС‚СЊ Р·РЅР°С‡РµРЅРёРµ
+    // Проверяем, можно ли изменять значение
     if (isReadOnly()) {
         return false;
     }
 
-    // РџСЂРѕРІРµСЂСЏРµРј РІР°Р»РёРґРЅРѕСЃС‚СЊ РЅРѕРІРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ
+    // Проверяем валидность нового значения
     std::vector<std::string> errors;
     if (!validateValue(value, errors)) {
         return false;
@@ -382,7 +380,7 @@ bool Property::setValue(const std::string& value) {
 }
 
 std::string Property::getValue() const {
-    // Р•СЃР»Рё Р·РЅР°С‡РµРЅРёРµ РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ, РІРѕР·РІСЂР°С‰Р°РµРј Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+    // Если значение не установлено, возвращаем значение по умолчанию
     if (currentValue.empty() && !defaultValue.empty()) {
         return defaultValue;
     }
@@ -405,7 +403,7 @@ bool Property::hasValue() const {
 }
 
 void Property::addValidationRule(const ValidationRule& rule) {
-    // РџСЂРѕРІРµСЂСЏРµРј, РЅРµС‚ Р»Рё СѓР¶Рµ РїСЂР°РІРёР»Р° СЃ С‚Р°РєРёРј РёРјРµРЅРµРј
+    // Проверяем, нет ли уже правила с таким именем
     auto it = std::find_if(validationRules.begin(), validationRules.end(),
         [&rule](const ValidationRule& r) {
             return r.name == rule.name;
@@ -445,23 +443,23 @@ bool Property::validate(std::vector<std::string>& errors) const {
 bool Property::validateValue(const std::string& value, std::vector<std::string>& errors) const {
     errors.clear();
 
-    // РџСЂРѕРІРµСЂРєР° РѕР±СЏР·Р°С‚РµР»СЊРЅРѕСЃС‚Рё
+    // Проверка обязательности
     if (isRequired() && value.empty()) {
         errors.push_back("Property '" + name + "' is required");
         return false;
     }
 
-    // Р•СЃР»Рё Р·РЅР°С‡РµРЅРёРµ РїСѓСЃС‚РѕРµ Рё СЃРІРѕР№СЃС‚РІРѕ РЅРµ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРµ - РѕРЅРѕ РІР°Р»РёРґРЅРѕ
+    // Если значение пустое и свойство не обязательное - оно валидно
     if (value.empty() && !isRequired()) {
         return true;
     }
 
-    // РџСЂРѕРІРµСЂРєР° С‚РёРїР° РґР°РЅРЅС‹С…
+    // Проверка типа данных
     if (!validateDataType(value, errors)) {
         return false;
     }
 
-    // РџСЂРѕРІРµСЂРєР° РјРёРЅРёРјР°Р»СЊРЅРѕР№/РјР°РєСЃРёРјР°Р»СЊРЅРѕР№ РґР»РёРЅС‹ РґР»СЏ СЃС‚СЂРѕРє
+    // Проверка минимальной/максимальной длины для строк
     if (dataType == DataType::String) {
         size_t length = value.length();
         if (minLength && length < *minLength) {
@@ -476,7 +474,7 @@ bool Property::validateValue(const std::string& value, std::vector<std::string>&
         }
     }
 
-    // РџСЂРѕРІРµСЂРєР° СЂРµРіСѓР»СЏСЂРЅРѕРіРѕ РІС‹СЂР°Р¶РµРЅРёСЏ
+    // Проверка регулярного выражения
     if (regExp && !regExp->empty()) {
         try {
             std::regex re(*regExp);
@@ -490,13 +488,13 @@ bool Property::validateValue(const std::string& value, std::vector<std::string>&
         }
     }
 
-    // РџСЂРѕРІРµСЂРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёС… РїСЂР°РІРёР» РІР°Р»РёРґР°С†РёРё
+    // Проверка пользовательских правил валидации
     for (const auto& rule : validationRules) {
-        // Р—РґРµСЃСЊ РґРѕР»Р¶РЅР° Р±С‹С‚СЊ СЂРµР°Р»РёР·Р°С†РёСЏ РїСЂРѕРІРµСЂРєРё РІС‹СЂР°Р¶РµРЅРёСЏ
-        // Р”Р»СЏ РїСЂРѕСЃС‚РѕС‚С‹ РїСЂРµРґРїРѕР»Р°РіР°РµРј, С‡С‚Рѕ РІС‹СЂР°Р¶РµРЅРёРµ - СЌС‚Рѕ РєРѕРґ РЅР° JavaScript РёР»Рё РїРѕРґРѕР±РЅРѕРј
-        // Р’ СЂРµР°Р»СЊРЅРѕР№ СЂРµР°Р»РёР·Р°С†РёРё РЅСѓР¶РЅРѕ РёРЅС‚РµРіСЂРёСЂРѕРІР°С‚СЊ РґРІРёР¶РѕРє СЃРєСЂРёРїС‚РѕРІ
+        // Здесь должна быть реализация проверки выражения
+        // Для простоты предполагаем, что выражение - это код на JavaScript или подобном
+        // В реальной реализации нужно интегрировать движок скриптов
         if (!rule.expression.empty()) {
-            // Р—Р°РіР»СѓС€РєР° РґР»СЏ РґРµРјРѕРЅСЃС‚СЂР°С†РёРё
+            // Заглушка для демонстрации
             if (rule.expression == "not_empty" && value.empty()) {
                 errors.push_back(rule.errorMessage.empty() ?
                     "Validation failed for rule: " + rule.name : rule.errorMessage);
@@ -568,14 +566,14 @@ void Property::setRegExp(const std::string& regExp) {
     }
 }
 
-// ========== РџР°С‚С‚РµСЂРЅ Prototype ==========
+// ========== Паттерн Prototype ==========
 
 std::unique_ptr<Property> Property::cloneWithName(const std::string& newName) const {
     auto cloneProp = clone();
     cloneProp->setName(newName);
-    cloneProp->uuid = generateUUID(); // РќРѕРІС‹Р№ UUID РґР»СЏ РєР»РѕРЅР°
+    cloneProp->uuid = generateUUID(); // Новый UUID для клона
 
-    // РћР±РЅРѕРІР»СЏРµРј РґР°С‚С‹
+    // Обновляем даты
     auto now = std::chrono::system_clock::now();
     cloneProp->created = now;
     cloneProp->modified = now;
@@ -583,7 +581,7 @@ std::unique_ptr<Property> Property::cloneWithName(const std::string& newName) co
     return cloneProp;
 }
 
-// ========== РЎРµСЂРёР°Р»РёР·Р°С†РёСЏ ==========
+// ========== Сериализация ==========
 
 void Property::toXML(void* parent) const {
 #ifdef USE_TINYXML2
@@ -622,14 +620,14 @@ void Property::toXML(void* parent) const {
         element->SetAttribute("created", getCreatedString().c_str());
         element->SetAttribute("modified", getModifiedString().c_str());
 
-        // Р”РѕР±Р°РІР»СЏРµРј РѕРїРёСЃР°РЅРёРµ РєР°Рє С‚РµРєСЃС‚РѕРІС‹Р№ СѓР·РµР»
+        // Добавляем описание как текстовый узел
         if (!description.empty()) {
             XMLElement* descElem = element->GetDocument()->NewElement("description");
             descElem->SetText(description.c_str());
             element->InsertEndChild(descElem);
         }
 
-        // Р”РѕР±Р°РІР»СЏРµРј РїСЂР°РІРёР»Р° РІР°Р»РёРґР°С†РёРё
+        // Добавляем правила валидации
         if (!validationRules.empty()) {
             XMLElement* rulesElem = element->GetDocument()->NewElement("validationRules");
             for (const auto& rule : validationRules) {
@@ -645,7 +643,7 @@ void Property::toXML(void* parent) const {
             element->InsertEndChild(rulesElem);
         }
 
-        // Р”РѕР±Р°РІР»СЏРµРј РѕРіСЂР°РЅРёС‡РµРЅРёСЏ
+        // Добавляем ограничения
         if (minValue || maxValue || minLength || maxLength || (regExp && !regExp->empty())) {
             XMLElement* constraintsElem = element->GetDocument()->NewElement("constraints");
 
@@ -668,7 +666,7 @@ void Property::toXML(void* parent) const {
             element->InsertEndChild(constraintsElem);
         }
 
-        // Р”РѕР±Р°РІР»СЏРµРј Р°С‚СЂРёР±СѓС‚С‹
+        // Добавляем атрибуты
         if (!attributes.empty()) {
             XMLElement* attrsElem = element->GetDocument()->NewElement("attributes");
             for (const auto& [key, value] : attributes) {
@@ -705,7 +703,7 @@ bool Property::fromXML(const void* element) {
     const XMLElement* xmlElem = static_cast<const XMLElement*>(element);
     if (!xmlElem) return false;
 
-    // Р§РёС‚Р°РµРј Р°С‚СЂРёР±СѓС‚С‹
+    // Читаем атрибуты
     const char* nameAttr = xmlElem->Attribute("name");
     if (nameAttr) setName(nameAttr);
 
@@ -767,13 +765,13 @@ bool Property::fromXML(const void* element) {
         }
     }
 
-    // Р§РёС‚Р°РµРј РѕРїРёСЃР°РЅРёРµ
+    // Читаем описание
     const XMLElement* descElem = xmlElem->FirstChildElement("description");
     if (descElem && descElem->GetText()) {
         setDescription(descElem->GetText());
     }
 
-    // Р§РёС‚Р°РµРј РїСЂР°РІРёР»Р° РІР°Р»РёРґР°С†РёРё
+    // Читаем правила валидации
     const XMLElement* rulesElem = xmlElem->FirstChildElement("validationRules");
     if (rulesElem) {
         const XMLElement* ruleElem = rulesElem->FirstChildElement("rule");
@@ -797,7 +795,7 @@ bool Property::fromXML(const void* element) {
         }
     }
 
-    // Р§РёС‚Р°РµРј РѕРіСЂР°РЅРёС‡РµРЅРёСЏ
+    // Читаем ограничения
     const XMLElement* constraintsElem = xmlElem->FirstChildElement("constraints");
     if (constraintsElem) {
         const char* minValueAttr = constraintsElem->Attribute("minValue");
@@ -826,7 +824,7 @@ bool Property::fromXML(const void* element) {
         }
     }
 
-    // Р§РёС‚Р°РµРј Р°С‚СЂРёР±СѓС‚С‹
+    // Читаем атрибуты
     const XMLElement* attrsElem = xmlElem->FirstChildElement("attributes");
     if (attrsElem) {
         const XMLElement* attrElem = attrsElem->FirstChildElement("attribute");
@@ -875,7 +873,7 @@ std::string Property::toJSON() const {
     j["created"] = getCreatedString();
     j["modified"] = getModifiedString();
 
-    // РџСЂР°РІРёР»Р° РІР°Р»РёРґР°С†РёРё
+    // Правила валидации
     if (!validationRules.empty()) {
         json rulesArray = json::array();
         for (const auto& rule : validationRules) {
@@ -889,7 +887,7 @@ std::string Property::toJSON() const {
         j["validationRules"] = rulesArray;
     }
 
-    // РћРіСЂР°РЅРёС‡РµРЅРёСЏ
+    // Ограничения
     json constraints;
     if (minValue) constraints["minValue"] = *minValue;
     if (maxValue) constraints["maxValue"] = *maxValue;
@@ -901,7 +899,7 @@ std::string Property::toJSON() const {
         j["constraints"] = constraints;
     }
 
-    // РђС‚СЂРёР±СѓС‚С‹
+    // Атрибуты
     if (!attributes.empty()) {
         json attrs = json::object();
         for (const auto& [key, value] : attributes) {
@@ -960,7 +958,7 @@ bool Property::fromJSON(const std::string& jsonStr) {
             }
         }
 
-        // РџСЂР°РІРёР»Р° РІР°Р»РёРґР°С†РёРё
+        // Правила валидации
         if (j.contains("validationRules") && j["validationRules"].is_array()) {
             for (const auto& ruleJson : j["validationRules"]) {
                 ValidationRule rule;
@@ -975,7 +973,7 @@ bool Property::fromJSON(const std::string& jsonStr) {
             }
         }
 
-        // РћРіСЂР°РЅРёС‡РµРЅРёСЏ
+        // Ограничения
         if (j.contains("constraints")) {
             json constraints = j["constraints"];
             if (constraints.contains("minValue")) {
@@ -995,7 +993,7 @@ bool Property::fromJSON(const std::string& jsonStr) {
             }
         }
 
-        // РђС‚СЂРёР±СѓС‚С‹
+        // Атрибуты
         if (j.contains("attributes") && j["attributes"].is_object()) {
             json attrs = j["attributes"];
             for (auto it = attrs.begin(); it != attrs.end(); ++it) {
@@ -1023,7 +1021,7 @@ bool Property::fromJSON(const std::string& jsonStr) {
 #endif
 }
 
-// ========== РЎСЂР°РІРЅРµРЅРёРµ СЃРІРѕР№СЃС‚РІ ==========
+// ========== Сравнение свойств ==========
 
 bool Property::compare(const Property& other,
                       std::vector<std::string>& differences) const {
@@ -1084,7 +1082,7 @@ bool Property::compare(const Property& other,
         equal = false;
     }
 
-    // РЎСЂР°РІРЅРёРІР°РµРј РїСЂР°РІРёР»Р° РІР°Р»РёРґР°С†РёРё
+    // Сравниваем правила валидации
     if (validationRules.size() != other.validationRules.size()) {
         differences.push_back("Validation rules count differs");
         equal = false;
@@ -1097,7 +1095,7 @@ bool Property::compare(const Property& other,
         }
     }
 
-    // РЎСЂР°РІРЅРёРІР°РµРј РѕРіСЂР°РЅРёС‡РµРЅРёСЏ
+    // Сравниваем ограничения
     if (minValue != other.minValue) {
         differences.push_back("Min value differs");
         equal = false;
@@ -1123,7 +1121,7 @@ bool Property::compare(const Property& other,
         equal = false;
     }
 
-    // РЎСЂР°РІРЅРёРІР°РµРј Р°С‚СЂРёР±СѓС‚С‹
+    // Сравниваем атрибуты
     if (attributes.size() != other.attributes.size()) {
         differences.push_back("Attributes count differs");
         equal = false;
@@ -1156,14 +1154,14 @@ bool Property::operator!=(const Property& other) const {
 }
 
 bool Property::operator<(const Property& other) const {
-    // РЎРЅР°С‡Р°Р»Р° РїРѕ СЃРѕСЂС‚РёСЂРѕРІРєРµ, Р·Р°С‚РµРј РїРѕ РёРјРµРЅРё
+    // Сначала по сортировке, затем по имени
     if (sortOrder != other.sortOrder) {
         return sortOrder < other.sortOrder;
     }
     return name < other.name;
 }
 
-// ========== Р—Р°РІРёСЃРёРјРѕСЃС‚Рё Рё СЃРІСЏР·Рё ==========
+// ========== Зависимости и связи ==========
 
 void Property::setOwner(const std::weak_ptr<MetaObject>& owner) {
     this->owner = owner;
@@ -1186,7 +1184,7 @@ void Property::addDependentProperty(const std::weak_ptr<Property>& property) {
 }
 
 std::vector<std::weak_ptr<Property>> Property::getDependentProperties() const {
-    // РћС‡РёС‰Р°РµРј "РїСЂРѕС‚СѓС…С€РёРµ" weak_ptr
+    // Очищаем "протухшие" weak_ptr
     auto mutableThis = const_cast<Property*>(this);
     mutableThis->dependentProperties.erase(
         std::remove_if(mutableThis->dependentProperties.begin(),
@@ -1211,7 +1209,7 @@ bool Property::dependsOn(const std::shared_ptr<Property>& property) const {
     return false;
 }
 
-// ========== Р Р°СЃС€РёСЂСЏРµРјС‹Рµ Р°С‚СЂРёР±СѓС‚С‹ ==========
+// ========== Расширяемые атрибуты ==========
 
 void Property::setAttribute(const std::string& key,
                            const std::variant<std::string, int, double, bool>& value) {
@@ -1243,7 +1241,7 @@ Property::getAllAttributes() const {
     return attributes;
 }
 
-// ========== РЎРёРіРЅР°Р»С‹ Рё СЃРѕР±С‹С‚РёСЏ ==========
+// ========== Сигналы и события ==========
 
 size_t Property::subscribeToValueChanged(ValueChangedSignal callback) {
     size_t id = signalData->nextId++;
@@ -1267,7 +1265,7 @@ void Property::notifyValueChanged(const std::string& oldValue, const std::string
         try {
             callback(oldValue, newValue);
         } catch (...) {
-            // РРіРЅРѕСЂРёСЂСѓРµРј РёСЃРєР»СЋС‡РµРЅРёСЏ РІ РєРѕР»Р»Р±РµРєР°С…
+            // Игнорируем исключения в коллбеках
         }
     }
 }
@@ -1277,12 +1275,12 @@ void Property::notifyPropertyModified() {
         try {
             callback();
         } catch (...) {
-            // РРіРЅРѕСЂРёСЂСѓРµРј РёСЃРєР»СЋС‡РµРЅРёСЏ РІ РєРѕР»Р»Р±РµРєР°С…
+            // Игнорируем исключения в коллбеках
         }
     }
 }
 
-// ========== Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ ==========
+// ========== Вспомогательные методы ==========
 
 std::string Property::generateUUID() {
 #ifdef _WIN32
@@ -1304,7 +1302,7 @@ std::string Property::generateUUID() {
     return buffer;
 #endif
 
-//    // Fallback - РіРµРЅРµСЂР°С†РёСЏ СЃР»СѓС‡Р°Р№РЅРѕРіРѕ UUID
+//    // Fallback - генерация случайного UUID
 //    static std::random_device rd;
 //    static std::mt19937 gen(rd());
 //    static std::uniform_int_distribution<> dis(0, 15);
@@ -1335,15 +1333,15 @@ std::string Property::normalizeName(const std::string& name) {
 
     std::string result = name;
 
-    // Р—Р°РјРµРЅСЏРµРј РїСЂРѕР±РµР»С‹ Рё СЃРїРµС†РёР°Р»СЊРЅС‹Рµ СЃРёРјРІРѕР»С‹ РЅР° РїРѕРґС‡РµСЂРєРёРІР°РЅРёСЏ
+    // Заменяем пробелы и специальные символы на подчеркивания
     std::replace_if(result.begin(), result.end(),
         [](char c) { return !std::isalnum(c) && c != '_' && c != '.'; }, '_');
 
-    // РЈРґР°Р»СЏРµРј РґРІРѕР№РЅС‹Рµ РїРѕРґС‡РµСЂРєРёРІР°РЅРёСЏ
+    // Удаляем двойные подчеркивания
     result.erase(std::unique(result.begin(), result.end(),
         [](char a, char b) { return a == '_' && b == '_'; }), result.end());
 
-    // РћР±СЂРµР·Р°РµРј РЅР°С‡Р°Р»СЊРЅС‹Рµ Рё РєРѕРЅРµС‡РЅС‹Рµ РїРѕРґС‡РµСЂРєРёРІР°РЅРёСЏ
+    // Обрезаем начальные и конечные подчеркивания
     while (!result.empty() && result.front() == '_') {
         result.erase(result.begin());
     }
@@ -1354,11 +1352,11 @@ std::string Property::normalizeName(const std::string& name) {
     return result;
 }
 
-// ========== Р’Р°Р»РёРґР°С†РёСЏ С‚РёРїРѕРІ РґР°РЅРЅС‹С… ==========
+// ========== Валидация типов данных ==========
 
 bool Property::validateDataType(const std::string& value, std::vector<std::string>& errors) const {
     if (value.empty()) {
-        return true; // РџСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР° РІР°Р»РёРґРЅР° РґР»СЏ РІСЃРµС… С‚РёРїРѕРІ (РєСЂРѕРјРµ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С…)
+        return true; // Пустая строка валидна для всех типов (кроме обязательных)
     }
 
     switch (dataType) {
@@ -1379,14 +1377,14 @@ bool Property::validateDataType(const std::string& value, std::vector<std::strin
         case DataType::Time:
             return validateTime(value, errors);
         case DataType::UUID:
-            return validateString(value, errors); // UUID РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ regex
+            return validateString(value, errors); // UUID проверяется regex
         default:
-            return true; // Р”Р»СЏ РЅРµРёР·РІРµСЃС‚РЅС‹С… С‚РёРїРѕРІ РїСЂРёРЅРёРјР°РµРј Р»СЋР±РѕРµ Р·РЅР°С‡РµРЅРёРµ
+            return true; // Для неизвестных типов принимаем любое значение
     }
 }
 
 bool Property::validateString(const std::string& value, std::vector<std::string>& errors) const {
-    // РџСЂРѕРІРµСЂРєР° РґРёР°РїР°Р·РѕРЅР° Р·РЅР°С‡РµРЅРёР№
+    // Проверка диапазона значений
     if (minValue || maxValue) {
         try {
             double numValue = std::stod(value);
@@ -1401,7 +1399,7 @@ bool Property::validateString(const std::string& value, std::vector<std::string>
                 return false;
             }
         } catch (const std::exception&) {
-            // РќРµ С‡РёСЃР»Рѕ, РїСЂРѕРїСѓСЃРєР°РµРј РїСЂРѕРІРµСЂРєСѓ РґРёР°РїР°Р·РѕРЅР°
+            // Не число, пропускаем проверку диапазона
         }
     }
 
@@ -1412,13 +1410,13 @@ bool Property::validateNumber(const std::string& value, std::vector<std::string>
     try {
         double numValue = std::stod(value);
 
-        // РџСЂРѕРІРµСЂРєР° NaN Рё Infinity
+        // Проверка NaN и Infinity
         if (std::isnan(numValue) || std::isinf(numValue)) {
             errors.push_back("Value is not a valid number");
             return false;
         }
 
-        // РџСЂРѕРІРµСЂРєР° РґРёР°РїР°Р·РѕРЅР°
+        // Проверка диапазона
         if (minValue && numValue < *minValue) {
             errors.push_back("Value " + value + " is less than minimum: " +
                            std::to_string(*minValue));
@@ -1441,7 +1439,7 @@ bool Property::validateInteger(const std::string& value, std::vector<std::string
     try {
         long long intValue = std::stoll(value);
 
-        // РџСЂРѕРІРµСЂРєР° РґРёР°РїР°Р·РѕРЅР°
+        // Проверка диапазона
         if (minValue && intValue < static_cast<long long>(*minValue)) {
             errors.push_back("Integer value " + value + " is less than minimum: " +
                            std::to_string(static_cast<long long>(*minValue)));
@@ -1453,7 +1451,7 @@ bool Property::validateInteger(const std::string& value, std::vector<std::string
             return false;
         }
 
-        // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ СЌС‚Рѕ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ С†РµР»РѕРµ С‡РёСЃР»Рѕ
+        // Проверка, что это действительно целое число
         double doubleValue = std::stod(value);
         if (doubleValue != static_cast<double>(intValue)) {
             errors.push_back("Value '" + value + "' is not an integer");
@@ -1471,13 +1469,13 @@ bool Property::validateFloat(const std::string& value, std::vector<std::string>&
     try {
         double floatValue = std::stod(value);
 
-        // РџСЂРѕРІРµСЂРєР° NaN Рё Infinity
+        // Проверка NaN и Infinity
         if (std::isnan(floatValue) || std::isinf(floatValue)) {
             errors.push_back("Value is not a valid float");
             return false;
         }
 
-        // РџСЂРѕРІРµСЂРєР° РґРёР°РїР°Р·РѕРЅР°
+        // Проверка диапазона
         if (minValue && floatValue < *minValue) {
             errors.push_back("Float value " + value + " is less than minimum: " +
                            std::to_string(*minValue));
@@ -1515,7 +1513,7 @@ bool Property::validateDate(const std::string& value, std::vector<std::string>& 
     std::tm tm = {};
     std::stringstream ss(value);
 
-    // РџСЂРѕР±СѓРµРј СЂР°Р·РЅС‹Рµ С„РѕСЂРјР°С‚С‹ РґР°С‚С‹
+    // Пробуем разные форматы даты
     ss >> std::get_time(&tm, "%Y-%m-%d");
     if (ss.fail()) {
         ss.clear();
@@ -1540,7 +1538,7 @@ bool Property::validateDateTime(const std::string& value, std::vector<std::strin
     std::tm tm = {};
     std::stringstream ss(value);
 
-    // РџСЂРѕР±СѓРµРј СЂР°Р·РЅС‹Рµ С„РѕСЂРјР°С‚С‹ РґР°С‚С‹ Рё РІСЂРµРјРµРЅРё
+    // Пробуем разные форматы даты и времени
     ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
     if (ss.fail()) {
         ss.clear();
@@ -1565,7 +1563,7 @@ bool Property::validateTime(const std::string& value, std::vector<std::string>& 
     std::tm tm = {};
     std::stringstream ss(value);
 
-    // РџСЂРѕР±СѓРµРј СЂР°Р·РЅС‹Рµ С„РѕСЂРјР°С‚С‹ РІСЂРµРјРµРЅРё
+    // Пробуем разные форматы времени
     ss >> std::get_time(&tm, "%H:%M:%S");
     if (ss.fail()) {
         ss.clear();
@@ -1581,7 +1579,7 @@ bool Property::validateTime(const std::string& value, std::vector<std::string>& 
     return true;
 }
 
-// ========== РЎС‚Р°С‚РёС‡РµСЃРєРёРµ РјРµС‚РѕРґС‹ ==========
+// ========== Статические методы ==========
 
 std::string Property::propertyTypeToString(PropertyType type) {
     switch (type) {
@@ -1675,19 +1673,19 @@ bool Property::isValidName(const std::string& name, std::string& error) {
         return false;
     }
 
-    // РџСЂРѕРІРµСЂСЏРµРј РґР»РёРЅСѓ
+    // Проверяем длину
     if (name.length() > 255) {
         error = "Name is too long (max 255 characters)";
         return false;
     }
 
-    // РџСЂРѕРІРµСЂСЏРµРј РїРµСЂРІС‹Р№ СЃРёРјРІРѕР»
+    // Проверяем первый символ
     if (!std::isalpha(name[0]) && name[0] != '_') {
         error = "Name must start with a letter or underscore";
         return false;
     }
 
-    // РџСЂРѕРІРµСЂСЏРµРј РѕСЃС‚Р°Р»СЊРЅС‹Рµ СЃРёРјРІРѕР»С‹
+    // Проверяем остальные символы
     for (char c : name) {
         if (!std::isalnum(c) && c != '_' && c != '.' && c != '-') {
             error = "Name can only contain letters, digits, underscores, dots and hyphens";
@@ -1695,7 +1693,7 @@ bool Property::isValidName(const std::string& name, std::string& error) {
         }
     }
 
-    // Р—Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅРЅС‹Рµ РёРјРµРЅР°
+    // Зарезервированные имена
     static const std::vector<std::string> reservedNames = {
         "null", "undefined", "new", "delete", "this", "self",
         "true", "false", "yes", "no", "on", "off"

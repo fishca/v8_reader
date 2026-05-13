@@ -1,9 +1,7 @@
-﻿//---------------------------------------------------------------------------
-#pragma hdrstop
+//---------------------------------------------------------------------------
 
 #include "HTTPServices.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 THTTPServices::THTTPServices() : BaseMetadataObject()
 {
@@ -28,7 +26,7 @@ THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid, const Stri
 
 THTTPServices::~THTTPServices()
 {
-    // root_data Р±СѓРґРµС‚ РѕСЃРІРѕР±РѕР¶РґРµРЅ РІ Р±Р°Р·РѕРІРѕРј РєР»Р°СЃСЃРµ
+    // root_data будет освобожден в базовом классе
 }
 
 String THTTPServices::GetHTTPServicesName()
@@ -41,7 +39,7 @@ void THTTPServices::SetHTTPServicesName(String _name)
     name = _name;
 }
 
-// Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
+// Реализация виртуальных методов BaseMetadataObject
 
 std::vector<std::unique_ptr<TRequisite>>& THTTPServices::getAttributes()
 {
@@ -70,8 +68,8 @@ std::vector<std::unique_ptr<TForm1C>>& THTTPServices::getForms()
 
 void THTTPServices::initializeFromTree()
 {
-    // HTTP-СЃРµСЂРІРёСЃС‹ РјРѕРіСѓС‚ РЅРµ РёРјРµС‚СЊ СЃС‚Р°РЅРґР°СЂС‚РЅРѕР№ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЂРµРєРІРёР·РёС‚РѕРІ/РєРѕРјР°РЅРґ
-    // РћСЃС‚Р°РІР»СЏРµРј РїСѓСЃС‚С‹РјРё vectors - СЌС‚Рѕ РЅРѕСЂРјР°Р»СЊРЅРѕ РґР»СЏ РґР°РЅРЅРѕРіРѕ С‚РёРїР° РјРµС‚Р°РґР°РЅРЅС‹С…
+    // HTTP-сервисы могут не иметь стандартной структуры реквизитов/команд
+    // Оставляем пустыми vectors - это нормально для данного типа метаданных
 }
 //---------------------------------------------------------------------------
 

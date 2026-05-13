@@ -7,8 +7,9 @@
 #include <memory>
 #include "../APIcfBase.h"
 #include "Parse_tree.h"
+#include "MetadataEntity.h"
 
-class TEnums : public TObject
+class TEnums : public MetadataEntity
 {
 public:
 

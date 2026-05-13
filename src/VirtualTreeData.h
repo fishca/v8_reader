@@ -6,13 +6,14 @@
 #include <System.hpp>
 
 #include "ModuleTextStorage.h"
+#include "MetadataEntity.h"
 
 struct VirtualTreeData
 {
 	String Name;
 	String text_module;
 	String moduleItemGuid;
-	TObject* MetadataObject = nullptr;
+	MetadataEntity* MetadataObject = nullptr;
 	ModuleTextLocation moduleLocation;
 	bool moduleEditable = false;
 	bool moduleDirty = false;
@@ -21,4 +22,3 @@ struct VirtualTreeData
 };
 
 #endif
-

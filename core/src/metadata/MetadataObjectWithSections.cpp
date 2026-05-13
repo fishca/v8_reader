@@ -1,11 +1,9 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#pragma hdrstop
 
 #include "MetadataObjectWithSections.h"
 #include "Common.h"
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
 
 namespace
 {
@@ -99,7 +97,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
 {
     if (!root_data || !paths.getFormNameFunc) return;
 
-    // Р РµРєРІРёР·РёС‚С‹
+    // Реквизиты
     attributes.clear();
     tree* node_att = GetNodeByPath(root_data.get(), {0, paths.attIdx, 1});
     int CountAtt = node_att ? node_att->get_value().ToIntDef(0) : 0;
@@ -117,7 +115,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // РўР°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+    // Табличные части
     tabulars.clear();
     if (paths.hasTabulars)
     {
@@ -141,7 +139,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             std::unique_ptr<tree> tabularRootData;
             if (parent && !GuidAttTab.IsEmpty())
             {
-                v8file* tabularFile = parent->GetFile(GuidAttTab);
+                v8file* tabularFile = parent->GetFile16(V8Utf16FromString(GuidAttTab));
                 if (tabularFile)
                     tabularRootData.reset(get_treeFromV8file(tabularFile));
             }
@@ -151,7 +149,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // Р¤РѕСЂРјС‹
+    // Формы
     forms.clear();
     tree* node = GetNodeByPath(root_data.get(), {0, paths.formsIdx, 0});
     tree* curNodeChild = node ? node->get_next() : nullptr;
@@ -172,7 +170,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // РљРѕРјР°РЅРґС‹
+    // Команды
     comands.clear();
     tree* node_att_c = GetNodeByPath(root_data.get(), {0, paths.cmdIdx, 1});
     int CountCom = node_att_c ? node_att_c->get_value().ToIntDef(0) : 0;
@@ -194,7 +192,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // РњР°РєРµС‚С‹
+    // Макеты
     moxels.clear();
     tree* node_mox = GetNodeByPath(root_data.get(), {0, paths.moxIdx, 0});
     tree* curNodeChildMox = node_mox ? node_mox->get_next() : nullptr;
@@ -297,7 +295,7 @@ bool MetadataObjectWithSections::SaveEditableModuleText(ModuleTextKind kind, con
 {
 	if (!SupportsMetadataObjectModuleKind(kind))
 	{
-		errorText = L"РќРµРїРѕРґРґРµСЂР¶РёРІР°РµРјС‹Р№ РІРёРґ РјРѕРґСѓР»СЏ РґР»СЏ РѕР±СЉРµРєС‚Р° РјРµС‚Р°РґР°РЅРЅС‹С….";
+		errorText = L"Неподдерживаемый вид модуля для объекта метаданных.";
 		return false;
 	}
 

@@ -1,4 +1,4 @@
-﻿#include "APIcfBase.h"
+#include "APIcfBase.h"
 #include "../include/v8reader_core/io/IByteStream.h"
 #include "../include/v8reader_core/io/MemoryByteStream.h"
 #include "../include/v8reader_core/io/StdFileStream.h"
@@ -10,6 +10,7 @@
 #include <memory>
 #include <algorithm>
 #include <cwctype>
+#include <stdexcept>
 
 #define CHUNK 65536
 
@@ -29,77 +30,34 @@ using v8reader::core::io::StdFileStream;
 
 namespace
 {
-class TStreamByteStreamAdapter final : public IByteStream
+static void ReadBufferExact(IByteStream& stream, void* buffer, std::size_t count)
 {
-  public:
-	explicit TStreamByteStreamAdapter(TStream* stream) : stream_(stream) {}
-
-	std::size_t Read(void* buffer, std::size_t count) override
-	{
-		return static_cast<std::size_t>(stream_->Read(buffer, static_cast<int>(count)));
-	}
-
-	std::size_t Write(const void* buffer, std::size_t count) override
-	{
-		return static_cast<std::size_t>(stream_->Write(buffer, static_cast<int>(count)));
-	}
-
-	std::uint64_t Seek(std::int64_t offset, SeekOrigin origin) override
-	{
-		TSeekOrigin vclOrigin = soBeginning;
-		switch(origin)
-		{
-			case SeekOrigin::Begin:
-				vclOrigin = soBeginning;
-				break;
-			case SeekOrigin::Current:
-				vclOrigin = soCurrent;
-				break;
-			case SeekOrigin::End:
-				vclOrigin = soEnd;
-				break;
-		}
-
-		return static_cast<std::uint64_t>(stream_->Seek(offset, vclOrigin));
-	}
-
-	std::uint64_t Position() const override
-	{
-		return static_cast<std::uint64_t>(stream_->Position);
-	}
-
-	std::uint64_t Size() const override
-	{
-		return static_cast<std::uint64_t>(stream_->Size);
-	}
-
-	void SetSize(std::uint64_t size) override
-	{
-		stream_->Size = static_cast<__int64>(size);
-	}
-
-  private:
-	TStream* stream_;
-};
-
-static void ZInflateStream(TStream* src, TStream* dst)
-{
-	if(!src || !dst)
-		return;
-
-	TStreamByteStreamAdapter srcAdapter(src);
-	TStreamByteStreamAdapter dstAdapter(dst);
-	::ZInflateStream(srcAdapter, dstAdapter);
+	const std::size_t read = stream.Read(buffer, count);
+	if(read != count)
+		throw std::runtime_error("Unexpected EOF while reading stream");
 }
 
-static void ZDeflateStream(TStream* src, TStream* dst)
+static void WriteBufferExact(IByteStream& stream, const void* buffer, std::size_t count)
 {
-	if(!src || !dst)
-		return;
+	const std::size_t written = stream.Write(buffer, count);
+	if(written != count)
+		throw std::runtime_error("Failed to write all bytes to stream");
+}
 
-	TStreamByteStreamAdapter srcAdapter(src);
-	TStreamByteStreamAdapter dstAdapter(dst);
-	::ZDeflateStream(srcAdapter, dstAdapter);
+static void CopyFromStream(IByteStream& destination, IByteStream& source, std::size_t count)
+{
+	ByteVector chunk(CHUNK);
+	std::size_t remaining = count;
+	while(remaining > 0)
+	{
+		const std::size_t toRead = std::min(remaining, chunk.size());
+		const std::size_t bytesRead = source.Read(chunk.data(), toRead);
+		if(bytesRead == 0)
+			break;
+
+		WriteBufferExact(destination, chunk.data(), bytesRead);
+		remaining -= bytesRead;
+	}
 }
 
 static std::filesystem::path StringToPath(const String& value)
@@ -122,72 +80,6 @@ static String PathToString(const std::filesystem::path& path)
 	return String(path.c_str());
 #endif
 }
-
-static SeekOrigin ToSeekOrigin(TSeekOrigin origin)
-{
-	switch(origin)
-	{
-		case soBeginning:
-			return SeekOrigin::Begin;
-		case soCurrent:
-			return SeekOrigin::Current;
-		case soEnd:
-			return SeekOrigin::End;
-	}
-
-	return SeekOrigin::Begin;
-}
-
-static SeekOrigin ToSeekOrigin(System::Word origin)
-{
-	switch(origin)
-	{
-		case soFromBeginning:
-			return SeekOrigin::Begin;
-		case soFromCurrent:
-			return SeekOrigin::Current;
-		case soFromEnd:
-			return SeekOrigin::End;
-	}
-
-	return SeekOrigin::Begin;
-}
-
-class StdFileTStream final : public TStream
-{
-  public:
-	StdFileTStream(const String& fileName, FileOpenMode mode)
-		: stream_(StringToPath(fileName), mode) {}
-	StdFileTStream(const std::filesystem::path& filePath, FileOpenMode mode)
-		: stream_(filePath, mode) {}
-
-	virtual int __fastcall Read(void* Buffer, int Count) override
-	{
-		if(Count <= 0)
-			return 0;
-		return static_cast<int>(stream_.Read(Buffer, static_cast<std::size_t>(Count)));
-	}
-
-	virtual int __fastcall Write(const void* Buffer, int Count) override
-	{
-		if(Count <= 0)
-			return 0;
-		return static_cast<int>(stream_.Write(Buffer, static_cast<std::size_t>(Count)));
-	}
-
-	virtual int __fastcall Seek(int Offset, System::Word Origin) override
-	{
-		return static_cast<int>(stream_.Seek(static_cast<std::int64_t>(Offset), ToSeekOrigin(Origin)));
-	}
-
-	virtual __int64 __fastcall Seek(const __int64 Offset, TSeekOrigin Origin) override
-	{
-		return static_cast<__int64>(stream_.Seek(Offset, ToSeekOrigin(Origin)));
-	}
-
-  private:
-	StdFileStream stream_;
-};
 
 static void SetFileTimesByPath(const std::filesystem::path& path, const FILETIME* createTime, const FILETIME* accessTime, const FILETIME* writeTime)
 {
@@ -384,43 +276,41 @@ static std::unique_ptr<MemoryByteStream> read_block_16_core(IByteStream& stream_
 
 //===========================================================================
 // читает блок из потока каталога stream_from, собирая его по страницам
-TStream* read_block(TStream* stream_from, int start, TStream* stream_to = NULL)
+IByteStream* read_block(IByteStream& stream_from, int start, IByteStream* stream_to = NULL)
 {
 	if(!stream_to)
-		stream_to = new TMemoryStream;
+		stream_to = new MemoryByteStream;
 
-	stream_to->Seek(0, soFromBeginning);
-	stream_to->Size = 0;
+	stream_to->Seek(0, SeekOrigin::Begin);
+	stream_to->SetSize(0);
 
-	TStreamByteStreamAdapter source(stream_from);
-	std::unique_ptr<MemoryByteStream> block = read_block_core(source, start);
+	std::unique_ptr<MemoryByteStream> block = read_block_core(stream_from, start);
 	if(block->Size() > 0)
 	{
 		const std::vector<std::uint8_t>& data = block->Data();
-		stream_to->Write(data.data(), static_cast<int>(data.size()));
+		WriteBufferExact(*stream_to, data.data(), data.size());
 	}
-	stream_to->Seek(0, soFromBeginning);
+	stream_to->Seek(0, SeekOrigin::Begin);
 	return stream_to;
 }
 
 //===========================================================================
 // читает блок из потока каталога stream_from, собирая его по страницам
-TStream* read_block_16(TStream* stream_from, __int64 start, TStream* stream_to = NULL)
+IByteStream* read_block_16(IByteStream& stream_from, __int64 start, IByteStream* stream_to = NULL)
 {
 	if(!stream_to)
-		stream_to = new TMemoryStream;
+		stream_to = new MemoryByteStream;
 
-	stream_to->Seek(0, soFromBeginning);
-	stream_to->Size = 0;
+	stream_to->Seek(0, SeekOrigin::Begin);
+	stream_to->SetSize(0);
 
-	TStreamByteStreamAdapter source(stream_from);
-	std::unique_ptr<MemoryByteStream> block = read_block_16_core(source, start);
+	std::unique_ptr<MemoryByteStream> block = read_block_16_core(stream_from, start);
 	if(block->Size() > 0)
 	{
 		const std::vector<std::uint8_t>& data = block->Data();
-		stream_to->Write(data.data(), static_cast<int>(data.size()));
+		WriteBufferExact(*stream_to, data.data(), data.size());
 	}
-	stream_to->Seek(0, soFromBeginning);
+	stream_to->Seek(0, SeekOrigin::Begin);
 	return stream_to;
 }
 
@@ -478,6 +368,16 @@ static String Utf16ToString(const Utf16String& value)
 #else
 	return String(reinterpret_cast<const wchar_t*>(value.c_str()));
 #endif
+}
+
+Utf16String V8Utf16FromString(const String& value)
+{
+	return StringToUtf16(value);
+}
+
+String V8StringFromUtf16(const Utf16String& value)
+{
+	return Utf16ToString(value);
 }
 
 //===========================================================================
@@ -559,16 +459,6 @@ void v8file::SaveToFile(const std::filesystem::path& filePath)
 }
 
 //===========================================================================
-void v8file::SaveToStream(TStream* stream)
-{
-	if(!stream)
-		return;
-
-	TStreamByteStreamAdapter streamAdapter(stream);
-	SaveToByteStream(streamAdapter);
-}
-
-//===========================================================================
 void v8file::SaveToByteStream(IByteStream& stream)
 {
 	V8ScopedLock guard(Lock);
@@ -576,20 +466,20 @@ void v8file::SaveToByteStream(IByteStream& stream)
 		if(!Open())
 			return;
 
-	const __int64 sourcePosition = data->Position;
-	data->Seek(0, soFromBeginning);
+	const std::uint64_t sourcePosition = data->Position();
+	data->Seek(0, SeekOrigin::Begin);
 
 	ByteVector buffer(CHUNK);
 	while(true)
 	{
-		const int bytesRead = data->Read(buffer.data(), static_cast<int>(buffer.size()));
-		if(bytesRead <= 0)
+		const std::size_t bytesRead = data->Read(buffer.data(), buffer.size());
+		if(bytesRead == 0)
 			break;
 
-		stream.Write(buffer.data(), static_cast<std::size_t>(bytesRead));
+		WriteBufferExact(stream, buffer.data(), bytesRead);
 	}
 
-	data->Seek(sourcePosition, soFromBeginning);
+	data->Seek(static_cast<std::int64_t>(sourcePosition), SeekOrigin::Begin);
 }
 
 //===========================================================================
@@ -600,7 +490,7 @@ int v8file::GetFileLength()
 		if(!Open())
 			return 0;
 
-	return data->Size;
+	return static_cast<int>(data->Size());
 }
 
 //===========================================================================
@@ -611,7 +501,7 @@ __int64 v8file::GetFileLength64()
 		if(!Open())
 			return 0l;
 
-	return data->Size;
+	return static_cast<__int64>(data->Size());
 }
 
 //===========================================================================
@@ -622,8 +512,8 @@ int v8file::Read(void* Buffer, int Start, int Length)
 		if(!Open())
 			return 0;
 
-	data->Seek(Start, soFromBeginning);
-	return data->Read(Buffer, Length);
+	data->Seek(Start, SeekOrigin::Begin);
+	return static_cast<int>(data->Read(Buffer, static_cast<std::size_t>(Length)));
 }
 
 //===========================================================================
@@ -638,8 +528,8 @@ int v8file::Read(ByteVector& Buffer, int Start, int Length)
 		return 0;
 
 	Buffer.resize(Length);
-	data->Seek(Start, soFromBeginning);
-	const int read = data->Read(Buffer.data(), Length);
+	data->Seek(Start, SeekOrigin::Begin);
+	const int read = static_cast<int>(data->Read(Buffer.data(), static_cast<std::size_t>(Length)));
 	if(read >= 0 && read < Length)
 		Buffer.resize(read);
 
@@ -648,7 +538,7 @@ int v8file::Read(ByteVector& Buffer, int Start, int Length)
 
 ////---------------------------------------------------------------------------
 //// Потоконебезопасная функция!
-//TStream* v8file::get_data()
+//IByteStream* v8file::get_data()
 //{
 //	return data;
 //}
@@ -667,7 +557,7 @@ int v8file::Write(const void* Buffer, int Start, int Length)
 	is_headermodified = true;
 	is_datamodified = true;
 
-	data->Seek(Start, soFromBeginning);
+	data->Seek(Start, SeekOrigin::Begin);
 	return data->Write(Buffer, Length);
 }
 
@@ -686,7 +576,7 @@ int v8file::Write(const ByteVector& Buffer, int Start, int Length)
 	setCurrentTime(&time_modify);
 	is_headermodified = true;
 	is_datamodified = true;
-	data->Seek(Start, soFromBeginning);
+	data->Seek(Start, SeekOrigin::Begin);
 	if(Length == 0)
 		return 0;
 
@@ -706,35 +596,12 @@ int v8file::Write(const void* Buffer, int Length)
 	setCurrentTime(&time_modify);
 	is_headermodified = true;
 	is_datamodified = true;
-	if(data->Size > Length)
-		data->Size = Length;
-	data->Seek(0, soFromBeginning);
-	return data->Write(Buffer, Length);
+	if(data->Size() > static_cast<std::uint64_t>(Length))
+		data->SetSize(static_cast<std::uint64_t>(Length));
+	data->Seek(0, SeekOrigin::Begin);
+	return static_cast<int>(data->Write(Buffer, static_cast<std::size_t>(Length)));
 }
 
-//===========================================================================
-// дозапись/перезапись частично
-int v8file::Write(TStream* Stream, int Start, int Length)
-{
-	if(!Stream)
-		return 0;
-
-	TStreamByteStreamAdapter streamAdapter(Stream);
-	return Write(streamAdapter, Start, Length);
-}
-
-//===========================================================================
-// перезапись целиком
-int v8file::Write(TStream* Stream)
-{
-	if(!Stream)
-		return 0;
-
-	TStreamByteStreamAdapter streamAdapter(Stream);
-	return Write(streamAdapter);
-}
-
-//===========================================================================
 // дозапись/перезапись частично
 int v8file::Write(IByteStream& Stream, int Start, int Length)
 {
@@ -746,7 +613,7 @@ int v8file::Write(IByteStream& Stream, int Start, int Length)
 	setCurrentTime(&time_modify);
 	is_headermodified = true;
 	is_datamodified = true;
-	data->Seek(Start, soFromBeginning);
+	data->Seek(Start, SeekOrigin::Begin);
 
 	if(Length == 0)
 		return 0;
@@ -767,7 +634,7 @@ int v8file::Write(IByteStream& Stream, int Start, int Length)
 		if(bytesRead == 0)
 			break;
 
-		data->Write(buffer.data(), static_cast<int>(bytesRead));
+		WriteBufferExact(*data, buffer.data(), bytesRead);
 		totalWritten += static_cast<int>(bytesRead);
 	}
 
@@ -791,9 +658,9 @@ int v8file::Write(IByteStream& Stream)
 	const std::uint64_t sourcePosition = Stream.Position();
 	const std::uint64_t remaining = sourceSize > sourcePosition ? sourceSize - sourcePosition : 0;
 
-	if(data->Size > static_cast<__int64>(sourceSize))
-		data->Size = static_cast<__int64>(sourceSize);
-	data->Seek(0, soFromBeginning);
+	if(data->Size() > sourceSize)
+		data->SetSize(sourceSize);
+	data->Seek(0, SeekOrigin::Begin);
 
 	int totalWritten = 0;
 	ByteVector buffer(CHUNK);
@@ -805,7 +672,7 @@ int v8file::Write(IByteStream& Stream)
 		if(bytesRead == 0)
 			break;
 
-		data->Write(buffer.data(), static_cast<int>(bytesRead));
+		WriteBufferExact(*data, buffer.data(), bytesRead);
 		totalWritten += static_cast<int>(bytesRead);
 	}
 
@@ -842,6 +709,12 @@ String v8file::GetFullName()
 }
 
 //===========================================================================
+Utf16String v8file::GetFullName16()
+{
+	return StringToUtf16(GetFullName());
+}
+
+//===========================================================================
 void v8file::SetFileName(const String& _name)
 {
 	name = _name;
@@ -873,10 +746,10 @@ bool v8file::IsCatalog()
 
 					return false;
 				}
-		_filelen = data->Size;
+		_filelen = data->Size();
 		if(_filelen == 16)
 		{
-			data->Seek(0, soFromBeginning);
+			data->Seek(0, SeekOrigin::Begin);
 			data->Read(_t, 16);
 			if(memcmp(_t, _empty_catalog_template, 16) != 0)
 			{
@@ -894,7 +767,7 @@ bool v8file::IsCatalog()
 			}
 		}
 
-		data->Seek(0, soFromBeginning);
+		data->Seek(0, SeekOrigin::Begin);
 		data->Read(&_startempty, 4);
 		if(_startempty != V8_FF_SIGNATURE)
         {
@@ -906,7 +779,7 @@ bool v8file::IsCatalog()
 				return false;
 			}
 
-			data->Seek(_startempty, soFromBeginning);
+			data->Seek(_startempty, SeekOrigin::Begin);
 			data->Read(_t, 31);
 
 			if(_t[0] != 0xd || _t[1] != 0xa || _t[10] != 0x20 || _t[19] != 0x20 || _t[28] != 0x20 || _t[29] != 0xd || _t[30] != 0xa)
@@ -924,7 +797,7 @@ bool v8file::IsCatalog()
 
 			return false;
 		}
-		data->Seek(16, soFromBeginning);
+		data->Seek(16, SeekOrigin::Begin);
 		data->Read(_t, 31);
 		if(_t[0] != 0xd || _t[1] != 0xa || _t[10] != 0x20 || _t[19] != 0x20 || _t[28] != 0x20 || _t[29] != 0xd || _t[30] != 0xa)
         {
@@ -1087,27 +960,26 @@ void v8file::Close()
 			V8ScopedLock parent_guard(parent->Lock);
 			if(is_datamodified)
 			{
-				start_data = parent->write_datablock(data, start_data, selfzipped);
+				start_data = parent->write_datablock(*data, start_data, selfzipped);
 			}
 			if(is_headermodified)
 			{
-				TMemoryStream* hs = new TMemoryStream();
-				hs->Write(&time_create, 8);
-				hs->Write(&time_modify, 8);
-				hs->Write(&_t, 4);
+				MemoryByteStream hs;
+				WriteBufferExact(hs, &time_create, 8);
+				WriteBufferExact(hs, &time_modify, 8);
+				WriteBufferExact(hs, &_t, 4);
 				#ifndef _DELPHI_STRING_UNICODE
 				int ws = name.WideCharBufSize();
 				char* tb = new char[ws];
 				name.WideChar((wchar_t*)tb, ws);
-				hs->Write((char*)tb, ws);
+				WriteBufferExact(hs, tb, static_cast<std::size_t>(ws));
 				delete[] tb;
 				#else
-				hs->Write(name.c_str(), name.Length() * 2);
+				WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.Length() * 2));
 				#endif
-				hs->Write(&_t, 4);
+				WriteBufferExact(hs, &_t, 4);
 
 				start_header = parent->write_block(hs, start_header, false);
-				delete hs;
 			}
 		}
 	}
@@ -1120,7 +992,7 @@ void v8file::Close()
 }
 
 //===========================================================================
-int v8file::WriteAndClose(TStream* Stream, int Length)
+int v8file::WriteAndClose(IByteStream& Stream, int Length)
 {
 	int _t = 0;
 
@@ -1144,14 +1016,13 @@ int v8file::WriteAndClose(TStream* Stream, int Length)
 	{
 		V8ScopedLock parent_guard(parent->Lock);
 		start_data = parent->write_datablock(Stream, start_data, selfzipped, Length);
-		TMemoryStream* hs = new TMemoryStream();
-		hs->Write(&time_create, 8);
-		hs->Write(&time_modify, 8);
-		hs->Write(&_t, 4);
-		hs->Write(name.c_str(), name.Length() * 2);
-		hs->Write(&_t, 4);
+		MemoryByteStream hs;
+		WriteBufferExact(hs, &time_create, 8);
+		WriteBufferExact(hs, &time_modify, 8);
+		WriteBufferExact(hs, &_t, 4);
+		WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.Length() * 2));
+		WriteBufferExact(hs, &_t, 4);
 		start_header = parent->write_block(hs, start_header, false);
-		delete hs;
 
 	}
 	iscatalog = iscatalog_unknown;
@@ -1160,39 +1031,9 @@ int v8file::WriteAndClose(TStream* Stream, int Length)
 	is_headermodified = false;
 
 	if(Length == -1)
-    	return Stream->Size;
+    	return static_cast<int>(Stream.Size());
 
 	return Length;
-}
-
-//===========================================================================
-int v8file::WriteAndClose(IByteStream& Stream, int Length)
-{
-	std::unique_ptr<TMemoryStream> temp(new TMemoryStream());
-
-	int bytesToCopy = Length;
-	if(bytesToCopy < 0)
-	{
-		const std::uint64_t sourcePos = Stream.Position();
-		const std::uint64_t sourceSize = Stream.Size();
-		bytesToCopy = static_cast<int>(sourceSize > sourcePos ? sourceSize - sourcePos : 0);
-	}
-
-	int totalCopied = 0;
-	ByteVector buffer(CHUNK);
-	while(totalCopied < bytesToCopy)
-	{
-		const int toRead = min(bytesToCopy - totalCopied, static_cast<int>(buffer.size()));
-		const std::size_t bytesRead = Stream.Read(buffer.data(), static_cast<std::size_t>(toRead));
-		if(bytesRead == 0)
-			break;
-
-		temp->WriteBuffer(buffer.data(), static_cast<int>(bytesRead));
-		totalCopied += static_cast<int>(bytesRead);
-	}
-
-	temp->Seek(0, soFromBeginning);
-	return WriteAndClose(temp.get(), totalCopied);
 }
 
 //===========================================================================
@@ -1258,28 +1099,27 @@ void v8file::Flush()
 			V8ScopedLock parent_guard(parent->Lock);
 			if(is_datamodified)
 			{
-				start_data = parent->write_datablock(data, start_data, selfzipped);
+				start_data = parent->write_datablock(*data, start_data, selfzipped);
 				is_datamodified = false;
 			}
 			if(is_headermodified)
 			{
-				TMemoryStream* hs = new TMemoryStream();
-				hs->Write(&time_create, 8);
-				hs->Write(&time_modify, 8);
-				hs->Write(&_t, 4);
+				MemoryByteStream hs;
+				WriteBufferExact(hs, &time_create, 8);
+				WriteBufferExact(hs, &time_modify, 8);
+				WriteBufferExact(hs, &_t, 4);
 				#ifndef _DELPHI_STRING_UNICODE
 				int ws = name.WideCharBufSize();
 				char* tb = new char[ws];
 				name.WideChar((wchar_t*)tb, ws);
-				hs->Write((char*)tb, ws);
+				WriteBufferExact(hs, tb, static_cast<std::size_t>(ws));
 				delete[] tb;
 				#else
-				hs->Write(name.c_str(), name.Length() * 2);
+				WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.Length() * 2));
 				#endif
-				hs->Write(&_t, 4);
+				WriteBufferExact(hs, &_t, 4);
 
 				start_header = parent->write_block(hs, start_header, false);
-				delete hs;
 				is_headermodified = false;
 			}
 		}
@@ -1297,7 +1137,7 @@ bool v8catalog::Is8316()
     char _temp_data[8] = "";
 
 	V8ScopedLock guard(Lock);
-	data->Seek(V8_OFFSET_8316, soFromBeginning);
+	data->Seek(V8_OFFSET_8316, SeekOrigin::Begin);
 	data->Read(_temp_data, 8);
     return memcmp(_temp_data, _empty_catalog_template8316, 8) == 0;
 
@@ -1321,10 +1161,10 @@ bool v8catalog::IsCatalog()
 	iscatalog = false;
 
 	// эмпирический метод?
-	_filelen = data->Size;
+	_filelen = data->Size();
 	if(_filelen == 16)
 	{
-		data->Seek(0, soFromBeginning);
+		data->Seek(0, SeekOrigin::Begin);
 		data->Read(_t, 16);
 		if(memcmp(_t, _empty_catalog_template, 16) != 0)
 		{
@@ -1339,7 +1179,7 @@ bool v8catalog::IsCatalog()
 		}
 	}
 
-	data->Seek(0, soFromBeginning);
+	data->Seek(0, SeekOrigin::Begin);
 	data->Read(&_startempty, 4);
 	if(_startempty != V8_FF_SIGNATURE)
     {
@@ -1348,7 +1188,7 @@ bool v8catalog::IsCatalog()
 			Lock->Release();
 			return false;
 		}
-		data->Seek(_startempty, soFromBeginning);
+		data->Seek(_startempty, SeekOrigin::Begin);
 		data->Read(_t, 31);
 		if(_t[0] != 0xd || _t[1] != 0xa || _t[10] != 0x20 || _t[19] != 0x20 || _t[28] != 0x20 || _t[29] != 0xd || _t[30] != 0xa)
 		{
@@ -1361,7 +1201,7 @@ bool v8catalog::IsCatalog()
 		Lock->Release();
 		return false;
 	}
-	data->Seek(16, soFromBeginning);
+	data->Seek(16, SeekOrigin::Begin);
 	data->Read(_t, 31);
 	if(_t[0] != 0xd || _t[1] != 0xa || _t[10] != 0x20 || _t[19] != 0x20 || _t[28] != 0x20 || _t[29] != 0xd || _t[30] != 0xa)
 	{
@@ -1395,17 +1235,17 @@ v8catalog::v8catalog(const std::filesystem::path& path)
 	{
 		is_cfu = true;
 		zipped = false;
-		data = new TMemoryStream();
+		data = new MemoryByteStream();
 
 		if(!std::filesystem::exists(path))
 		{
-			data->WriteBuffer(_empty_catalog_template, 16);
-			cfu = new StdFileTStream(path, FileOpenMode::CreateTruncate);
+			WriteBufferExact(*data, _empty_catalog_template, 16);
+			cfu = new StdFileStream(path, FileOpenMode::CreateTruncate);
 		}
 		else
 		{
-			cfu = new StdFileTStream(path, FileOpenMode::ReadWrite);
-			ZInflateStream(cfu, data);
+			cfu = new StdFileStream(path, FileOpenMode::ReadWrite);
+			ZInflateStream(*cfu, *data);
 		}
 	}
 	else
@@ -1415,11 +1255,11 @@ v8catalog::v8catalog(const std::filesystem::path& path)
 
 		if(!std::filesystem::exists(path))
 		{
-			data = new StdFileTStream(path, FileOpenMode::CreateTruncate);
-			data->WriteBuffer(_empty_catalog_template, 16);
+			data = new StdFileStream(path, FileOpenMode::CreateTruncate);
+			WriteBufferExact(*data, _empty_catalog_template, 16);
 			delete data;
 		}
-		data = new StdFileTStream(path, FileOpenMode::ReadWrite);
+		data = new StdFileStream(path, FileOpenMode::ReadWrite);
 	}
 
 	file = NULL;
@@ -1460,12 +1300,12 @@ v8catalog::v8catalog(const std::filesystem::path& path, bool _zipped)
 
 	if(!std::filesystem::exists(path))
 	{
-		data = new StdFileTStream(path, FileOpenMode::CreateTruncate);
-		data->WriteBuffer(_empty_catalog_template, 16);
+		data = new StdFileStream(path, FileOpenMode::CreateTruncate);
+		WriteBufferExact(*data, _empty_catalog_template, 16);
 		delete data;
 	}
 
-	data = new StdFileTStream(path, FileOpenMode::ReadWrite);
+	data = new StdFileStream(path, FileOpenMode::ReadWrite);
 
 	file = NULL;
 
@@ -1497,18 +1337,18 @@ v8catalog::v8catalog(const std::filesystem::path& path, bool _zipped)
 
 //===========================================================================
 // создать каталог из потока
-v8catalog::v8catalog(TStream* stream, bool _zipped, bool leave_stream)
+v8catalog::v8catalog(IByteStream* stream, bool _zipped, bool leave_stream)
 {
 	Lock = new V8RecursiveMutex();
 	is_cfu = false;
 	iscatalogdefined = false;
 	zipped = _zipped;
-	//data = new TMemoryStream;
-	//data->CopyFrom(stream, 0);
+	//data = new MemoryByteStream;
+	//CopyFromStream(*data, *stream, static_cast<std::size_t>( 0));
 	data = stream;
 	file = NULL;
-	if(!data->Size)
-    	data->WriteBuffer(_empty_catalog_template, 16);
+	if(!data->Size())
+    	WriteBufferExact(*data, _empty_catalog_template, 16);
 	if(IsCatalog())
     	initialize();
 	else
@@ -1577,8 +1417,8 @@ void v8catalog::initialize(int Offset)
 
 	char* _temp_buf;
 
-	TMemoryStream* _file_header;
-	TStream* _fat;
+	MemoryByteStream* _file_header;
+	IByteStream* _fat;
 
 	v8file* _prev;
 	v8file* _file;
@@ -1590,11 +1430,11 @@ void v8catalog::initialize(int Offset)
     int dataStart   = 0;
     int headerStart = 0;
 
-    data->Seek(Offset, soFromBeginning);
+    data->Seek(Offset, SeekOrigin::Begin);
     if (Offset)
     {
 	    HeaderSize = 20;
-        data->ReadBuffer(&_ch8316, HeaderSize);
+        ReadBufferExact(*data, &_ch8316, HeaderSize);
         start_empty8316 = _ch8316.start_empty;
         page_size = _ch8316.page_size;
         version = _ch8316.version;
@@ -1602,7 +1442,7 @@ void v8catalog::initialize(int Offset)
     else
     {
 	    HeaderSize = 16;
-    	data->ReadBuffer(&_ch, HeaderSize);
+    	ReadBufferExact(*data, &_ch, HeaderSize);
         start_empty = _ch.start_empty;
         page_size = _ch.page_size;
         version = _ch.version;
@@ -1611,23 +1451,23 @@ void v8catalog::initialize(int Offset)
 	first = NULL;
 	_prev = NULL;
 
-	_file_header = new TMemoryStream;
+	_file_header = new MemoryByteStream;
 
 	try
 	{
-		if(data->Size > HeaderSize)
+		if(data->Size() > HeaderSize)
 		{
 	        if (Offset)
             {
-				_fat = read_block_16(data, HeaderSize + Offset);
-                _fat->Seek(0, soFromBeginning);
-                _countfiles = _fat->Size / 24;
+				_fat = read_block_16(*data, HeaderSize + Offset);
+                _fat->Seek(0, SeekOrigin::Begin);
+                _countfiles = _fat->Size() / 24;
             }
             else
             {
-                _fat = read_block(data, HeaderSize);
-                _fat->Seek(0, soFromBeginning);
-                _countfiles = _fat->Size / 12;
+                _fat = read_block(*data, HeaderSize);
+                _fat->Seek(0, SeekOrigin::Begin);
+                _countfiles = _fat->Size() / 12;
             }
 
 			for(int i = 0; i < _countfiles; i++)
@@ -1635,18 +1475,18 @@ void v8catalog::initialize(int Offset)
                 if (Offset)
                 {
 	                _fat->Read(&_fi8316, 24);
-                    read_block_16(data, _fi8316.header_start + Offset, _file_header);
+                    read_block_16(*data, _fi8316.header_start + Offset, _file_header);
                 }
                 else
                 {
 	                _fat->Read(&_fi, 12);
-                    read_block(data, _fi.header_start, _file_header);
+                    read_block(*data, _fi.header_start, _file_header);
                 }
 
-				_file_header->Seek(0, soFromBeginning);
+				_file_header->Seek(0, SeekOrigin::Begin);
 
-				_temp_buf = new char[_file_header->Size];
-				_file_header->Read(_temp_buf, _file_header->Size);
+				_temp_buf = new char[_file_header->Size()];
+				_file_header->Read(_temp_buf, _file_header->Size());
 				_name = (wchar_t*)(_temp_buf + 20);
 
 				dataStart   = Offset ? _fi8316.data_start   + Offset : _fi.data_start;
@@ -1706,42 +1546,42 @@ void v8catalog::initialize(int Offset)
 //	String _name;
 //	fat_item _fi;
 //	char* _temp_buf;
-//	TMemoryStream* _file_header;
-//	TStream* _fat;
+//	MemoryByteStream* _file_header;
+//	IByteStream* _fat;
 //	v8file* _prev;
 //	v8file* _file;
 //	v8file* f;
 //	int _countfiles;
 //
-//	data->Seek(0, soFromBeginning);
-//    //data->Seek(4953, soFromBeginning);
-//	data->ReadBuffer(&_ch, 16);
-//    //data->ReadBuffer(&_ch, 20);
+//	data->Seek(0, SeekOrigin::Begin);
+//    //data->Seek(4953, SeekOrigin::Begin);
+//	ReadBufferExact(*data, &_ch, 16);
+//    //ReadBufferExact(*data, &_ch, 20);
 //	start_empty = _ch.start_empty;
 //	page_size = _ch.page_size;
 //	version = _ch.version;
 //
 //	first = NULL;
 //
-//	_file_header = new TMemoryStream;
+//	_file_header = new MemoryByteStream;
 //	_prev = NULL;
 //	try
 //	{
-//		if(data->Size > 16)
+//		if(data->Size() > 16)
 //		{
 //			_fat = read_block(data, 16);
 //            //_fat = read_block(data, 20);
-//			_fat->Seek(0, soFromBeginning);
-//            //_fat->Seek(4953, soFromBeginning);
-//			_countfiles = _fat->Size / 12;
-//            //_countfiles = _fat->Size / 24;
+//			_fat->Seek(0, SeekOrigin::Begin);
+//            //_fat->Seek(4953, SeekOrigin::Begin);
+//			_countfiles = _fat->Size() / 12;
+//            //_countfiles = _fat->Size() / 24;
 //			for(int i = 0; i < _countfiles; i++){
 //				_fat->Read(&_fi, 12);
-//				read_block(data, _fi.header_start, _file_header);
-//				_file_header->Seek(0, soFromBeginning);
-//                //_file_header->Seek(4953, soFromBeginning);
-//				_temp_buf = new char[_file_header->Size];
-//				_file_header->Read(_temp_buf, _file_header->Size);
+//				read_block(*data, _fi.header_start, _file_header);
+//				_file_header->Seek(0, SeekOrigin::Begin);
+//                //_file_header->Seek(4953, SeekOrigin::Begin);
+//				_temp_buf = new char[_file_header->Size()];
+//				_file_header->Read(_temp_buf, _file_header->Size());
 //				_name = (wchar_t*)(_temp_buf + 20);
 //				_file = new v8file(this, _name, _prev, _fi.data_start, _fi.header_start, (__int64*)_temp_buf, (__int64*)(_temp_buf + 8));
 //				delete[] _temp_buf;
@@ -1789,11 +1629,18 @@ void v8catalog::initialize(int Offset)
 //===========================================================================
 void v8catalog::DeleteFile(const String& FileName)
 {
+	DeleteFile16(StringToUtf16(FileName));
+}
+
+void v8catalog::DeleteFile16(const Utf16String& fileName)
+{
+	const String vclFileName = Utf16ToString(fileName);
+
 	V8ScopedLock guard(Lock);
 	v8file* f = first;
 	while(f)
 	{
-		if(!f->name.CompareIC(FileName))
+		if(!f->name.CompareIC(vclFileName))
 		{
 			f->DeleteFile();
 			delete f;
@@ -1805,8 +1652,15 @@ void v8catalog::DeleteFile(const String& FileName)
 //===========================================================================
 v8file* v8catalog::GetFile(const String& FileName)
 {
+	return GetFile16(StringToUtf16(FileName));
+}
+
+v8file* v8catalog::GetFile16(const Utf16String& fileName)
+{
+	const String vclFileName = Utf16ToString(fileName);
+
 	V8ScopedLock guard(Lock);
-	std::map<String, v8file*>::const_iterator it = files.find(FileName.UpperCase());
+	std::map<String, v8file*>::const_iterator it = files.find(vclFileName.UpperCase());
 	if(it == files.end())
 		return NULL;
 
@@ -1822,16 +1676,23 @@ v8file* v8catalog::GetFirst()
 //===========================================================================
 v8file* v8catalog::createFile(const String& FileName, bool _selfzipped)
 {
+	return createFile16(StringToUtf16(FileName), _selfzipped);
+}
+
+v8file* v8catalog::createFile16(const Utf16String& fileName, bool _selfzipped)
+{
+	const String vclFileName = Utf16ToString(fileName);
+
 	__int64 v8t;
 	v8file* f;
 
 	V8ScopedLock guard(Lock);
-	std::map<String, v8file*>::const_iterator it = files.find(FileName.UpperCase());
+	std::map<String, v8file*>::const_iterator it = files.find(vclFileName.UpperCase());
 	f = it == files.end() ? NULL : it->second;
 	if(!f)
 	{
 		setCurrentTime(&v8t);
-		f = new v8file(this, FileName, last, 0, 0, &v8t, &v8t);
+		f = new v8file(this, vclFileName, last, 0, 0, &v8t, &v8t);
 		f->selfzipped = _selfzipped;
 		last = f;
 		is_fatmodified = true;
@@ -1849,23 +1710,23 @@ v8catalog* v8catalog::GetParentCatalog()
 }
 
 //===========================================================================
-TStream* v8catalog::read_datablock(int start, int offset)
+IByteStream* v8catalog::read_datablock(int start, int offset)
 {
-	TStream* stream;
-	TStream* stream2;
+	IByteStream* stream;
+	IByteStream* stream2;
 
 	if(!start)
-		return new TMemoryStream;
+		return new MemoryByteStream;
 
 	Lock->Acquire();
 
     if (offset)
     {
-        stream = read_block_16(data, start);
+        stream = read_block_16(*data, start);
     }
     else
     {
-	    stream = read_block(data, start);
+	    stream = read_block(*data, start);
     }
 
 
@@ -1873,9 +1734,9 @@ TStream* v8catalog::read_datablock(int start, int offset)
 
 	if(zipped)
 	{
-		stream2 = new TMemoryStream;
-		stream->Seek(0, soFromBeginning);
-		ZInflateStream(stream, stream2);
+		stream2 = new MemoryByteStream;
+		stream->Seek(0, SeekOrigin::Begin);
+		ZInflateStream(*stream, *stream2);
 		delete stream;
 	}
 	else
@@ -1902,14 +1763,14 @@ void v8catalog::free_block(int start)
 
 	do
 	{
-		data->Seek(start, soFromBeginning);
-		data->ReadBuffer(temp_buf, 31);
+		data->Seek(start, SeekOrigin::Begin);
+		ReadBufferExact(*data, temp_buf, 31);
 		nextstart = hex_to_int(&temp_buf[20]);
 		int_to_hex(&temp_buf[2], V8_FF_SIGNATURE);
 		if(nextstart == V8_FF_SIGNATURE)
         	int_to_hex(&temp_buf[20], prevempty);
-		data->Seek(start, soFromBeginning);
-		data->WriteBuffer(temp_buf, 31);
+		data->Seek(start, SeekOrigin::Begin);
+		WriteBufferExact(*data, temp_buf, 31);
 		start = nextstart;
 	}
 	while(start != V8_FF_SIGNATURE);
@@ -1920,10 +1781,10 @@ void v8catalog::free_block(int start)
 }
 
 //===========================================================================
-int v8catalog::write_datablock(TStream* block, int start, bool _zipped, int len)
+int v8catalog::write_datablock(IByteStream& block, int start, bool _zipped, int len)
 {
-	TMemoryStream* stream2;
-	TMemoryStream* stream;
+	MemoryByteStream* stream2;
+	MemoryByteStream* stream;
 	int ret;
 
 	//if(!file)
@@ -1931,25 +1792,25 @@ int v8catalog::write_datablock(TStream* block, int start, bool _zipped, int len)
 	{
 		if(len == -1)
 		{
-			stream2 = new TMemoryStream;
-			block->Seek(0, soFromBeginning);
-			ZDeflateStream(block, stream2);
+			stream2 = new MemoryByteStream;
+			block.Seek(0, SeekOrigin::Begin);
+			ZDeflateStream(block, *stream2);
 			Lock->Acquire();
-			start = write_block(stream2, start, false);
+			start = write_block(*stream2, start, false);
 			ret = start;
 			Lock->Release();
 			delete stream2;
 		}
 		else
 		{
-			stream = new TMemoryStream;
-			stream->CopyFrom(block, len);
-			stream2 = new TMemoryStream;
-			stream->Seek(0, soFromBeginning);
-			ZDeflateStream(stream, stream2);
+			stream = new MemoryByteStream;
+			CopyFromStream(*stream, block, static_cast<std::size_t>(len));
+			stream2 = new MemoryByteStream;
+			stream->Seek(0, SeekOrigin::Begin);
+			ZDeflateStream(*stream, *stream2);
 			delete stream;
 			Lock->Acquire();
-			start = write_block(stream2, start, false);
+			start = write_block(*stream2, start, false);
 			ret = start;
 			Lock->Release();
 			delete stream2;
@@ -1976,7 +1837,7 @@ int v8catalog::get_nextblock(int start)
 		start = start_empty;
 
 		if(start == V8_FF_SIGNATURE)
-        	start = data->Size;
+        	start = data->Size();
 	}
 	ret = start;
 	Lock->Release();
@@ -1984,7 +1845,7 @@ int v8catalog::get_nextblock(int start)
 }
 
 //===========================================================================
-int v8catalog::write_block(TStream* block, int start, bool use_page_size, int len)
+int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, int len)
 {
 	char temp_buf[32];
 	char* _t;
@@ -1993,16 +1854,17 @@ int v8catalog::write_block(TStream* block, int start, bool use_page_size, int le
 	bool addwrite = false; // признак, что надо дозаписать файл при использовании размера страницы по умолчанию
 
 	Lock->Acquire();
-	if(data->Size == 16 && start != 16) // если каталог пустой, надо выделить первую страницу!!!
+	if(data->Size() == 16 && start != 16) // если каталог пустой, надо выделить первую страницу!!!
 	{
-		TMemoryStream* _ts = new TMemoryStream;
-		write_block(_ts, 16, true);
+		MemoryByteStream* _ts = new MemoryByteStream;
+		write_block(*_ts, 16, true);
+		delete _ts;
 	}
 
 	if(len == -1)
 	{
-		len = block->Size;
-		block->Seek(0, soFromBeginning);
+		len = static_cast<int>(block.Size());
+		block.Seek(0, SeekOrigin::Begin);
 	}
 	start = get_nextblock(start);
 
@@ -2011,15 +1873,15 @@ int v8catalog::write_block(TStream* block, int start, bool use_page_size, int le
 		if(start == start_empty)
 		{
         	// пишем в свободный блок
-			data->Seek(start, soFromBeginning);
-			data->ReadBuffer(temp_buf, 31);
+			data->Seek(start, SeekOrigin::Begin);
+			ReadBufferExact(*data, temp_buf, 31);
 			blocklen = hex_to_int(&temp_buf[11]);
 			nextstart = hex_to_int(&temp_buf[20]);
 			//start_empty = len <= blocklen ? V8_FF_SIGNATURE : nextstart;
 			start_empty = nextstart;
 			is_emptymodified = true;
 		}
-		else if(start == data->Size)
+		else if(start == data->Size())
 		{
         	// пишем в новый блок
 			memcpy(temp_buf, _block_header_template, 31);
@@ -2032,8 +1894,8 @@ int v8catalog::write_block(TStream* block, int start, bool use_page_size, int le
 		else
 		{
         	// пишем в существующий блок
-			data->Seek(start, soFromBeginning);
-			data->ReadBuffer(temp_buf, 31);
+			data->Seek(start, SeekOrigin::Begin);
+			ReadBufferExact(*data, temp_buf, 31);
 			blocklen = hex_to_int(&temp_buf[11]);
 			nextstart = hex_to_int(&temp_buf[20]);
 		}
@@ -2042,20 +1904,20 @@ int v8catalog::write_block(TStream* block, int start, bool use_page_size, int le
 		curlen = min(blocklen, len);
 
 		if(!nextstart)
-        	nextstart = data->Size + 31 + blocklen;
+        	nextstart = data->Size() + 31 + blocklen;
 		else
         	nextstart = get_nextblock(nextstart);
 
 		int_to_hex(&temp_buf[20], len <= blocklen ? V8_FF_SIGNATURE : nextstart);
 
-		data->Seek(start, soFromBeginning);
-		data->WriteBuffer(temp_buf, 31);
-		data->CopyFrom(block, curlen);
+		data->Seek(start, SeekOrigin::Begin);
+		WriteBufferExact(*data, temp_buf, 31);
+		CopyFromStream(*data, block, static_cast<std::size_t>(curlen));
 		if(addwrite)
 		{
 			_t = new char [blocklen - len];
 			memset(_t, 0, blocklen - len);
-			data->WriteBuffer(_t, blocklen - len);
+			WriteBufferExact(*data, _t, blocklen - len);
 			addwrite = false;
 		}
 
@@ -2070,7 +1932,7 @@ int v8catalog::write_block(TStream* block, int start, bool use_page_size, int le
 
 	}while(len > 0);
 
-	if(start < data->Size && start != start_empty)
+	if(start < data->Size() && start != start_empty)
     	free_block(start);
 
 	is_modified = true;
@@ -2084,7 +1946,7 @@ v8catalog::~v8catalog()
 {
 	fat_item fi;
 	v8file* f;
-	TMemoryStream* fat = NULL;
+	MemoryByteStream* fat = NULL;
 
 	Lock->Acquire();
 	is_destructed = true;
@@ -2103,17 +1965,17 @@ v8catalog::~v8catalog()
 		{
 			try
 			{
-				fat = new TMemoryStream;
+				fat = new MemoryByteStream;
 				fi.ff = V8_FF_SIGNATURE;
 				f = first;
 				while(f)
 				{
 					fi.header_start = f->start_header;
 					fi.data_start = f->start_data;
-					fat->WriteBuffer(&fi, 12);
+					WriteBufferExact(*fat, &fi, 12);
 					f = f->next;
 				}
-				write_block(fat, 16, true);
+				write_block(*fat, 16, true);
 			}
 			catch(...)
 			{
@@ -2128,14 +1990,14 @@ v8catalog::~v8catalog()
 	{
 		if(is_emptymodified)
 		{
-			data->Seek(0, soFromBeginning);
-			data->WriteBuffer(&start_empty, 4);
+			data->Seek(0, SeekOrigin::Begin);
+			WriteBufferExact(*data, &start_empty, 4);
 		}
 		if(is_modified)
 		{
 			version++;
-			data->Seek(8, soFromBeginning);
-			data->WriteBuffer(&version, 4);
+			data->Seek(8, SeekOrigin::Begin);
+			WriteBufferExact(*data, &version, 4);
 		}
 	}
 
@@ -2153,9 +2015,9 @@ v8catalog::~v8catalog()
 		{
 			if(data && cfu && is_modified)
 			{
-				data->Seek(0, soFromBeginning);
-				cfu->Seek(0, soFromBeginning);
-				ZDeflateStream(data, cfu);
+				data->Seek(0, SeekOrigin::Begin);
+				cfu->Seek(0, SeekOrigin::Begin);
+				ZDeflateStream(*data, *cfu);
 			}
 			delete data;
 			data = NULL;
@@ -2184,9 +2046,14 @@ v8file* v8catalog::GetSelfFile()
 //===========================================================================
 v8catalog* v8catalog::CreateCatalog(const String& FileName, bool _selfzipped)
 {
+	return CreateCatalog16(StringToUtf16(FileName), _selfzipped);
+}
+
+v8catalog* v8catalog::CreateCatalog16(const Utf16String& fileName, bool _selfzipped)
+{
 	v8catalog* ret;
 	V8ScopedLock guard(Lock);
-	v8file* f = createFile(FileName, _selfzipped);
+	v8file* f = createFile16(fileName, _selfzipped);
 	if(f->GetFileLength())
 	{
 		if(f->IsCatalog()) ret = f->GetCatalog();
@@ -2258,31 +2125,31 @@ void v8catalog::Flush()
 	{
 		if(is_fatmodified)
 		{
-			TMemoryStream* fat = new TMemoryStream;
+			MemoryByteStream* fat = new MemoryByteStream;
 			fi.ff = V8_FF_SIGNATURE;
 			f = first;
 			while(f)
 			{
 				fi.header_start = f->start_header;
 				fi.data_start = f->start_data;
-				fat->WriteBuffer(&fi, 12);
+				WriteBufferExact(*fat, &fi, 12);
 				f = f->next;
 			}
-			write_block(fat, 16, true);
+			write_block(*fat, 16, true);
 			is_fatmodified = false;
 		}
 
 		if(is_emptymodified)
 		{
-			data->Seek(0, soFromBeginning);
-			data->WriteBuffer(&start_empty, 4);
+			data->Seek(0, SeekOrigin::Begin);
+			WriteBufferExact(*data, &start_empty, 4);
 			is_emptymodified = false;
 		}
 		if(is_modified)
 		{
 			version++;
-			data->Seek(8, soFromBeginning);
-			data->WriteBuffer(&version, 4);
+			data->Seek(8, SeekOrigin::Begin);
+			WriteBufferExact(*data, &version, 4);
 		}
 	}
 
@@ -2301,9 +2168,9 @@ void v8catalog::Flush()
 		{
 			if(data && cfu && is_modified)
 			{
-				data->Seek(0, soFromBeginning);
-				cfu->Seek(0, soFromBeginning);
-				ZDeflateStream(data, cfu);
+				data->Seek(0, SeekOrigin::Begin);
+				cfu->Seek(0, SeekOrigin::Begin);
+				ZDeflateStream(*data, *cfu);
 			}
 		}
 	}
@@ -2342,9 +2209,9 @@ void v8catalog::HalfOpen(const std::filesystem::path& path)
 	V8ScopedLock guard(Lock);
 
 	if(is_cfu)
-    	cfu = new StdFileTStream(path, FileOpenMode::ReadWrite);
+    	cfu = new StdFileStream(path, FileOpenMode::ReadWrite);
 	else
-    	data = new StdFileTStream(path, FileOpenMode::ReadWrite);
+    	data = new StdFileStream(path, FileOpenMode::ReadWrite);
 }
 
 void v8catalog::ClearIs8316()
@@ -2358,5 +2225,6 @@ void v8catalog::ClearIs8316()
 //}
 
 //===========================================================================
+
 
 
