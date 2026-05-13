@@ -1,4 +1,4 @@
-#include "APIcfBase.h"
+﻿#include "APIcfBase.h"
 #include "../include/v8reader_core/io/IByteStream.h"
 #include "../include/v8reader_core/io/MemoryByteStream.h"
 #include "../include/v8reader_core/io/StdFileStream.h"
@@ -14,10 +14,10 @@
 
 #define CHUNK 65536
 
-// массив для преобразования числа в шестнадцатиричную строку
+// РјР°СЃСЃРёРІ РґР»СЏ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ С‡РёСЃР»Р° РІ С€РµСЃС‚РЅР°РґС†Р°С‚РёСЂРёС‡РЅСѓСЋ СЃС‚СЂРѕРєСѓ
 const char _bufhex[] = "0123456789abcdef";
 
-// шаблон заголовка блока
+// С€Р°Р±Р»РѕРЅ Р·Р°РіРѕР»РѕРІРєР° Р±Р»РѕРєР°
 const char _block_header_template[]    = "\r\n00000000 00000000 00000000 \r\n";
 const char _empty_catalog_template[16] = {0xff,0xff,0xff,0x7f,0,2,0,0,0,0,0,0,0,0,0,0};
 const char _empty_catalog_template8316[8] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
@@ -60,25 +60,14 @@ static void CopyFromStream(IByteStream& destination, IByteStream& source, std::s
 	}
 }
 
-static std::filesystem::path StringToPath(const String& value)
+static std::wstring Utf16ToWide(const Utf16String& value)
 {
-#ifndef _DELPHI_STRING_UNICODE
-	const int ws = value.WideCharBufSize();
-	std::vector<wchar_t> buffer(ws);
-	value.WideChar(buffer.data(), ws);
-	return std::filesystem::path(buffer.data());
-#else
-	return std::filesystem::path(reinterpret_cast<const wchar_t*>(value.c_str()));
-#endif
+	return std::wstring(value.begin(), value.end());
 }
 
-static String PathToString(const std::filesystem::path& path)
+static Utf16String WideToUtf16(const std::wstring& value)
 {
-#ifndef _DELPHI_STRING_UNICODE
-	return String(path.string().c_str());
-#else
-	return String(path.c_str());
-#endif
+	return Utf16String(value.begin(), value.end());
 }
 
 static void SetFileTimesByPath(const std::filesystem::path& path, const FILETIME* createTime, const FILETIME* accessTime, const FILETIME* writeTime)
@@ -97,9 +86,27 @@ static void SetFileTimesByPath(const std::filesystem::path& path, const FILETIME
 	CloseHandle(file);
 }
 
-static void SetFileTimesByPath(const String& fileName, const FILETIME* createTime, const FILETIME* accessTime, const FILETIME* writeTime)
+static Utf16String Utf16ToUpper(const Utf16String& value)
 {
-	SetFileTimesByPath(StringToPath(fileName), createTime, accessTime, writeTime);
+	Utf16String result(value);
+	if(result.empty())
+		return result;
+
+	CharUpperBuffW(reinterpret_cast<wchar_t*>(result.data()), static_cast<DWORD>(result.size()));
+	return result;
+}
+
+static bool Utf16EqualsIgnoreCase(const Utf16String& left, const Utf16String& right)
+{
+	if(left.size() != right.size())
+		return false;
+
+	return CompareStringOrdinal(
+		reinterpret_cast<const wchar_t*>(left.c_str()),
+		static_cast<int>(left.size()),
+		reinterpret_cast<const wchar_t*>(right.c_str()),
+		static_cast<int>(right.size()),
+		TRUE) == CSTR_EQUAL;
 }
 
 } // namespace
@@ -117,7 +124,7 @@ int min(int value1, int value2)
 #endif
 
 //===========================================================================
-// преобразует шестнадцатиричную восьмисимвольную строку в число
+// РїСЂРµРѕР±СЂР°Р·СѓРµС‚ С€РµСЃС‚РЅР°РґС†Р°С‚РёСЂРёС‡РЅСѓСЋ РІРѕСЃСЊРјРёСЃРёРјРІРѕР»СЊРЅСѓСЋ СЃС‚СЂРѕРєСѓ РІ С‡РёСЃР»Рѕ
 int hex_to_int(char* hexstr)
 {
 	int res = 0;
@@ -154,7 +161,7 @@ int hex_to_int16(char* hexstr)
 
 
 //===========================================================================
-// преобразует число в шестнадцатиричную восьмисимвольную строку
+// РїСЂРµРѕР±СЂР°Р·СѓРµС‚ С‡РёСЃР»Рѕ РІ С€РµСЃС‚РЅР°РґС†Р°С‚РёСЂРёС‡РЅСѓСЋ РІРѕСЃСЊРјРёСЃРёРјРІРѕР»СЊРЅСѓСЋ СЃС‚СЂРѕРєСѓ
 char* int_to_hex(char* hexstr, int dec)
 {
 	int _t1 = dec;
@@ -275,7 +282,7 @@ static std::unique_ptr<MemoryByteStream> read_block_16_core(IByteStream& stream_
 }
 
 //===========================================================================
-// читает блок из потока каталога stream_from, собирая его по страницам
+// С‡РёС‚Р°РµС‚ Р±Р»РѕРє РёР· РїРѕС‚РѕРєР° РєР°С‚Р°Р»РѕРіР° stream_from, СЃРѕР±РёСЂР°СЏ РµРіРѕ РїРѕ СЃС‚СЂР°РЅРёС†Р°Рј
 IByteStream* read_block(IByteStream& stream_from, int start, IByteStream* stream_to = NULL)
 {
 	if(!stream_to)
@@ -295,7 +302,7 @@ IByteStream* read_block(IByteStream& stream_from, int start, IByteStream* stream
 }
 
 //===========================================================================
-// читает блок из потока каталога stream_from, собирая его по страницам
+// С‡РёС‚Р°РµС‚ Р±Р»РѕРє РёР· РїРѕС‚РѕРєР° РєР°С‚Р°Р»РѕРіР° stream_from, СЃРѕР±РёСЂР°СЏ РµРіРѕ РїРѕ СЃС‚СЂР°РЅРёС†Р°Рј
 IByteStream* read_block_16(IByteStream& stream_from, __int64 start, IByteStream* stream_to = NULL)
 {
 	if(!stream_to)
@@ -316,7 +323,7 @@ IByteStream* read_block_16(IByteStream& stream_from, __int64 start, IByteStream*
 
 
 //===========================================================================
-//преобразование времени
+//РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РІСЂРµРјРµРЅРё
 void V8timeToFileTime(const __int64* v8t, FILETIME* ft)
 {
 	FILETIME lft;
@@ -348,45 +355,13 @@ void setCurrentTime(__int64* v8t)
 	FileTimeToV8time(&ft, v8t);
 }
 
-static Utf16String StringToUtf16(const String& value)
-{
-#ifndef _DELPHI_STRING_UNICODE
-	const int ws = value.WideCharBufSize();
-	std::vector<wchar_t> buffer(ws);
-	value.WideChar(buffer.data(), ws);
-	return Utf16String(reinterpret_cast<const char16_t*>(buffer.data()));
-#else
-	const wchar_t* w = value.c_str();
-	return Utf16String(reinterpret_cast<const char16_t*>(w), value.Length());
-#endif
-}
-
-static String Utf16ToString(const Utf16String& value)
-{
-#ifndef _DELPHI_STRING_UNICODE
-	return String(reinterpret_cast<const wchar_t*>(value.c_str()));
-#else
-	return String(reinterpret_cast<const wchar_t*>(value.c_str()));
-#endif
-}
-
-Utf16String V8Utf16FromString(const String& value)
-{
-	return StringToUtf16(value);
-}
-
-String V8StringFromUtf16(const Utf16String& value)
-{
-	return Utf16ToString(value);
-}
-
 //===========================================================================
 
 //********************************************************
-// Класс v8file
+// РљР»Р°СЃСЃ v8file
 
 //===========================================================================
-v8file::v8file(v8catalog* _parent, const String& _name, v8file* _previous,
+v8file::v8file(v8catalog* _parent, const Utf16String& _name, v8file* _previous,
                           int _start_data, int _start_header,
                           __int64* _time_create, __int64* _time_modify)
 {
@@ -413,7 +388,7 @@ v8file::v8file(v8catalog* _parent, const String& _name, v8file* _previous,
 	time_modify = *_time_modify;
 	selfzipped = false;
 	if(parent)
-		parent->files[name.UpperCase()] = this;
+		parent->files[Utf16ToUpper(name)] = this;
 }
 
 //===========================================================================
@@ -438,12 +413,6 @@ void v8file::SetTimeCreate(FILETIME* ft)
 void v8file::SetTimeModify(FILETIME* ft)
 {
 	FileTimeToV8time(ft, &time_modify);
-}
-
-//===========================================================================
-void v8file::SaveToFile(const String& FileName)
-{
-	SaveToFile(StringToPath(FileName));
 }
 
 //===========================================================================
@@ -537,13 +506,13 @@ int v8file::Read(ByteVector& Buffer, int Start, int Length)
 }
 
 ////---------------------------------------------------------------------------
-//// Потоконебезопасная функция!
+//// РџРѕС‚РѕРєРѕРЅРµР±РµР·РѕРїР°СЃРЅР°СЏ С„СѓРЅРєС†РёСЏ!
 //IByteStream* v8file::get_data()
 //{
 //	return data;
 //}
 
-// дозапись/перезапись частично
+// РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
 int v8file::Write(const void* Buffer, int Start, int Length)
 {
 //	if(readonly) return 0;
@@ -562,7 +531,7 @@ int v8file::Write(const void* Buffer, int Start, int Length)
 }
 
 //===========================================================================
-// дозапись/перезапись частично
+// РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
 int v8file::Write(const ByteVector& Buffer, int Start, int Length)
 {
 	V8ScopedLock guard(Lock);
@@ -584,7 +553,7 @@ int v8file::Write(const ByteVector& Buffer, int Start, int Length)
 }
 
 //===========================================================================
-// перезапись целиком
+// РїРµСЂРµР·Р°РїРёСЃСЊ С†РµР»РёРєРѕРј
 int v8file::Write(const void* Buffer, int Length)
 {
 //	if(readonly) return 0;
@@ -602,7 +571,7 @@ int v8file::Write(const void* Buffer, int Length)
 	return static_cast<int>(data->Write(Buffer, static_cast<std::size_t>(Length)));
 }
 
-// дозапись/перезапись частично
+// РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
 int v8file::Write(IByteStream& Stream, int Start, int Length)
 {
 	V8ScopedLock guard(Lock);
@@ -642,7 +611,7 @@ int v8file::Write(IByteStream& Stream, int Start, int Length)
 }
 
 //===========================================================================
-// перезапись целиком
+// РїРµСЂРµР·Р°РїРёСЃСЊ С†РµР»РёРєРѕРј
 int v8file::Write(IByteStream& Stream)
 {
 	V8ScopedLock guard(Lock);
@@ -680,7 +649,7 @@ int v8file::Write(IByteStream& Stream)
 }
 
 //===========================================================================
-String v8file::GetFileName()
+Utf16String v8file::GetFileName()
 {
 	return name;
 }
@@ -688,18 +657,18 @@ String v8file::GetFileName()
 //===========================================================================
 Utf16String v8file::GetFileName16()
 {
-	return StringToUtf16(name);
+	return name;
 }
 
 //===========================================================================
-String v8file::GetFullName()
+Utf16String v8file::GetFullName()
 {
 	if(parent) if(parent->file)
 	{
-		String fulln = parent->file->GetFullName();
-		if(!fulln.IsEmpty())
+		Utf16String fulln = parent->file->GetFullName();
+		if(!fulln.empty())
 		{
-			fulln += "\\";
+			fulln += u"\\";
 			fulln += name;
 
 			return fulln;
@@ -711,11 +680,11 @@ String v8file::GetFullName()
 //===========================================================================
 Utf16String v8file::GetFullName16()
 {
-	return StringToUtf16(GetFullName());
+	return GetFullName();
 }
 
 //===========================================================================
-void v8file::SetFileName(const String& _name)
+void v8file::SetFileName(const Utf16String& _name)
 {
 	name = _name;
 	is_headermodified = true;
@@ -724,7 +693,7 @@ void v8file::SetFileName(const String& _name)
 //===========================================================================
 void v8file::SetFileName16(const Utf16String& _name)
 {
-	name = Utf16ToString(_name);
+	name = _name;
 	is_headermodified = true;
 }
 
@@ -738,7 +707,7 @@ bool v8file::IsCatalog()
 	Lock->Acquire();
 	if(iscatalog == iscatalog_unknown)
     {
-		// эмпирический метод?
+		// СЌРјРїРёСЂРёС‡РµСЃРєРёР№ РјРµС‚РѕРґ?
 		if(!is_opened)
 			if(!Open())
 				{
@@ -870,7 +839,7 @@ void v8file::DeleteFile()
 		parent->is_fatmodified = true;
 		parent->free_block(start_data);
 		parent->free_block(start_header);
-		parent->files.erase(name.UpperCase());
+		parent->files.erase(Utf16ToUpper(name));
 		parent->Lock->Release();
 		parent = NULL;
 	}
@@ -895,7 +864,7 @@ void v8file::DeleteFile()
 	is_datamodified = false;
 	is_headermodified = false;
 	//Lock->Release();
-	//delete this; // суицид
+	//delete this; // СЃСѓРёС†РёРґ
 }
 
 //===========================================================================
@@ -968,15 +937,7 @@ void v8file::Close()
 				WriteBufferExact(hs, &time_create, 8);
 				WriteBufferExact(hs, &time_modify, 8);
 				WriteBufferExact(hs, &_t, 4);
-				#ifndef _DELPHI_STRING_UNICODE
-				int ws = name.WideCharBufSize();
-				char* tb = new char[ws];
-				name.WideChar((wchar_t*)tb, ws);
-				WriteBufferExact(hs, tb, static_cast<std::size_t>(ws));
-				delete[] tb;
-				#else
-				WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.Length() * 2));
-				#endif
+				WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.size() * sizeof(char16_t)));
 				WriteBufferExact(hs, &_t, 4);
 
 				start_header = parent->write_block(hs, start_header, false);
@@ -1020,7 +981,7 @@ int v8file::WriteAndClose(IByteStream& Stream, int Length)
 		WriteBufferExact(hs, &time_create, 8);
 		WriteBufferExact(hs, &time_modify, 8);
 		WriteBufferExact(hs, &_t, 4);
-		WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.Length() * 2));
+		WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.size() * sizeof(char16_t)));
 		WriteBufferExact(hs, &_t, 4);
 		start_header = parent->write_block(hs, start_header, false);
 
@@ -1108,15 +1069,7 @@ void v8file::Flush()
 				WriteBufferExact(hs, &time_create, 8);
 				WriteBufferExact(hs, &time_modify, 8);
 				WriteBufferExact(hs, &_t, 4);
-				#ifndef _DELPHI_STRING_UNICODE
-				int ws = name.WideCharBufSize();
-				char* tb = new char[ws];
-				name.WideChar((wchar_t*)tb, ws);
-				WriteBufferExact(hs, tb, static_cast<std::size_t>(ws));
-				delete[] tb;
-				#else
-				WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.Length() * 2));
-				#endif
+				WriteBufferExact(hs, name.c_str(), static_cast<std::size_t>(name.size() * sizeof(char16_t)));
 				WriteBufferExact(hs, &_t, 4);
 
 				start_header = parent->write_block(hs, start_header, false);
@@ -1130,7 +1083,7 @@ void v8file::Flush()
 //===========================================================================
 
 //********************************************************
-// Класс v8catalog
+// РљР»Р°СЃСЃ v8catalog
 
 bool v8catalog::Is8316()
 {
@@ -1160,7 +1113,7 @@ bool v8catalog::IsCatalog()
 	iscatalogdefined = true;
 	iscatalog = false;
 
-	// эмпирический метод?
+	// СЌРјРїРёСЂРёС‡РµСЃРєРёР№ РјРµС‚РѕРґ?
 	_filelen = data->Size();
 	if(_filelen == 16)
 	{
@@ -1215,13 +1168,7 @@ bool v8catalog::IsCatalog()
 }
 
 //===========================================================================
-// создать каталог из физического файла .cf
-v8catalog::v8catalog(String name) : v8catalog(StringToPath(name))
-{
-}
-
-//===========================================================================
-// создать каталог из физического файла .cf
+// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„РёР·РёС‡РµСЃРєРѕРіРѕ С„Р°Р№Р»Р° .cf
 v8catalog::v8catalog(const std::filesystem::path& path)
 {
 	Lock = new V8RecursiveMutex();
@@ -1284,13 +1231,7 @@ v8catalog::v8catalog(const std::filesystem::path& path)
 }
 
 //===========================================================================
-// создать каталог из физического файла
-v8catalog::v8catalog(String name, bool _zipped) : v8catalog(StringToPath(name), _zipped)
-{
-}
-
-//===========================================================================
-// создать каталог из физического файла
+// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„РёР·РёС‡РµСЃРєРѕРіРѕ С„Р°Р№Р»Р°
 v8catalog::v8catalog(const std::filesystem::path& path, bool _zipped)
 {
 	Lock = new V8RecursiveMutex();
@@ -1336,7 +1277,7 @@ v8catalog::v8catalog(const std::filesystem::path& path, bool _zipped)
 }
 
 //===========================================================================
-// создать каталог из потока
+// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· РїРѕС‚РѕРєР°
 v8catalog::v8catalog(IByteStream* stream, bool _zipped, bool leave_stream)
 {
 	Lock = new V8RecursiveMutex();
@@ -1370,7 +1311,7 @@ v8catalog::v8catalog(IByteStream* stream, bool _zipped, bool leave_stream)
 }
 
 //===========================================================================
-// создать каталог из файла
+// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„Р°Р№Р»Р°
 v8catalog::v8catalog(v8file* f)
 {
 	is_cfu = false;
@@ -1410,7 +1351,7 @@ void v8catalog::initialize(int Offset)
 	catalog_header     _ch;
     catalog_header8316 _ch8316;
 
-	String _name;
+	Utf16String _name;
 
 	fat_item     _fi;
     fat_item8316 _fi8316;
@@ -1487,7 +1428,7 @@ void v8catalog::initialize(int Offset)
 
 				_temp_buf = new char[_file_header->Size()];
 				_file_header->Read(_temp_buf, _file_header->Size());
-				_name = (wchar_t*)(_temp_buf + 20);
+				_name = WideToUtf16(reinterpret_cast<const wchar_t*>(_temp_buf + 20));
 
 				dataStart   = Offset ? _fi8316.data_start   + Offset : _fi.data_start;
 				headerStart = Offset ? _fi8316.header_start + Offset : _fi.header_start;
@@ -1627,20 +1568,13 @@ void v8catalog::initialize(int Offset)
 
 
 //===========================================================================
-void v8catalog::DeleteFile(const String& FileName)
-{
-	DeleteFile16(StringToUtf16(FileName));
-}
-
 void v8catalog::DeleteFile16(const Utf16String& fileName)
 {
-	const String vclFileName = Utf16ToString(fileName);
-
 	V8ScopedLock guard(Lock);
 	v8file* f = first;
 	while(f)
 	{
-		if(!f->name.CompareIC(vclFileName))
+		if(Utf16EqualsIgnoreCase(f->name, fileName))
 		{
 			f->DeleteFile();
 			delete f;
@@ -1650,17 +1584,10 @@ void v8catalog::DeleteFile16(const Utf16String& fileName)
 }
 
 //===========================================================================
-v8file* v8catalog::GetFile(const String& FileName)
-{
-	return GetFile16(StringToUtf16(FileName));
-}
-
 v8file* v8catalog::GetFile16(const Utf16String& fileName)
 {
-	const String vclFileName = Utf16ToString(fileName);
-
 	V8ScopedLock guard(Lock);
-	std::map<String, v8file*>::const_iterator it = files.find(vclFileName.UpperCase());
+	std::map<Utf16String, v8file*>::const_iterator it = files.find(Utf16ToUpper(fileName));
 	if(it == files.end())
 		return NULL;
 
@@ -1674,25 +1601,18 @@ v8file* v8catalog::GetFirst()
 }
 
 //===========================================================================
-v8file* v8catalog::createFile(const String& FileName, bool _selfzipped)
-{
-	return createFile16(StringToUtf16(FileName), _selfzipped);
-}
-
 v8file* v8catalog::createFile16(const Utf16String& fileName, bool _selfzipped)
 {
-	const String vclFileName = Utf16ToString(fileName);
-
 	__int64 v8t;
 	v8file* f;
 
 	V8ScopedLock guard(Lock);
-	std::map<String, v8file*>::const_iterator it = files.find(vclFileName.UpperCase());
+	std::map<Utf16String, v8file*>::const_iterator it = files.find(Utf16ToUpper(fileName));
 	f = it == files.end() ? NULL : it->second;
 	if(!f)
 	{
 		setCurrentTime(&v8t);
-		f = new v8file(this, vclFileName, last, 0, 0, &v8t, &v8t);
+		f = new v8file(this, fileName, last, 0, 0, &v8t, &v8t);
 		f->selfzipped = _selfzipped;
 		last = f;
 		is_fatmodified = true;
@@ -1851,10 +1771,10 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 	char* _t;
 	int firststart, nextstart, blocklen, curlen;
 	bool isfirstblock = true;
-	bool addwrite = false; // признак, что надо дозаписать файл при использовании размера страницы по умолчанию
+	bool addwrite = false; // РїСЂРёР·РЅР°Рє, С‡С‚Рѕ РЅР°РґРѕ РґРѕР·Р°РїРёСЃР°С‚СЊ С„Р°Р№Р» РїСЂРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё СЂР°Р·РјРµСЂР° СЃС‚СЂР°РЅРёС†С‹ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
 
 	Lock->Acquire();
-	if(data->Size() == 16 && start != 16) // если каталог пустой, надо выделить первую страницу!!!
+	if(data->Size() == 16 && start != 16) // РµСЃР»Рё РєР°С‚Р°Р»РѕРі РїСѓСЃС‚РѕР№, РЅР°РґРѕ РІС‹РґРµР»РёС‚СЊ РїРµСЂРІСѓСЋ СЃС‚СЂР°РЅРёС†Сѓ!!!
 	{
 		MemoryByteStream* _ts = new MemoryByteStream;
 		write_block(*_ts, 16, true);
@@ -1872,7 +1792,7 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 	{
 		if(start == start_empty)
 		{
-        	// пишем в свободный блок
+        	// РїРёС€РµРј РІ СЃРІРѕР±РѕРґРЅС‹Р№ Р±Р»РѕРє
 			data->Seek(start, SeekOrigin::Begin);
 			ReadBufferExact(*data, temp_buf, 31);
 			blocklen = hex_to_int(&temp_buf[11]);
@@ -1883,7 +1803,7 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 		}
 		else if(start == data->Size())
 		{
-        	// пишем в новый блок
+        	// РїРёС€РµРј РІ РЅРѕРІС‹Р№ Р±Р»РѕРє
 			memcpy(temp_buf, _block_header_template, 31);
 			blocklen = use_page_size ? len > page_size ? len : page_size : len;
 			int_to_hex(&temp_buf[11], blocklen);
@@ -1893,7 +1813,7 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 		}
 		else
 		{
-        	// пишем в существующий блок
+        	// РїРёС€РµРј РІ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ Р±Р»РѕРє
 			data->Seek(start, SeekOrigin::Begin);
 			ReadBufferExact(*data, temp_buf, 31);
 			blocklen = hex_to_int(&temp_buf[11]);
@@ -2044,11 +1964,6 @@ v8file* v8catalog::GetSelfFile()
 }
 
 //===========================================================================
-v8catalog* v8catalog::CreateCatalog(const String& FileName, bool _selfzipped)
-{
-	return CreateCatalog16(StringToUtf16(FileName), _selfzipped);
-}
-
 v8catalog* v8catalog::CreateCatalog16(const Utf16String& fileName, bool _selfzipped)
 {
 	v8catalog* ret;
@@ -2068,12 +1983,6 @@ v8catalog* v8catalog::CreateCatalog16(const Utf16String& fileName, bool _selfzip
 }
 
 //===========================================================================
-void v8catalog::SaveToDir(String DirName)
-{
-	SaveToDir(StringToPath(DirName));
-}
-
-//===========================================================================
 void v8catalog::SaveToDir(const std::filesystem::path& dirPath)
 {
 	std::error_code ec;
@@ -2083,7 +1992,7 @@ void v8catalog::SaveToDir(const std::filesystem::path& dirPath)
 	v8file* f = first;
 	while(f)
 	{
-		const std::filesystem::path targetPath = dirPath / StringToPath(f->name);
+		const std::filesystem::path targetPath = dirPath / std::filesystem::path(Utf16ToWide(f->name));
 		if(f->IsCatalog())
         	f->GetCatalog()->SaveToDir(targetPath);
 		else
@@ -2199,11 +2108,6 @@ void v8catalog::HalfClose()
 }
 
 //===========================================================================
-void v8catalog::HalfOpen(const String& name)
-{
-	HalfOpen(StringToPath(name));
-}
-
 void v8catalog::HalfOpen(const std::filesystem::path& path)
 {
 	V8ScopedLock guard(Lock);
@@ -2225,6 +2129,7 @@ void v8catalog::ClearIs8316()
 //}
 
 //===========================================================================
+
 
 
 

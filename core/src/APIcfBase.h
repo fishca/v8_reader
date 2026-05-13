@@ -8,7 +8,7 @@
 #ifndef APIcfBaseH
 #define APIcfBaseH
 
-#include <System.hpp>
+#include <Windows.h>
 #include <cstdint>
 #include <filesystem>
 #include <mutex>
@@ -16,30 +16,34 @@
 #include <vector>
 #include <map>
 
-#ifndef _DELPHI_STRING_UNICODE
-	#define UnicodeString AnsiString
-	#define CompareIC AnsiCompareIC
-	#define str_cfu ".cfu"
-	#define str_cfe ".cfe"
-	#define str_cf ".cf"
-	#define str_epf ".epf"
-	#define str_erf ".erf"
-	#define str_backslash "\\"
-#else
-	#define str_cfu L".cfu"
-	#define str_cfe L".cfe"
-	#define str_cf L".cf"
-	#define str_epf L".epf"
-	#define str_erf L".erf"
-	#define str_backslash L"\\"
-#endif
-
-typedef System::DynamicArray<System::Byte> ByteArr;
 using ByteVector = std::vector<std::uint8_t>;
 using Utf16String = std::u16string;
 
-Utf16String V8Utf16FromString(const String& value);
-String V8StringFromUtf16(const Utf16String& value);
+template <typename TStringLike>
+inline Utf16String V8Utf16FromString(const TStringLike& value)
+{
+	return Utf16String(
+		reinterpret_cast<const char16_t*>(value.c_str()),
+		static_cast<std::size_t>(value.Length()));
+}
+
+inline Utf16String V8Utf16FromString(const wchar_t* value)
+{
+	if(!value)
+		return Utf16String();
+	return Utf16String(reinterpret_cast<const char16_t*>(value));
+}
+
+template <typename TStringLike>
+inline std::filesystem::path V8PathFromString(const TStringLike& value)
+{
+	return std::filesystem::path(value.c_str());
+}
+
+inline std::filesystem::path V8PathFromString(const wchar_t* value)
+{
+	return std::filesystem::path(value ? value : L"");
+}
 
 namespace v8reader::core::io
 {
@@ -140,7 +144,7 @@ class v8file
   private:
 	friend v8catalog;
 
-	String name;
+	Utf16String name;
 
 	__int64 time_create;
 	__int64 time_modify;
@@ -172,7 +176,7 @@ class v8file
 	bool selfzipped; // Признак, что файл является запакованным независимо от признака zipped каталога
 
   public:
-	v8file(v8catalog* _parent, const String& _name, v8file* _previous, int _start_data, int _start_header, __int64* _time_create, __int64* _time_modify);
+	v8file(v8catalog* _parent, const Utf16String& _name, v8file* _previous, int _start_data, int _start_header, __int64* _time_create, __int64* _time_modify);
 
 	~v8file();
 
@@ -198,12 +202,12 @@ class v8file
     // перезапись целиком
 	int Write(v8reader::core::io::IByteStream& Stream);
 
-	String GetFileName();
+	Utf16String GetFileName();
 	Utf16String GetFileName16();
-	String GetFullName();
+	Utf16String GetFullName();
 	Utf16String GetFullName16();
 
-	void SetFileName(const String& _name);
+	void SetFileName(const Utf16String& _name);
 	void SetFileName16(const Utf16String& _name);
 
 	v8catalog* GetParentCatalog();
@@ -223,7 +227,6 @@ class v8file
 	void SetTimeCreate(FILETIME* ft);
 	void SetTimeModify(FILETIME* ft);
 
-	void SaveToFile(const String& FileName);
 	void SaveToFile(const std::filesystem::path& filePath);
 	void SaveToByteStream(v8reader::core::io::IByteStream& stream);
 	//v8reader::core::io::IByteStream* get_data();
@@ -250,7 +253,7 @@ class v8catalog
 	v8file* first; // первый файл в каталоге
 	v8file* last;  // последний файл в каталоге
 
-	std::map<String, v8file*> files; // Соответствие имен и файлов
+	std::map<Utf16String, v8file*> files; // Соответствие имен и файлов
 
 	int     start_empty; // начало первого пустого блока
     __int64 start_empty8316;
@@ -289,8 +292,10 @@ class v8catalog
   public:
 //	bool readonly;
 	v8catalog(v8file* f);   // создать каталог из файла
-	v8catalog(String name); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
-	v8catalog(String name, bool _zipped); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
+	template <typename TStringLike>
+	explicit v8catalog(const TStringLike& name) : v8catalog(V8PathFromString(name)) {}
+	template <typename TStringLike>
+	v8catalog(const TStringLike& name, bool _zipped) : v8catalog(V8PathFromString(name), _zipped) {}
 	v8catalog(const std::filesystem::path& path); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
 	v8catalog(const std::filesystem::path& path, bool _zipped); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
 	v8catalog(v8reader::core::io::IByteStream* stream, bool _zipped, bool leave_stream = false); // создать каталог из потока
@@ -299,26 +304,38 @@ class v8catalog
 
 	bool IsCatalog();
     bool Is8316();
-	v8file* GetFile(const String& FileName);
+	template <typename TStringLike>
+	v8file* GetFile(const TStringLike& fileName) { return GetFile16(V8Utf16FromString(fileName)); }
+	v8file* GetFile(const wchar_t* fileName) { return GetFile16(V8Utf16FromString(fileName)); }
 	v8file* GetFile16(const Utf16String& fileName);
 	v8file* GetFirst();
 
     // CreateFile в win64 определяется как CreateFileW, пришлось заменить на маленькую букву
-	v8file* createFile(const String& FileName, bool _selfzipped = false);
+	template <typename TStringLike>
+	v8file* createFile(const TStringLike& fileName, bool _selfzipped = false) { return createFile16(V8Utf16FromString(fileName), _selfzipped); }
+	v8file* createFile(const wchar_t* fileName, bool _selfzipped = false) { return createFile16(V8Utf16FromString(fileName), _selfzipped); }
 	v8file* createFile16(const Utf16String& fileName, bool _selfzipped = false);
-	v8catalog* CreateCatalog(const String& FileName, bool _selfzipped = false);
+	template <typename TStringLike>
+	v8catalog* CreateCatalog(const TStringLike& fileName, bool _selfzipped = false) { return CreateCatalog16(V8Utf16FromString(fileName), _selfzipped); }
+	v8catalog* CreateCatalog(const wchar_t* fileName, bool _selfzipped = false) { return CreateCatalog16(V8Utf16FromString(fileName), _selfzipped); }
 	v8catalog* CreateCatalog16(const Utf16String& fileName, bool _selfzipped = false);
-	void DeleteFile(const String& FileName);
+	template <typename TStringLike>
+	void DeleteFile(const TStringLike& fileName) { DeleteFile16(V8Utf16FromString(fileName)); }
+	void DeleteFile(const wchar_t* fileName) { DeleteFile16(V8Utf16FromString(fileName)); }
 	void DeleteFile16(const Utf16String& fileName);
 	v8catalog* GetParentCatalog();
 	//void Defrag(bool Recursively);
 	v8file* GetSelfFile();
-	void SaveToDir(String DirName);
+	template <typename TStringLike>
+	void SaveToDir(const TStringLike& dirName) { SaveToDir(V8PathFromString(dirName)); }
+	void SaveToDir(const wchar_t* dirName) { SaveToDir(V8PathFromString(dirName)); }
 	void SaveToDir(const std::filesystem::path& dirPath);
 	bool isOpen();
 	void Flush();
 	void HalfClose();
-	void HalfOpen(const String& name);
+	template <typename TStringLike>
+	void HalfOpen(const TStringLike& name) { HalfOpen(V8PathFromString(name)); }
+	void HalfOpen(const wchar_t* name) { HalfOpen(V8PathFromString(name)); }
 	void HalfOpen(const std::filesystem::path& path);
 	//void set_leave_data(bool ld);
     void ClearIs8316();

@@ -10,6 +10,18 @@ typedef System::DynamicArray<System::Byte> ByteArr;
 
 namespace v8reader::vcl_bridge {
 
+inline Utf16String V8Utf16FromVclString(const String& value)
+{
+	return Utf16String(
+		reinterpret_cast<const char16_t*>(value.c_str()),
+		static_cast<std::size_t>(value.Length()));
+}
+
+inline String V8VclStringFromUtf16(const Utf16String& value)
+{
+	return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+}
+
 inline v8catalog* CreateCatalogFromVclStream(TStream* stream, bool zipped, bool leave_stream = false)
 {
     if (!stream)

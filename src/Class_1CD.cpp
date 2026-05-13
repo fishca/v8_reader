@@ -207,7 +207,7 @@ tree* get_treeFromV8file(v8file* f)
 	if(fileSize <= 0)
 	{
 		error("Пустой файл контейнера",
-			"Файл", f->GetFullName());
+			"Файл", v8reader::vcl_bridge::V8VclStringFromUtf16(f->GetFullName()));
 		return NULL;
 	}
 
@@ -215,7 +215,7 @@ tree* get_treeFromV8file(v8file* f)
 	if(f->Read(&sourceBytes[0], 0, fileSize) != fileSize)
 	{
 		error("Ошибка чтения файла контейнера",
-			"Файл", f->GetFullName());
+			"Файл", v8reader::vcl_bridge::V8VclStringFromUtf16(f->GetFullName()));
 		return NULL;
 	}
 
@@ -224,7 +224,7 @@ tree* get_treeFromV8file(v8file* f)
 	if(off == 0)
 	{
 		error("Ошибка определения кодировки файла контейнера",
-			"Файл", f->GetFullName());
+			"Файл", v8reader::vcl_bridge::V8VclStringFromUtf16(f->GetFullName()));
 		return NULL;
 	}
 
@@ -232,11 +232,11 @@ tree* get_treeFromV8file(v8file* f)
 	if(unicodeBytes.Length == 0)
 	{
 		error("Ошибка конвертации файла контейнера в Unicode",
-			"Файл", f->GetFullName());
+			"Файл", v8reader::vcl_bridge::V8VclStringFromUtf16(f->GetFullName()));
 		return NULL;
 	}
 
-	rt = parse_1Ctext(String((wchar_t*)&unicodeBytes[0], unicodeBytes.Length / 2), f->GetFullName());
+	rt = parse_1Ctext(String((wchar_t*)&unicodeBytes[0], unicodeBytes.Length / 2), v8reader::vcl_bridge::V8VclStringFromUtf16(f->GetFullName()));
 	return rt;
 }
 
@@ -9138,16 +9138,16 @@ bool T_1CD::recursive_test_stream_format(v8catalog* cat, String path)
 		}
 		if(result)
 		{
-			if(c) result = recursive_test_stream_format(c, path + L"/" + v8f->GetFileName());
+			if(c) result = recursive_test_stream_format(c, path + L"/" + v8reader::vcl_bridge::V8VclStringFromUtf16(v8f->GetFileName()));
 			else
 			{
-				fname = v8f->GetFileName();
+				fname = v8reader::vcl_bridge::V8VclStringFromUtf16(v8f->GetFileName());
 				if(fname != L"module" && fname != L"text")
 				{
 					TMemoryStream* file_stream = new TMemoryStream();
 					v8reader::vcl_bridge::SaveV8FileToVclStream(v8f, file_stream);
 					file_stream->Seek(0l, soBeginning);
-					result = recursive_test_stream_format(file_stream, path + L"/" + v8f->GetFileName());
+					result = recursive_test_stream_format(file_stream, path + L"/" + v8reader::vcl_bridge::V8VclStringFromUtf16(v8f->GetFileName()));
 					delete file_stream;
 				}
 			}
@@ -11985,7 +11985,3 @@ String T_1CD::pagemaprec_presentation(pagemaprec& pmr)
 }
 
 //---------------------------------------------------------------------------
-
-
-
-

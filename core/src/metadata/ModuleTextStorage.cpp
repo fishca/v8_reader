@@ -514,7 +514,9 @@ namespace
 				{
 					for (v8file* child = catalog->GetFirst(); child; child = child->GetNext())
 					{
-						String childName = V8StringFromUtf16(child->GetFileName16()).LowerCase();
+						const Utf16String childName16 = child->GetFileName16();
+						String childName(reinterpret_cast<const wchar_t*>(childName16.c_str()));
+						childName = childName.LowerCase();
 						if (childName.Pos(L"text") > 0 || childName.Pos(L"module") > 0)
 						{
 							text = ReadV8FileAsText(child);
@@ -860,12 +862,12 @@ namespace ModuleTextStorage
 
 			if (FileExistsFs(target) && !DeleteFileFs(target))
 			{
-				errorText = L"Не удалось удалить исходный файл модуля: " + target;
+				errorText = L"РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ РёСЃС…РѕРґРЅС‹Р№ С„Р°Р№Р» РјРѕРґСѓР»СЏ: " + target;
 				return false;
 			}
 			if (!MoveFileFs(tmp, target))
 			{
-				errorText = L"Не удалось переместить временный файл модуля: " + tmp;
+				errorText = L"РќРµ СѓРґР°Р»РѕСЃСЊ РїРµСЂРµРјРµСЃС‚РёС‚СЊ РІСЂРµРјРµРЅРЅС‹Р№ С„Р°Р№Р» РјРѕРґСѓР»СЏ: " + tmp;
 				return false;
 			}
 
@@ -894,4 +896,3 @@ namespace ModuleTextStorage
 		return L"";
 	}
 }
-

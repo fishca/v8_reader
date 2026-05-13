@@ -352,7 +352,7 @@ String normalizeGuid(const String& guid)
 String GetNameSubsystem(v8catalog* cf, String& guid_md)
 {
 	String Result = "";
-	v8file* filedata = cf->GetFile(guid_md);
+	v8file* filedata = cf->GetFile16(V8Utf16FromString(guid_md));
 	if (!filedata)
 		return Result;
 	tree* tree_md = get_treeFromV8file(filedata);
@@ -368,7 +368,7 @@ String GetNameSubsystem(v8catalog* cf, String& guid_md)
 String GetSubsystemInnerGuid(v8catalog* cf, String& guid_md)
 {
 	String Result = "";
-	v8file* filedata = cf->GetFile(guid_md);
+	v8file* filedata = cf->GetFile16(V8Utf16FromString(guid_md));
 	if (!filedata)
 		return Result;
 	tree* tree_md = get_treeFromV8file(filedata);
@@ -383,7 +383,7 @@ String GetSubsystemInnerGuid(v8catalog* cf, String& guid_md)
 
 void GetListChildrenSubsystem(v8catalog* cf, String& guid_md, std::vector<String>& child)
 {
-	v8file* filedata = cf->GetFile(guid_md);
+	v8file* filedata = cf->GetFile16(V8Utf16FromString(guid_md));
 	if (!filedata)
 		return;
 	tree* tree_md = get_treeFromV8file(filedata);
@@ -525,4 +525,3 @@ std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const Metad
 	}
 	return childSubsystemGuids;
 }
-
