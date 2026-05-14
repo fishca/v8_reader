@@ -229,7 +229,7 @@ namespace
 
 	bool TryCollectEmbeddedTabularAttributes(tree* root, std::vector<std::unique_ptr<TRequisite>>& attributes)
 	{
-		static const String EmbeddedTabularAttributeGuid = L"888744e1-b616-11d4-9436-004095e12fc7";
+		static constexpr const wchar_t* EmbeddedTabularAttributeGuid = L"888744e1-b616-11d4-9436-004095e12fc7";
 
 		auto tryCollectFromContainer = [&](tree* container) -> bool
 		{

@@ -15,18 +15,21 @@
  */
 class TDefinedTypes : public BaseMetadataObject
 {
-private:
-    String typeName;  // РРјСЏ РѕРїСЂРµРґРµР»СЏРµРјРѕРіРѕ С‚РёРїР°
-
 public:
     TDefinedTypes();
-    TDefinedTypes(v8catalog* _parent, const String& _guid);
-    TDefinedTypes(v8catalog* _parent, const String& _guid, const String& _name);
+    TDefinedTypes(v8catalog* _parent, const Utf16String& _guid);
+    TDefinedTypes(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TDefinedTypes(v8catalog* _parent, const TStringLike& _guid)
+        : TDefinedTypes(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TDefinedTypes(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TDefinedTypes(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TDefinedTypes();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РѕРїСЂРµРґРµР»СЏРµРјРѕРіРѕ С‚РёРїР°
-    String GetTypeName();
-    void SetTypeName(String _name);
+    Utf16String GetTypeName() const;
+    void SetTypeName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

@@ -7,17 +7,17 @@
 
 TSessionParameters::TSessionParameters() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TSessionParameters::TSessionParameters(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TSessionParameters::TSessionParameters(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TSessionParameters::TSessionParameters(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TSessionParameters::TSessionParameters(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TSessionParameters::~TSessionParameters()
 {
 }
 
-String TSessionParameters::GetParameterName()
+Utf16String TSessionParameters::GetParameterName()
 {
     return name;
 }
 
-void TSessionParameters::SetParameterName(String _name)
+void TSessionParameters::SetParameterName(const Utf16String& _name)
 {
     name = _name;
 }

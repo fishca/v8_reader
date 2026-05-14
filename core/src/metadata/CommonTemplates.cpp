@@ -7,17 +7,17 @@
 
 TCommonTemplates::TCommonTemplates() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommonTemplates::TCommonTemplates(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommonTemplates::TCommonTemplates(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommonTemplates::TCommonTemplates(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommonTemplates::TCommonTemplates(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TCommonTemplates::~TCommonTemplates()
 {
 }
 
-String TCommonTemplates::GetTemplateName()
+Utf16String TCommonTemplates::GetTemplateName() const
 {
     return name;
 }
 
-void TCommonTemplates::SetTemplateName(String _name)
+void TCommonTemplates::SetTemplateName(const Utf16String& _name)
 {
     name = _name;
 }

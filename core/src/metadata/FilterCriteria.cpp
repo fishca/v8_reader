@@ -80,12 +80,12 @@ namespace
         return guidNode ? Trim(guidNode->get_value()) : L"";
     }
 
-    String GetMetadataNameFromFile(v8catalog* parent, const String& guid)
+    String GetMetadataNameFromFile(v8catalog* parent, const Utf16String& guid)
     {
-        if (!parent || guid.IsEmpty())
+        if (!parent || guid.empty())
             return L"";
 
-        v8file* file = parent->GetFile16(V8Utf16FromString(guid));
+        v8file* file = parent->GetFile16(guid);
         if (!file)
             return L"";
 
@@ -97,18 +97,18 @@ namespace
 
 TFilterCriteria::TFilterCriteria() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TFilterCriteria::TFilterCriteria(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TFilterCriteria::TFilterCriteria(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     initializeFromTree();
     root_data.reset();
 }
 
-TFilterCriteria::TFilterCriteria(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TFilterCriteria::TFilterCriteria(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     initializeFromTree();
@@ -119,12 +119,12 @@ TFilterCriteria::~TFilterCriteria()
 {
 }
 
-String TFilterCriteria::GetFilterCriteriaName()
+Utf16String TFilterCriteria::GetFilterCriteriaName() const
 {
     return name;
 }
 
-void TFilterCriteria::SetFilterCriteriaName(String _name)
+void TFilterCriteria::SetFilterCriteriaName(const Utf16String& _name)
 {
     name = _name;
 }
@@ -162,11 +162,11 @@ void TFilterCriteria::initializeFromTree()
     if (!root_data)
         return;
 
-    if (name.IsEmpty())
+    if (name.empty())
     {
         tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 5, 1, 2});
         if (nameNode)
-            name = nameNode->get_value();
+            name = V8Utf16FromString(nameNode->get_value());
     }
 
     tree* rootNode = root_data->get_subnode(0);
@@ -184,7 +184,7 @@ void TFilterCriteria::initializeFromTree()
             continue;
 
         String formGuid = Trim(formGuidNode->get_value());
-        String formName = GetMetadataNameFromFile(parent, formGuid);
+        String formName = GetMetadataNameFromFile(parent, V8Utf16FromString(formGuid));
         if (formName.IsEmpty())
             formName = formGuid;
 
@@ -208,4 +208,5 @@ void TFilterCriteria::initializeFromTree()
         commands.push_back(std::make_unique<TComand>(commandName, GetDescriptorGuid(descriptor)));
     }
 }
+
 

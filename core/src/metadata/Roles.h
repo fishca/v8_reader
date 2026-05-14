@@ -15,18 +15,21 @@
  */
 class TRoles : public BaseMetadataObject
 {
-private:
-    String roleName;  // РРјСЏ СЂРѕР»Рё
-
 public:
     TRoles();
-    TRoles(v8catalog* _parent, const String& _guid);
-    TRoles(v8catalog* _parent, const String& _guid, const String& _name);
+    TRoles(v8catalog* _parent, const Utf16String& _guid);
+    TRoles(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TRoles(v8catalog* _parent, const TStringLike& _guid)
+        : TRoles(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TRoles(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TRoles(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TRoles();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё СЂРѕР»Рё
-    String GetRoleName();
-    void SetRoleName(String _name);
+    Utf16String GetRoleName() const;
+    void SetRoleName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

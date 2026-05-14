@@ -20,13 +20,19 @@ private:
 
 public:
     TCommonAttributes();
-    TCommonAttributes(v8catalog* _parent, const String& _guid);
-    TCommonAttributes(v8catalog* _parent, const String& _guid, const String& _name);
+    TCommonAttributes(v8catalog* _parent, const Utf16String& _guid);
+    TCommonAttributes(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TCommonAttributes(v8catalog* _parent, const TStringLike& _guid)
+        : TCommonAttributes(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TCommonAttributes(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TCommonAttributes(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TCommonAttributes();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РѕР±С‰РµРіРѕ СЂРµРєРІРёР·РёС‚Р°
-    String GetAttributeName();
-    void SetAttributeName(String _name);
+    Utf16String GetAttributeName() const;
+    void SetAttributeName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

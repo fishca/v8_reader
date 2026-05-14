@@ -27,8 +27,14 @@ public:
 	std::vector<std::unique_ptr<TForm1C>> forms;            // список форм
 
 	TChartOfAccounts();
-	TChartOfAccounts(v8catalog *_parent, const String& _guid);
-	TChartOfAccounts(v8catalog *_parent, const String& _guid, const String& _name);
+	TChartOfAccounts(v8catalog *_parent, const Utf16String& _guid);
+	TChartOfAccounts(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name);
+	template <typename TStringLike>
+	TChartOfAccounts(v8catalog *_parent, const TStringLike& _guid)
+		: TChartOfAccounts(_parent, V8Utf16FromString(_guid)) {}
+	template <typename TStringLikeGuid, typename TStringLikeName>
+	TChartOfAccounts(v8catalog *_parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+		: TChartOfAccounts(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
 
 	virtual ~TChartOfAccounts();
 

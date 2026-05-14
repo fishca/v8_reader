@@ -19,13 +19,19 @@ private:
 
 public:
     TWebServices();
-    TWebServices(v8catalog* _parent, const String& _guid);
-    TWebServices(v8catalog* _parent, const String& _guid, const String& _name);
+    TWebServices(v8catalog* _parent, const Utf16String& _guid);
+    TWebServices(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TWebServices(v8catalog* _parent, const TStringLike& _guid)
+        : TWebServices(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TWebServices(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TWebServices(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TWebServices();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РІРµР±-СЃРµСЂРІРёСЃР°
-    String GetWebServiceName();
-    void SetWebServiceName(String _name);
+    Utf16String GetWebServiceName() const;
+    void SetWebServiceName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

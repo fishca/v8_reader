@@ -20,13 +20,19 @@ private:
 
 public:
     TInterfaces();
-    TInterfaces(v8catalog* _parent, const String& _guid);
-    TInterfaces(v8catalog* _parent, const String& _guid, const String& _name);
+    TInterfaces(v8catalog* _parent, const Utf16String& _guid);
+    TInterfaces(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TInterfaces(v8catalog* _parent, const TStringLike& _guid)
+        : TInterfaces(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TInterfaces(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TInterfaces(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TInterfaces();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РёРЅС‚РµСЂС„РµР№СЃР°
-    String GetInterfaceName();
-    void SetInterfaceName(String _name);
+    Utf16String GetInterfaceName() const;
+    void SetInterfaceName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

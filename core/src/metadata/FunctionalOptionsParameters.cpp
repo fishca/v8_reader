@@ -7,17 +7,17 @@
 
 TFunctionalOptionsParameters::TFunctionalOptionsParameters() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TFunctionalOptionsParameters::~TFunctionalOptionsParameters()
 {
 }
 
-String TFunctionalOptionsParameters::GetParameterName()
+Utf16String TFunctionalOptionsParameters::GetParameterName() const
 {
     return name;
 }
 
-void TFunctionalOptionsParameters::SetParameterName(String _name)
+void TFunctionalOptionsParameters::SetParameterName(const Utf16String& _name)
 {
     name = _name;
 }

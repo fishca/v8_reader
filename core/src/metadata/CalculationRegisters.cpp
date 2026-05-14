@@ -38,7 +38,7 @@ TCalculationRegisters::TCalculationRegisters()
 }
 
 //---------------------------------------------------------------------------
-TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid)
+TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const Utf16String& _guid)
 	: MetadataObjectInformationRegister(_parent, _guid)
 {
 	initializeFromTree();
@@ -46,7 +46,7 @@ TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _
 }
 
 //---------------------------------------------------------------------------
-TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
+TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name)
 	: MetadataObjectInformationRegister(_parent, _guid, _name)
 {
 	initializeFromTree();

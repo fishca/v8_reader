@@ -5,19 +5,19 @@
 
 TWebServices::TWebServices() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data = nullptr;
     parent = nullptr;
 }
 
-TWebServices::TWebServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TWebServices::TWebServices(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     parent = _parent;
     root_data.reset();
 }
 
-TWebServices::TWebServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TWebServices::TWebServices(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     parent = _parent;
@@ -29,12 +29,12 @@ TWebServices::~TWebServices()
     // root_data будет освобожден в базовом классе
 }
 
-String TWebServices::GetWebServiceName()
+Utf16String TWebServices::GetWebServiceName() const
 {
     return name;
 }
 
-void TWebServices::SetWebServiceName(String _name)
+void TWebServices::SetWebServiceName(const Utf16String& _name)
 {
     name = _name;
 }

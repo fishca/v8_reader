@@ -20,13 +20,19 @@ private:
 
 public:
     TCommonPictures();
-    TCommonPictures(v8catalog* _parent, const String& _guid);
-    TCommonPictures(v8catalog* _parent, const String& _guid, const String& _name);
+    TCommonPictures(v8catalog* _parent, const Utf16String& _guid);
+    TCommonPictures(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TCommonPictures(v8catalog* _parent, const TStringLike& _guid)
+        : TCommonPictures(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TCommonPictures(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TCommonPictures(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TCommonPictures();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РѕР±С‰РµР№ РєР°СЂС‚РёРЅРєРё
-    String GetPictureName();
-    void SetPictureName(String _name);
+    Utf16String GetPictureName() const;
+    void SetPictureName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

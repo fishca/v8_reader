@@ -7,17 +7,17 @@
 
 TCommonPictures::TCommonPictures() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommonPictures::TCommonPictures(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommonPictures::TCommonPictures(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommonPictures::TCommonPictures(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommonPictures::TCommonPictures(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TCommonPictures::~TCommonPictures()
 {
 }
 
-String TCommonPictures::GetPictureName()
+Utf16String TCommonPictures::GetPictureName() const
 {
     return name;
 }
 
-void TCommonPictures::SetPictureName(String _name)
+void TCommonPictures::SetPictureName(const Utf16String& _name)
 {
     name = _name;
 }

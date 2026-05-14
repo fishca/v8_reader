@@ -7,17 +7,17 @@
 
 TFunctionalOptions::TFunctionalOptions() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TFunctionalOptions::TFunctionalOptions(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TFunctionalOptions::TFunctionalOptions(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TFunctionalOptions::TFunctionalOptions(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TFunctionalOptions::TFunctionalOptions(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TFunctionalOptions::~TFunctionalOptions()
 {
 }
 
-String TFunctionalOptions::GetOptionName()
+Utf16String TFunctionalOptions::GetOptionName() const
 {
     return name;
 }
 
-void TFunctionalOptions::SetOptionName(String _name)
+void TFunctionalOptions::SetOptionName(const Utf16String& _name)
 {
     name = _name;
 }

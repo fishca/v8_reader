@@ -83,7 +83,7 @@ namespace
 
     bool TryCollectExchangePlanAttributes(tree* root, std::vector<std::unique_ptr<TRequisite>>& attributes)
     {
-        static const String ExchangePlanAttributeSectionGuid = L"1a1b4fea-e093-470d-94ff-1d2f16cda2ab";
+        static constexpr const wchar_t* ExchangePlanAttributeSectionGuid = L"1a1b4fea-e093-470d-94ff-1d2f16cda2ab";
 
         tree* sectionNodeByGuid = find_metadata_node_by_guid(root, ExchangePlanAttributeSectionGuid);
         if (sectionNodeByGuid)
@@ -195,7 +195,7 @@ tree* nameNode = GetNodeByPath(current, {0, 1, 1, 1, 2});
 
     bool TryCollectExchangePlanTabularSections(tree* root, std::vector<std::unique_ptr<TTabular>>& tabulars)
     {
-        static const String ExchangePlanTabularSectionGuid = L"52293f4b-f98c-43ea-a80f-41047ae7ab58";
+        static constexpr const wchar_t* ExchangePlanTabularSectionGuid = L"52293f4b-f98c-43ea-a80f-41047ae7ab58";
 
         tree* sectionNodeByGuid = find_metadata_node_by_guid(root, ExchangePlanTabularSectionGuid);
         if (!sectionNodeByGuid)
@@ -241,7 +241,7 @@ tree* nameNode = GetNodeByPath(current, {0, 1, 1, 1, 2});
 
 bool TryCollectExchangePlanCommands(tree* root, std::vector<std::unique_ptr<TComand>>& commands)
 {
-    static const String ExchangePlanCommandsGuid = L"d5207c64-11d5-4d46-bba2-55b7b07ff4eb";
+    static constexpr const wchar_t* ExchangePlanCommandsGuid = L"d5207c64-11d5-4d46-bba2-55b7b07ff4eb";
 
     tree* sectionNodeByGuid = find_metadata_node_by_guid(root, ExchangePlanCommandsGuid);
     if (!sectionNodeByGuid)
@@ -280,7 +280,7 @@ bool TryCollectExchangePlanCommands(tree* root, std::vector<std::unique_ptr<TCom
 
 bool TryCollectExchangePlanForms(v8catalog* parent, tree* root, std::vector<std::unique_ptr<TForm1C>>& forms)
 {
-    static const String ExchangePlanFormsGuid = L"87c509ab-3d38-4d67-b379-aca796298578";
+    static constexpr const wchar_t* ExchangePlanFormsGuid = L"87c509ab-3d38-4d67-b379-aca796298578";
 
     if (!parent)
         return false;
@@ -320,7 +320,7 @@ bool TryCollectExchangePlanForms(v8catalog* parent, tree* root, std::vector<std:
 
 bool TryCollectExchangePlanLayouts(v8catalog* parent, tree* root, std::vector<std::unique_ptr<TMoxel>>& moxels)
 {
-    static const String ExchangePlanLayoutsGuid = L"3daea016-69b7-4ed4-9453-127911372fe6";
+    static constexpr const wchar_t* ExchangePlanLayoutsGuid = L"3daea016-69b7-4ed4-9453-127911372fe6";
 
     if (!parent)
         return false;
@@ -375,20 +375,20 @@ static MetadataTreePaths GetExchangePlansPaths()
 
 TExchangePlans::TExchangePlans() : MetadataObjectWithSections()
 {
-    exchangePlanName = "";
+    name.clear();
     root_data.reset();
 }
 
-TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid) : MetadataObjectWithSections(_parent, _guid)
+TExchangePlans::TExchangePlans(v8catalog* _parent, const Utf16String& _guid) : MetadataObjectWithSections(_parent, _guid)
 {
-    exchangePlanName = "";
+    name.clear();
     initializeFromTree();
     root_data.reset();
 }
 
-TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name) : MetadataObjectWithSections(_parent, _guid, _name)
+TExchangePlans::TExchangePlans(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : MetadataObjectWithSections(_parent, _guid, _name)
 {
-    exchangePlanName = _name;
+    name = _name;
     initializeFromTree();
     root_data.reset();
 }
@@ -397,14 +397,14 @@ TExchangePlans::~TExchangePlans()
 {
 }
 
-String TExchangePlans::GetExchangePlanName()
+Utf16String TExchangePlans::GetExchangePlanName() const
 {
-    return exchangePlanName;
+    return name;
 }
 
-void TExchangePlans::SetExchangePlanName(String _name)
+void TExchangePlans::SetExchangePlanName(const Utf16String& _name)
 {
-    exchangePlanName = _name;
+    name = _name;
 }
 
 void TExchangePlans::initializeFromTree()

@@ -21,8 +21,14 @@ private:
 public:
 	/* TODO : Реализовать класс */
 	TChartOfCharacteristicTypes();
-	TChartOfCharacteristicTypes(v8catalog *_parent, const String& _guid);
-	TChartOfCharacteristicTypes(v8catalog *_parent, const String& _guid, const String& _name);
+	TChartOfCharacteristicTypes(v8catalog *_parent, const Utf16String& _guid);
+	TChartOfCharacteristicTypes(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name);
+	template <typename TStringLike>
+	TChartOfCharacteristicTypes(v8catalog *_parent, const TStringLike& _guid)
+		: TChartOfCharacteristicTypes(_parent, V8Utf16FromString(_guid)) {}
+	template <typename TStringLikeGuid, typename TStringLikeName>
+	TChartOfCharacteristicTypes(v8catalog *_parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+		: TChartOfCharacteristicTypes(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
 	~TChartOfCharacteristicTypes();
 
 	// Реализация виртуальных методов

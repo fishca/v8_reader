@@ -8,17 +8,20 @@
 
 class TWebSocketClients : public BaseMetadataObject
 {
-private:
-    String clientName;
-
 public:
     TWebSocketClients();
-    TWebSocketClients(v8catalog* _parent, const String& _guid);
-    TWebSocketClients(v8catalog* _parent, const String& _guid, const String& _name);
+    TWebSocketClients(v8catalog* _parent, const Utf16String& _guid);
+    TWebSocketClients(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TWebSocketClients(v8catalog* _parent, const TStringLike& _guid)
+        : TWebSocketClients(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TWebSocketClients(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TWebSocketClients(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TWebSocketClients();
 
-    String GetClientName();
-    void SetClientName(String _name);
+    Utf16String GetClientName() const;
+    void SetClientName(const Utf16String& _name);
 
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;

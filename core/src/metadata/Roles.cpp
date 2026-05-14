@@ -7,19 +7,19 @@
 
 TRoles::TRoles() : BaseMetadataObject()
 {
-    roleName = "";
+    name.clear();
     root_data.reset();
 }
 
-TRoles::TRoles(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TRoles::TRoles(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    roleName = "";
+    name.clear();
     root_data.reset();
 }
 
-TRoles::TRoles(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TRoles::TRoles(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-    roleName = _name;
+    name = _name;
     root_data.reset();
 }
 
@@ -27,14 +27,14 @@ TRoles::~TRoles()
 {
 }
 
-String TRoles::GetRoleName()
+Utf16String TRoles::GetRoleName() const
 {
-    return roleName;
+    return name;
 }
 
-void TRoles::SetRoleName(String _name)
+void TRoles::SetRoleName(const Utf16String& _name)
 {
-    roleName = _name;
+    name = _name;
 }
 
 std::vector<std::unique_ptr<TRequisite>>& TRoles::getAttributes()

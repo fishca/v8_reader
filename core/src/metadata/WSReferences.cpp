@@ -23,10 +23,10 @@ namespace
         return current;
     }
 
-    String FindReferenceName(tree* node)
+    Utf16String FindReferenceName(tree* node)
     {
         if (!node)
-            return L"";
+            return u"";
 
         if (node->get_type() == nd_list && node->get_num_subnode() >= 3)
         {
@@ -37,39 +37,39 @@ namespace
                 possibleNameNode->get_type() == nd_string &&
                 !possibleNameNode->get_value().IsEmpty())
             {
-                return possibleNameNode->get_value();
+                return V8Utf16FromString(possibleNameNode->get_value());
             }
         }
 
         for (int i = 0; i < node->get_num_subnode(); i++)
         {
-            String result = FindReferenceName(node->get_subnode(i));
-            if (!result.IsEmpty())
+            Utf16String result = FindReferenceName(node->get_subnode(i));
+            if (!result.empty())
                 return result;
         }
 
-        return L"";
+        return u"";
     }
 }
 
 TWSReferences::TWSReferences() : BaseMetadataObject()
 {
-	referenceName = "";
+	name.clear();
 	root_data.reset();
 }
 
-TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid)
+TWSReferences::TWSReferences(v8catalog* _parent, const Utf16String& _guid)
 	: BaseMetadataObject(_parent, _guid)
 {
-	referenceName = "";
+	name.clear();
 	initializeFromTree();
 	root_data.reset();
 }
 
-TWSReferences::TWSReferences(v8catalog* _parent, const String& _guid, const String& _name)
+TWSReferences::TWSReferences(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name)
 	: BaseMetadataObject(_parent, _guid, _name)
 {
-	referenceName = _name;
+	name = _name;
 	initializeFromTree();
 	root_data.reset();
 }
@@ -78,14 +78,13 @@ TWSReferences::~TWSReferences()
 {
 }
 
-String TWSReferences::GetReferenceName()
+Utf16String TWSReferences::GetReferenceName() const
 {
-	return referenceName;
+	return name;
 }
 
-void TWSReferences::SetReferenceName(String _name)
+void TWSReferences::SetReferenceName(const Utf16String& _name)
 {
-	referenceName = _name;
 	name = _name;
 }
 
@@ -119,20 +118,14 @@ void TWSReferences::initializeFromTree()
 	tree* nameNode = GetNodeByPath(root_data.get(), {1, 2, 2});
 	if (nameNode && !nameNode->get_value().IsEmpty())
 	{
-		name = nameNode->get_value();
-		referenceName = name;
+		name = V8Utf16FromString(nameNode->get_value());
 		return;
 	}
 
-	String foundName = FindReferenceName(root_data.get());
-	if (!foundName.IsEmpty())
+	Utf16String foundName = FindReferenceName(root_data.get());
+	if (!foundName.empty())
 	{
 		name = foundName;
-		referenceName = name;
-		return;
 	}
-
-	if (referenceName.IsEmpty())
-		referenceName = name;
 }
 

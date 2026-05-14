@@ -52,27 +52,27 @@ namespace
 
 TCommonForms::TCommonForms() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
-	textDocument.text = L"";
+	textDocument.text = u"";
 	textDocument.loaded = false;
 	textDocument.dirty = false;
 }
 
-TCommonForms::TCommonForms(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommonForms::TCommonForms(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
-	textDocument.text = L"";
+	textDocument.text = u"";
 	textDocument.loaded = false;
 	textDocument.dirty = false;
 }
 
-TCommonForms::TCommonForms(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommonForms::TCommonForms(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
-	textDocument.text = L"";
+	textDocument.text = u"";
 	textDocument.loaded = false;
 	textDocument.dirty = false;
 }
@@ -81,12 +81,12 @@ TCommonForms::~TCommonForms()
 {
 }
 
-String TCommonForms::GetFormName()
+Utf16String TCommonForms::GetFormName()
 {
     return name;
 }
 
-void TCommonForms::SetFormName(String _name)
+void TCommonForms::SetFormName(const Utf16String& _name)
 {
     name = _name;
 }
@@ -111,13 +111,13 @@ void TCommonForms::RefreshEditableTextIfNeeded()
 		textDocument = refreshed;
 }
 
-String TCommonForms::GetText()
+Utf16String TCommonForms::GetText()
 {
 	LoadTextIfNeeded();
 	return textDocument.text;
 }
 
-void TCommonForms::SetText(String _text)
+void TCommonForms::SetText(const Utf16String& _text)
 {
 	LoadTextIfNeeded();
 	textDocument.text = _text;
@@ -131,7 +131,7 @@ ModuleTextDocument& TCommonForms::GetTextDocument()
 	return textDocument;
 }
 
-bool TCommonForms::SaveTextToSource(const String& newText, String& errorText)
+bool TCommonForms::SaveTextToSource(const Utf16String& newText, Utf16String& errorText)
 {
 	RefreshEditableTextIfNeeded();
 	return ModuleTextStorage::SaveDocument(textDocument, newText, errorText);
@@ -140,20 +140,20 @@ bool TCommonForms::SaveTextToSource(const String& newText, String& errorText)
 bool TCommonForms::HasEditableModuleText()
 {
 	RefreshEditableTextIfNeeded();
-	return !textDocument.text.IsEmpty() || textDocument.location.editable;
+	return !textDocument.text.empty() || textDocument.location.editable;
 }
 
-String TCommonForms::GetEditableModuleText()
+Utf16String TCommonForms::GetEditableModuleText()
 {
 	return GetText();
 }
 
-void TCommonForms::SetEditableModuleText(const String& value)
+void TCommonForms::SetEditableModuleText(const Utf16String& value)
 {
 	SetText(value);
 }
 
-bool TCommonForms::SaveEditableModuleText(const String& value, String& errorText)
+bool TCommonForms::SaveEditableModuleText(const Utf16String& value, Utf16String& errorText)
 {
 	return SaveTextToSource(value, errorText);
 }

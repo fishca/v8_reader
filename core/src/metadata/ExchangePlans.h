@@ -15,18 +15,21 @@
  */
 class TExchangePlans : public MetadataObjectWithSections
 {
-private:
-    String exchangePlanName;  // РРјСЏ РїР»Р°РЅР° РѕР±РјРµРЅР°
-
 public:
     TExchangePlans();
-    TExchangePlans(v8catalog* _parent, const String& _guid);
-    TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name);
+    TExchangePlans(v8catalog* _parent, const Utf16String& _guid);
+    TExchangePlans(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TExchangePlans(v8catalog* _parent, const TStringLike& _guid)
+        : TExchangePlans(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TExchangePlans(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TExchangePlans(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TExchangePlans();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РїР»Р°РЅР° РѕР±РјРµРЅР°
-    String GetExchangePlanName();
-    void SetExchangePlanName(String _name);
+    Utf16String GetExchangePlanName() const;
+    void SetExchangePlanName(const Utf16String& _name);
 
     void initializeFromTree() override;
 };

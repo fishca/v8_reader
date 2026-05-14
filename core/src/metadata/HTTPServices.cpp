@@ -5,19 +5,19 @@
 
 THTTPServices::THTTPServices() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data = nullptr;
     parent = nullptr;
 }
 
-THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+THTTPServices::THTTPServices(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     parent = _parent;
     root_data.reset();
 }
 
-THTTPServices::THTTPServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+THTTPServices::THTTPServices(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     parent = _parent;
@@ -29,12 +29,12 @@ THTTPServices::~THTTPServices()
     // root_data будет освобожден в базовом классе
 }
 
-String THTTPServices::GetHTTPServicesName()
+Utf16String THTTPServices::GetHTTPServicesName() const
 {
     return name;
 }
 
-void THTTPServices::SetHTTPServicesName(String _name)
+void THTTPServices::SetHTTPServicesName(const Utf16String& _name)
 {
     name = _name;
 }

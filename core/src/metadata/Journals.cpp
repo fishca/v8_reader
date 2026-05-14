@@ -26,14 +26,14 @@ TJournals::TJournals()
 {
 }
 
-TJournals::TJournals(v8catalog *_parent, const String& _guid)
+TJournals::TJournals(v8catalog *_parent, const Utf16String& _guid)
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-TJournals::TJournals(v8catalog *_parent, const String& _guid, const String& _name)
+TJournals::TJournals(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();

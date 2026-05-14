@@ -15,18 +15,21 @@
  */
 class TSettingsStorages : public BaseMetadataObject
 {
-private:
-    String storageName;  // РРјСЏ С…СЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє
-
 public:
     TSettingsStorages();
-    TSettingsStorages(v8catalog* _parent, const String& _guid);
-    TSettingsStorages(v8catalog* _parent, const String& _guid, const String& _name);
+    TSettingsStorages(v8catalog* _parent, const Utf16String& _guid);
+    TSettingsStorages(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TSettingsStorages(v8catalog* _parent, const TStringLike& _guid)
+        : TSettingsStorages(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TSettingsStorages(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TSettingsStorages(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TSettingsStorages();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё С…СЂР°РЅРёР»РёС‰Р° РЅР°СЃС‚СЂРѕРµРє
-    String GetStorageName();
-    void SetStorageName(String _name);
+    Utf16String GetStorageName() const;
+    void SetStorageName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

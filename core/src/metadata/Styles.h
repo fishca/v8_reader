@@ -8,17 +8,20 @@
 
 class TStyles : public BaseMetadataObject
 {
-private:
-    String styleName;
-
 public:
     TStyles();
-    TStyles(v8catalog* _parent, const String& _guid);
-    TStyles(v8catalog* _parent, const String& _guid, const String& _name);
+    TStyles(v8catalog* _parent, const Utf16String& _guid);
+    TStyles(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TStyles(v8catalog* _parent, const TStringLike& _guid)
+        : TStyles(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TStyles(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TStyles(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TStyles();
 
-    String GetStyleName();
-    void SetStyleName(String _name);
+    Utf16String GetStyleName() const;
+    void SetStyleName(const Utf16String& _name);
 
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;

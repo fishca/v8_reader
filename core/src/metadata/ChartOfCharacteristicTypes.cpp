@@ -8,23 +8,28 @@
 
 namespace
 {
-	String FindFirstGuid(tree* node)
+	String ToVclString(const Utf16String& value)
+	{
+		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+	}
+
+	Utf16String FindFirstGuid(tree* node)
 	{
 		if (!node)
-			return L"";
+		return Utf16String();
 
 		String value = Trim(node->get_value());
-		if (ModuleTextStorage::IsGuidLike(value))
-			return value;
+		if (ModuleTextStorage::IsGuidLike(V8Utf16FromString(value)))
+		return V8Utf16FromString(value);
 
 		for (int i = 0; i < node->get_num_subnode(); i++)
 		{
-			String found = FindFirstGuid(node->get_subnode(i));
-			if (!found.IsEmpty())
+			Utf16String found = FindFirstGuid(node->get_subnode(i));
+			if (!found.empty())
 				return found;
 		}
 
-		return L"";
+		return Utf16String();
 	}
 }
 
@@ -32,13 +37,13 @@ TChartOfCharacteristicTypes::TChartOfCharacteristicTypes():BaseMetadataObject()
 {
 }
 
-TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid) : BaseMetadataObject(_parent, _guid)
+TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const Utf16String &_guid) : BaseMetadataObject(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const String &_guid, const String &_name) : BaseMetadataObject(_parent, _guid, _name)
+TChartOfCharacteristicTypes::TChartOfCharacteristicTypes(v8catalog *_parent, const Utf16String &_guid, const Utf16String &_name) : BaseMetadataObject(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -84,18 +89,18 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		tree* tabularNode = &(*root_data.get())[0][5][i+CountAttTab-DeltaTab];
 		tree* node_att_tab = &(*tabularNode)[0][1][5][1][2];
 		String NameAttTab = node_att_tab->get_value();
-		String GuidAttTab;
+		Utf16String guidAttTab;
 		try {
-			GuidAttTab = (*tabularNode)[0][1][5][1][1].get_value();
+			guidAttTab = V8Utf16FromString((*tabularNode)[0][1][5][1][1].get_value());
 		} catch (...) {
-			GuidAttTab = L"";
+			guidAttTab.clear();
 		}
 
-		auto tabular = std::make_unique<TTabular>(NameAttTab, GuidAttTab);
+		auto tabular = std::make_unique<TTabular>(NameAttTab, ToVclString(guidAttTab));
 		std::unique_ptr<tree> tabularRootData;
-		if (parent && !GuidAttTab.IsEmpty())
+		if (parent && !guidAttTab.empty())
 		{
-			v8file* tabularFile = parent->GetFile16(V8Utf16FromString(GuidAttTab));
+			v8file* tabularFile = parent->GetFile16(guidAttTab);
 			if (tabularFile)
 				tabularRootData.reset(get_treeFromV8file(tabularFile));
 		}
@@ -135,10 +140,10 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 	for (int i = 0; i < CountCom; i++)
 	{
 		tree* commandNode = &(*root_data.get())[0][6][i+CountCom-DeltaCom];
-		String commandGuid = FindFirstGuid(commandNode);
+		Utf16String commandGuid = FindFirstGuid(commandNode);
 		tree* node_com = &(*commandNode)[0][1][3][2][9][2];
 		String NameCom = node_com->get_value();
-		comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
+		comands.push_back(std::make_unique<TComand>(NameCom, ToVclString(commandGuid)));
 	}
 	// Получаем макеты
 	auto& moxels = getLayouts();
@@ -159,4 +164,9 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 
 	}
 }
+
+
+
+
+
 

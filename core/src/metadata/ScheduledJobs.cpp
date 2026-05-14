@@ -7,17 +7,17 @@
 
 TScheduledJobs::TScheduledJobs() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TScheduledJobs::TScheduledJobs(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TScheduledJobs::TScheduledJobs(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TScheduledJobs::TScheduledJobs(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TScheduledJobs::TScheduledJobs(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TScheduledJobs::~TScheduledJobs()
 {
 }
 
-String TScheduledJobs::GetScheduledJobsName()
+Utf16String TScheduledJobs::GetScheduledJobsName() const
 {
     return name;
 }
 
-void TScheduledJobs::SetScheduledJobsName(String _name)
+void TScheduledJobs::SetScheduledJobsName(const Utf16String& _name)
 {
     name = _name;
 }

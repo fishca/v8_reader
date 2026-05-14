@@ -43,8 +43,14 @@ protected:
 
 public:
     MetadataObjectInformationRegister();
-    MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid);
-    MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid, const String& _name);
+    MetadataObjectInformationRegister(v8catalog* _parent, const Utf16String& _guid);
+    MetadataObjectInformationRegister(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    MetadataObjectInformationRegister(v8catalog* _parent, const TStringLike& _guid)
+        : MetadataObjectInformationRegister(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    MetadataObjectInformationRegister(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : MetadataObjectInformationRegister(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~MetadataObjectInformationRegister();
 
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override { return attributes; }

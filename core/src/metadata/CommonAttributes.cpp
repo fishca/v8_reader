@@ -7,17 +7,17 @@
 
 TCommonAttributes::TCommonAttributes() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommonAttributes::TCommonAttributes(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommonAttributes::TCommonAttributes(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommonAttributes::TCommonAttributes(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommonAttributes::TCommonAttributes(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TCommonAttributes::~TCommonAttributes()
 {
 }
 
-String TCommonAttributes::GetAttributeName()
+Utf16String TCommonAttributes::GetAttributeName() const
 {
     return name;
 }
 
-void TCommonAttributes::SetAttributeName(String _name)
+void TCommonAttributes::SetAttributeName(const Utf16String& _name)
 {
     name = _name;
 }

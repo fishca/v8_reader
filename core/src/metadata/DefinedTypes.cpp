@@ -7,19 +7,19 @@
 
 TDefinedTypes::TDefinedTypes() : BaseMetadataObject()
 {
-    typeName = "";
+    name.clear();
     root_data.reset();
 }
 
-TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TDefinedTypes::TDefinedTypes(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    typeName = "";
+    name.clear();
     root_data.reset();
 }
 
-TDefinedTypes::TDefinedTypes(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TDefinedTypes::TDefinedTypes(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-    typeName = _name;
+    name = _name;
     root_data.reset();
 }
 
@@ -27,14 +27,14 @@ TDefinedTypes::~TDefinedTypes()
 {
 }
 
-String TDefinedTypes::GetTypeName()
+Utf16String TDefinedTypes::GetTypeName() const
 {
-    return typeName;
+    return name;
 }
 
-void TDefinedTypes::SetTypeName(String _name)
+void TDefinedTypes::SetTypeName(const Utf16String& _name)
 {
-    typeName = _name;
+    name = _name;
 }
 
 std::vector<std::unique_ptr<TRequisite>>& TDefinedTypes::getAttributes()

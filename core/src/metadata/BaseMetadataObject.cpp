@@ -6,26 +6,29 @@
 
 BaseMetadataObject::BaseMetadataObject()
 {
-    name = "";
-    guid = "";
+    name = u"";
+    guid = u"";
+	guid16.clear();
     root_data = nullptr;
     parent = nullptr;
 }
 
-BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const String& _guid)
+BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const Utf16String& _guid)
 {
     guid = _guid;
+	guid16 = _guid;
     parent = _parent;
-    root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
-    name = ""; // Имя будет инициализировано в производных классах
+    root_data.reset(get_treeFromV8file(parent->GetFile16(guid16)));
+    name = u""; // Имя будет инициализировано в производных классах
 }
 
-BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const String& _guid, const String& _name)
+BaseMetadataObject::BaseMetadataObject(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name)
 {
     name = _name;
     guid = _guid;
+	guid16 = _guid;
     parent = _parent;
-    root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
+    root_data.reset(get_treeFromV8file(parent->GetFile16(guid16)));
 }
 
 BaseMetadataObject::~BaseMetadataObject()
@@ -33,14 +36,19 @@ BaseMetadataObject::~BaseMetadataObject()
 	// unique_ptr автоматически освобождает память
 }
 
-String BaseMetadataObject::GetName()
+Utf16String BaseMetadataObject::GetName()
 {
     return name;
 }
 
-String BaseMetadataObject::GetGUID()
+Utf16String BaseMetadataObject::GetGUID()
 {
     return guid;
+}
+
+Utf16String BaseMetadataObject::GetGUID16()
+{
+	return guid16;
 }
 
 bool BaseMetadataObject::HasEditableModuleText()
@@ -48,18 +56,18 @@ bool BaseMetadataObject::HasEditableModuleText()
 	return false;
 }
 
-String BaseMetadataObject::GetEditableModuleText()
+Utf16String BaseMetadataObject::GetEditableModuleText()
 {
-	return L"";
+	return u"";
 }
 
-void BaseMetadataObject::SetEditableModuleText(const String& value)
+void BaseMetadataObject::SetEditableModuleText(const Utf16String& value)
 {
 }
 
-bool BaseMetadataObject::SaveEditableModuleText(const String& value, String& errorText)
+bool BaseMetadataObject::SaveEditableModuleText(const Utf16String& value, Utf16String& errorText)
 {
-	errorText = L"Для этого объекта редактирование модуля не реализовано.";
+	errorText = u"Для этого объекта редактирование модуля не реализовано.";
 	return false;
 }
 
@@ -73,17 +81,17 @@ bool BaseMetadataObject::HasEditableModuleText(ModuleTextKind kind)
 	return HasEditableModuleText();
 }
 
-String BaseMetadataObject::GetEditableModuleText(ModuleTextKind kind)
+Utf16String BaseMetadataObject::GetEditableModuleText(ModuleTextKind kind)
 {
 	return GetEditableModuleText();
 }
 
-void BaseMetadataObject::SetEditableModuleText(ModuleTextKind kind, const String& value)
+void BaseMetadataObject::SetEditableModuleText(ModuleTextKind kind, const Utf16String& value)
 {
 	SetEditableModuleText(value);
 }
 
-bool BaseMetadataObject::SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText)
+bool BaseMetadataObject::SaveEditableModuleText(ModuleTextKind kind, const Utf16String& value, Utf16String& errorText)
 {
 	return SaveEditableModuleText(value, errorText);
 }
@@ -92,4 +100,6 @@ ModuleTextLocation BaseMetadataObject::GetEditableModuleLocation(ModuleTextKind 
 {
 	return GetEditableModuleLocation();
 }
+
+
 

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 
 #include <filesystem>
@@ -12,6 +12,25 @@
 #include "ModuleTextEncodingUtils.h"
 
 //---------------------------------------------------------------------------
+
+namespace
+{
+	inline String ToVclString(const Utf16String& value)
+	{
+		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+	}
+}
+
+namespace ModuleTextStorage
+{
+	bool LooksLike1CModuleText(const String& value);
+	bool IsGuidLike(const String& value);
+	String NormalizeGuidFileName(const String& guid);
+	ModuleTextDocument LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
+	ModuleTextDocument LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
+	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind);
+	ModuleTextDocument LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind);
+}
 
 namespace
 {
@@ -216,15 +235,15 @@ namespace
 				return false;
 		}
 
-		document.text = text;
+		document.text = V8Utf16FromString(text);
 		document.loaded = true;
 		document.dirty = false;
-		document.location.metadataGuid = metadataGuid;
-		document.location.moduleDataGuid = moduleDataGuid;
-		document.location.filePath = filePath;
-		document.location.fileName = ExtractFileName(filePath);
-		document.location.containerPath = ExtractFileDir(filePath);
-		document.location.sourceRoot = ExtractFileDir(document.location.containerPath);
+		document.location.metadataGuid = V8Utf16FromString(metadataGuid);
+		document.location.moduleDataGuid = V8Utf16FromString(moduleDataGuid);
+		document.location.filePath = V8Utf16FromString(filePath);
+		document.location.fileName = V8Utf16FromString(ExtractFileName(filePath));
+		document.location.containerPath = V8Utf16FromString(ExtractFileDir(filePath));
+		document.location.sourceRoot = V8Utf16FromString(ExtractFileDir(filePath));
 		document.location.kind = kind;
 		document.location.encoding = encoding;
 		document.location.editable = true;
@@ -255,7 +274,7 @@ namespace
 				const String textPath = CombinePath(containerPath, L"text");
 				if (TryReadDiskModuleFile(textPath, kind, metadataGuid, containerName, candidate))
 				{
-					if (kind != ModuleTextKind::ManagerModule || !candidate.text.IsEmpty())
+					if (kind != ModuleTextKind::ManagerModule || !candidate.text.empty())
 					{
 						document = candidate;
 						return true;
@@ -271,7 +290,7 @@ namespace
 				const String modulePath = CombinePath(containerPath, L"module");
 				if (TryReadDiskModuleFile(modulePath, kind, metadataGuid, containerName, candidate))
 				{
-					if (kind != ModuleTextKind::ManagerModule || !candidate.text.IsEmpty())
+					if (kind != ModuleTextKind::ManagerModule || !candidate.text.empty())
 					{
 						document = candidate;
 						return true;
@@ -287,7 +306,7 @@ namespace
 				const String directPath = CombinePath(sourceRoot, containerName);
 				if (TryReadDiskModuleFile(directPath, kind, metadataGuid, containerName, candidate))
 				{
-					if (kind != ModuleTextKind::ManagerModule || !candidate.text.IsEmpty())
+					if (kind != ModuleTextKind::ManagerModule || !candidate.text.empty())
 					{
 						document = candidate;
 						return true;
@@ -429,7 +448,7 @@ namespace
 			return false;
 
 		const String upper = UpperCase(text);
-		if (upper.Pos(L"ПРОЦЕДУРА") > 0 || upper.Pos(L"ФУНКЦИЯ") > 0
+		if (upper.Pos(L"РџР РћР¦Р•Р”РЈР Рђ") > 0 || upper.Pos(L"Р¤РЈРќРљР¦РРЇ") > 0
 			|| upper.Pos(L"PROCEDURE") > 0 || upper.Pos(L"FUNCTION") > 0)
 			return true;
 
@@ -571,10 +590,10 @@ namespace ModuleTextStorage
 		return value.Length() > 0
 			&& (value.Pos(L"\n") > 0
 				|| value.Pos(L"\r") > 0
-				|| value.Pos(L"Процедура") > 0
-				|| value.Pos(L"Функция") > 0
-				|| value.Pos(L"КонецПроцедуры") > 0
-				|| value.Pos(L"КонецФункции") > 0);
+				|| value.Pos(L"РџСЂРѕС†РµРґСѓСЂР°") > 0
+				|| value.Pos(L"Р¤СѓРЅРєС†РёСЏ") > 0
+				|| value.Pos(L"РљРѕРЅРµС†РџСЂРѕС†РµРґСѓСЂС‹") > 0
+				|| value.Pos(L"РљРѕРЅРµС†Р¤СѓРЅРєС†РёРё") > 0);
 	}
 
 	bool IsGuidLike(const String& value)
@@ -617,7 +636,7 @@ namespace ModuleTextStorage
 		ModuleTextDocument document;
 		document.loaded = true;
 		document.location.kind = ModuleTextKind::CommonModule;
-		document.location.metadataGuid = metadataGuid;
+		document.location.metadataGuid = V8Utf16FromString(metadataGuid);
 
 		if (TryLoadFromSourceCfByGuid(metadataGuid, ModuleTextKind::CommonModule, document))
 			return document;
@@ -635,7 +654,7 @@ namespace ModuleTextStorage
 				if (objectFile)
 				{
 					std::unique_ptr<tree> objectTree(get_treeFromV8file(objectFile));
-					document.text = FindEmbeddedModuleText(objectTree.get());
+					document.text = V8Utf16FromString(FindEmbeddedModuleText(objectTree.get()));
 
 					std::vector<String> referencedGuids;
 					CollectGuidReferences(objectTree.get(), referencedGuids);
@@ -658,8 +677,8 @@ namespace ModuleTextStorage
 				String text = TryReadModuleContainer(dataModule, true);
 				if (!text.IsEmpty())
 				{
-					document.text = text;
-					document.location.moduleDataGuid = candidates[i];
+					document.text = V8Utf16FromString(text);
+					document.location.moduleDataGuid = V8Utf16FromString(candidates[i]);
 					document.location.editable = false;
 					document.location.foundInSourceCF = false;
 					return document;
@@ -675,7 +694,7 @@ namespace ModuleTextStorage
 		ModuleTextDocument document;
 		document.loaded = true;
 		document.location.kind = ModuleTextKind::CommonForm;
-		document.location.metadataGuid = metadataGuid;
+		document.location.metadataGuid = V8Utf16FromString(metadataGuid);
 
 		if (TryLoadFromSourceCfByGuid(metadataGuid, ModuleTextKind::CommonForm, document))
 			return document;
@@ -686,8 +705,8 @@ namespace ModuleTextStorage
 			String text = TryReadModuleContainer(dataForm, true);
 			if (!text.IsEmpty())
 			{
-				document.text = text;
-				document.location.moduleDataGuid = metadataGuid + L".0";
+				document.text = V8Utf16FromString(text);
+				document.location.moduleDataGuid = V8Utf16FromString(metadataGuid + L".0");
 				document.location.editable = false;
 				document.location.foundInSourceCF = false;
 			}
@@ -701,7 +720,7 @@ namespace ModuleTextStorage
 		ModuleTextDocument document;
 		document.loaded = true;
 		document.location.kind = kind;
-		document.location.metadataGuid = metadataGuid;
+		document.location.metadataGuid = V8Utf16FromString(metadataGuid);
 
 		if (TryLoadFromSourceCfByGuid(metadataGuid, kind, document))
 			return document;
@@ -738,8 +757,8 @@ namespace ModuleTextStorage
 				String text = TryReadModuleContainer(file, true);
 				if (!text.IsEmpty())
 				{
-					document.text = text;
-					document.location.moduleDataGuid = candidates[i];
+					document.text = V8Utf16FromString(text);
+					document.location.moduleDataGuid = V8Utf16FromString(candidates[i]);
 					document.location.editable = false;
 					document.location.foundInSourceCF = false;
 					return document;
@@ -755,7 +774,7 @@ namespace ModuleTextStorage
 		ModuleTextDocument document;
 		document.loaded = true;
 		document.location.kind = kind;
-		document.location.metadataGuid = metadataGuid;
+		document.location.metadataGuid = V8Utf16FromString(metadataGuid);
 
 		if (moduleDataGuid.IsEmpty())
 			return document;
@@ -775,12 +794,12 @@ namespace ModuleTextStorage
 					return false;
 
 				ModuleTextEncodingKind encoding = ModuleTextEncodingKind::Unknown;
-				document.text = ReadDiskFileRawText(filePath, encoding);
-				document.location.moduleDataGuid = moduleDataGuid;
-				document.location.filePath = filePath;
-				document.location.fileName = ExtractFileName(filePath);
-				document.location.containerPath = ExtractFileDir(filePath);
-				document.location.sourceRoot = ExtractFileDir(document.location.containerPath);
+				document.text = V8Utf16FromString(ReadDiskFileRawText(filePath, encoding));
+				document.location.moduleDataGuid = V8Utf16FromString(moduleDataGuid);
+				document.location.filePath = V8Utf16FromString(filePath);
+				document.location.fileName = V8Utf16FromString(ExtractFileName(filePath));
+				document.location.containerPath = V8Utf16FromString(ExtractFileDir(filePath));
+				document.location.sourceRoot = V8Utf16FromString(ExtractFileDir(filePath));
 				document.location.encoding = encoding;
 				document.location.editable = true;
 				document.location.foundInSourceCF = true;
@@ -805,7 +824,7 @@ namespace ModuleTextStorage
 		document.location.kind = kind;
 
 		const String rootMetadataGuid = ReadConfigurationObjectGuid(parent);
-		document.location.metadataGuid = rootMetadataGuid;
+		document.location.metadataGuid = V8Utf16FromString(rootMetadataGuid);
 
 		if (!rootMetadataGuid.IsEmpty())
 		{
@@ -821,8 +840,8 @@ namespace ModuleTextStorage
 					String text = TryReadModuleContainer(parent->GetFile16(V8Utf16FromString(candidate)), true);
 					if (!text.IsEmpty())
 					{
-						document.text = text;
-						document.location.moduleDataGuid = candidate;
+						document.text = V8Utf16FromString(text);
+						document.location.moduleDataGuid = V8Utf16FromString(candidate);
 						document.location.editable = false;
 						document.location.foundInSourceCF = false;
 						return document;
@@ -834,21 +853,57 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	bool SaveDocument(ModuleTextDocument& document, const String& newText, String& errorText)
+	Utf16String NormalizeGuidFileName(const Utf16String& guid)
 	{
-		errorText = L"";
+		return V8Utf16FromString(NormalizeGuidFileName(ToVclString(guid)));
+	}
 
-		if (!document.location.editable || document.location.filePath.IsEmpty())
+	bool IsGuidLike(const Utf16String& value)
+	{
+		return IsGuidLike(ToVclString(value));
+	}
+
+	bool LooksLike1CModuleText(const Utf16String& value)
+	{
+		return LooksLike1CModuleText(ToVclString(value));
+	}
+
+	ModuleTextDocument LoadCommonModule(v8catalog* parent, const Utf16String& metadataGuid, const Utf16String& moduleName)
+	{
+		return LoadCommonModule(parent, ToVclString(metadataGuid), ToVclString(moduleName));
+	}
+
+	ModuleTextDocument LoadCommonForm(v8catalog* parent, const Utf16String& metadataGuid, const Utf16String& formName)
+	{
+		return LoadCommonForm(parent, ToVclString(metadataGuid), ToVclString(formName));
+	}
+
+	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const Utf16String& metadataGuid, const Utf16String& objectName, ModuleTextKind kind)
+	{
+		return LoadByMetadataObject(parent, ToVclString(metadataGuid), ToVclString(objectName), kind);
+	}
+
+	ModuleTextDocument LoadBySourceCfModuleDataGuid(const Utf16String& metadataGuid, const Utf16String& moduleDataGuid, ModuleTextKind kind)
+	{
+		return LoadBySourceCfModuleDataGuid(ToVclString(metadataGuid), ToVclString(moduleDataGuid), kind);
+	}
+
+	bool SaveDocument(ModuleTextDocument& document, const Utf16String& newText, Utf16String& errorText)
+	{
+		errorText.clear();
+
+		if (!document.location.editable || document.location.filePath.empty())
 		{
-			errorText = L"Не найден редактируемый файл модуля в SourceCF.";
+			errorText = u"Не найден редактируемый файл модуля в SourceCF.";
 			return false;
 		}
 
-		const String target = document.location.filePath;
+		const String target = String(reinterpret_cast<const wchar_t*>(document.location.filePath.c_str()));
 		const String dir = ExtractFileDir(target);
 		if (!DirectoryExistsFs(dir))
 		{
-			errorText = L"Каталог модуля не существует: " + dir;
+			errorText = u"Каталог модуля не существует: ";
+			errorText += Utf16String(reinterpret_cast<const char16_t*>(dir.c_str()));
 			return false;
 		}
 
@@ -857,17 +912,19 @@ namespace ModuleTextStorage
 		{
 			{
 				v8reader::core::io::StdFileStream out(ToFsPath(tmp), v8reader::core::io::FileOpenMode::CreateTruncate);
-				ModuleTextEncodingUtils::WriteTextWithEncoding(out, newText, document.location.encoding);
+				ModuleTextEncodingUtils::WriteTextWithEncoding(out, String(reinterpret_cast<const wchar_t*>(newText.c_str())), document.location.encoding);
 			}
 
 			if (FileExistsFs(target) && !DeleteFileFs(target))
 			{
-				errorText = L"Не удалось удалить исходный файл модуля: " + target;
+				errorText = u"Не удалось удалить исходный файл модуля: ";
+				errorText += document.location.filePath;
 				return false;
 			}
 			if (!MoveFileFs(tmp, target))
 			{
-				errorText = L"Не удалось переместить временный файл модуля: " + tmp;
+				errorText = u"Не удалось переместить временный файл модуля: ";
+				errorText += Utf16String(reinterpret_cast<const char16_t*>(tmp.c_str()));
 				return false;
 			}
 
@@ -880,19 +937,19 @@ namespace ModuleTextStorage
 		{
 			if (FileExistsFs(tmp))
 				DeleteFileFs(tmp);
-			errorText = e.Message;
+			errorText = Utf16String(reinterpret_cast<const char16_t*>(e.Message.c_str()));
 			return false;
 		}
 	}
 
-	String DescribeLocation(const ModuleTextLocation& location)
+	Utf16String DescribeLocation(const ModuleTextLocation& location)
 	{
-		if (!location.filePath.IsEmpty())
+		if (!location.filePath.empty())
 			return location.filePath;
-		if (!location.containerPath.IsEmpty())
+		if (!location.containerPath.empty())
 			return location.containerPath;
-		if (!location.moduleDataGuid.IsEmpty())
+		if (!location.moduleDataGuid.empty())
 			return location.moduleDataGuid;
-		return L"";
+		return u"";
 	}
 }

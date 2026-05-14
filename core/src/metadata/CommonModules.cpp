@@ -7,23 +7,23 @@
 TCommonModules::TCommonModules() : BaseMetadataObject()
 {
 	root_data.reset();
-	textDocument.text = L"";
+	textDocument.text = u"";
 	textDocument.loaded = false;
 	textDocument.dirty = false;
 }
 
-TCommonModules::TCommonModules(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommonModules::TCommonModules(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
 	root_data.reset();
-	textDocument.text = L"";
+	textDocument.text = u"";
 	textDocument.loaded = false;
 	textDocument.dirty = false;
 }
 
-TCommonModules::TCommonModules(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommonModules::TCommonModules(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
 	root_data.reset();
-	textDocument.text = L"";
+	textDocument.text = u"";
 	textDocument.loaded = false;
 	textDocument.dirty = false;
 	name = _name;
@@ -53,13 +53,13 @@ TCommonModules::~TCommonModules()
 {
 }
 
-String TCommonModules::GetText()
+Utf16String TCommonModules::GetText()
 {
 	LoadTextIfNeeded();
 	return textDocument.text;
 }
 
-void TCommonModules::SetText(String _text)
+void TCommonModules::SetText(const Utf16String& _text)
 {
 	LoadTextIfNeeded();
 	textDocument.text = _text;
@@ -73,7 +73,7 @@ ModuleTextDocument& TCommonModules::GetTextDocument()
 	return textDocument;
 }
 
-bool TCommonModules::SaveTextToSource(const String& newText, String& errorText)
+bool TCommonModules::SaveTextToSource(const Utf16String& newText, Utf16String& errorText)
 {
 	RefreshEditableTextIfNeeded();
 	return ModuleTextStorage::SaveDocument(textDocument, newText, errorText);
@@ -82,20 +82,20 @@ bool TCommonModules::SaveTextToSource(const String& newText, String& errorText)
 bool TCommonModules::HasEditableModuleText()
 {
 	RefreshEditableTextIfNeeded();
-	return !textDocument.text.IsEmpty() || textDocument.location.editable;
+	return !textDocument.text.empty() || textDocument.location.editable;
 }
 
-String TCommonModules::GetEditableModuleText()
+Utf16String TCommonModules::GetEditableModuleText()
 {
 	return GetText();
 }
 
-void TCommonModules::SetEditableModuleText(const String& value)
+void TCommonModules::SetEditableModuleText(const Utf16String& value)
 {
 	SetText(value);
 }
 
-bool TCommonModules::SaveEditableModuleText(const String& value, String& errorText)
+bool TCommonModules::SaveEditableModuleText(const Utf16String& value, Utf16String& errorText)
 {
 	return SaveTextToSource(value, errorText);
 }

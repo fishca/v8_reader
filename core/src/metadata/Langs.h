@@ -13,13 +13,19 @@ private:
 
 public:
 	TLangs();
-	TLangs(v8catalog* _parent, const String& _guid);
-	TLangs(v8catalog* _parent, const String& _guid, const String& _name);
+	TLangs(v8catalog* _parent, const Utf16String& _guid);
+	TLangs(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+	template <typename TStringLike>
+	TLangs(v8catalog* _parent, const TStringLike& _guid)
+		: TLangs(_parent, V8Utf16FromString(_guid)) {}
+	template <typename TStringLikeGuid, typename TStringLikeName>
+	TLangs(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+		: TLangs(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
 	virtual ~TLangs();
 
 	// Методы для получения имени интерфейса
-	String GetLangName();
-	void SetLangName(String _name);
+	Utf16String GetLangName() const;
+	void SetLangName(const Utf16String& _name);
 
 	// Реализация виртуальных методов BaseMetadataObject
 	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

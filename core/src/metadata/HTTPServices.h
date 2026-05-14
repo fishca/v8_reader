@@ -19,13 +19,19 @@ private:
 
 public:
     THTTPServices();
-    THTTPServices(v8catalog* _parent, const String& _guid);
-    THTTPServices(v8catalog* _parent, const String& _guid, const String& _name);
+    THTTPServices(v8catalog* _parent, const Utf16String& _guid);
+    THTTPServices(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    THTTPServices(v8catalog* _parent, const TStringLike& _guid)
+        : THTTPServices(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    THTTPServices(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : THTTPServices(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~THTTPServices();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё HTTP-СЃРµСЂРІРёСЃР°
-    String GetHTTPServicesName();
-    void SetHTTPServicesName(String _name);
+    Utf16String GetHTTPServicesName() const;
+    void SetHTTPServicesName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

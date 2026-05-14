@@ -1,4 +1,4 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef SessionParametersH
 #define SessionParametersH
@@ -8,27 +8,35 @@
 
 /**
  * @class TSessionParameters
- * @brief РљР»Р°СЃСЃ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ СЃРµР°РЅСЃР° (md_SessionParameters)
+ * @brief Класс для хранения параметров сеанса (md_SessionParameters)
  *
- * РџР°СЂР°РјРµС‚СЂС‹ СЃРµР°РЅСЃР° - СЌС‚Рѕ РѕР±СЉРµРєС‚С‹ РјРµС‚Р°РґР°РЅРЅС‹С…, РєРѕС‚РѕСЂС‹Рµ СЃРѕРґРµСЂР¶Р°С‚
- * РїР°СЂР°РјРµС‚СЂС‹, РґРѕСЃС‚СѓРїРЅС‹Рµ РІ С‚РµРєСѓС‰РµРј СЃРµР°РЅСЃРµ СЂР°Р±РѕС‚С‹ СЃРёСЃС‚РµРјС‹.
+ * Параметры сеанса - это объекты метаданных, которые содержат
+ * параметры, доступные в текущем сеансе работы системы.
  */
 class TSessionParameters : public BaseMetadataObject
 {
 private:
-    // parameterName С…СЂР°РЅРёС‚СЃСЏ РІ СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅРѕРј РїРѕР»Рµ name РёР· BaseMetadataObject
+    // parameterName хранится в унаследованном поле name из BaseMetadataObject
 
 public:
     TSessionParameters();
-    TSessionParameters(v8catalog* _parent, const String& _guid);
-    TSessionParameters(v8catalog* _parent, const String& _guid, const String& _name);
+    TSessionParameters(v8catalog* _parent, const Utf16String& _guid);
+    TSessionParameters(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TSessionParameters(v8catalog* _parent, const TStringLike& _guid)
+        : TSessionParameters(_parent, V8Utf16FromString(_guid))
+    {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TSessionParameters(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TSessionParameters(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name))
+    {}
     virtual ~TSessionParameters();
 
-    // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РїР°СЂР°РјРµС‚СЂР° СЃРµР°РЅСЃР°
-    String GetParameterName();
-    void SetParameterName(String _name);
+    // Методы для получения имени параметра сеанса
+    Utf16String GetParameterName();
+    void SetParameterName(const Utf16String& _name);
 
-    // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
+    // Реализация виртуальных методов BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
     std::vector<std::unique_ptr<TComand>>& getCommands() override;
     std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
@@ -38,7 +46,7 @@ public:
     void initializeFromTree() override;
 
 private:
-    // Р’РЅСѓС‚СЂРµРЅРЅРёРµ С…СЂР°РЅРёР»РёС‰Р° РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё СЃ РёРЅС‚РµСЂС„РµР№СЃРѕРј
+    // Внутренние хранилища для совместимости с интерфейсом
     std::vector<std::unique_ptr<TRequisite>> attributes;
     std::vector<std::unique_ptr<TComand>> commands;
     std::vector<std::unique_ptr<TMoxel>> layouts;

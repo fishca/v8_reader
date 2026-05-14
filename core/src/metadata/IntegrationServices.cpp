@@ -26,20 +26,20 @@ namespace
 
 TIntegrationServices::TIntegrationServices() : BaseMetadataObject()
 {
-    serviceName = "";
+    name.clear();
     root_data.reset();
 }
 
-TIntegrationServices::TIntegrationServices(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TIntegrationServices::TIntegrationServices(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    serviceName = "";
+    name.clear();
     initializeFromTree();
     root_data.reset();
 }
 
-TIntegrationServices::TIntegrationServices(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TIntegrationServices::TIntegrationServices(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-    serviceName = _name;
+    name = _name;
     initializeFromTree();
     root_data.reset();
 }
@@ -48,14 +48,13 @@ TIntegrationServices::~TIntegrationServices()
 {
 }
 
-String TIntegrationServices::GetServiceName()
+Utf16String TIntegrationServices::GetServiceName() const
 {
-    return serviceName;
+    return name;
 }
 
-void TIntegrationServices::SetServiceName(String _name)
+void TIntegrationServices::SetServiceName(const Utf16String& _name)
 {
-    serviceName = _name;
     name = _name;
 }
 
@@ -89,12 +88,8 @@ void TIntegrationServices::initializeFromTree()
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
     {
-        name = nameNode->get_value();
-        serviceName = name;
+        name = V8Utf16FromString(nameNode->get_value());
         return;
     }
-
-    if (serviceName.IsEmpty())
-        serviceName = name;
 }
 

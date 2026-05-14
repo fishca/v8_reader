@@ -7,17 +7,17 @@
 
 TEventSubscriptions::TEventSubscriptions() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TEventSubscriptions::TEventSubscriptions(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TEventSubscriptions::~TEventSubscriptions()
 {
 }
 
-String TEventSubscriptions::GetEventSubscriptionName()
+Utf16String TEventSubscriptions::GetEventSubscriptionName() const
 {
     return name;
 }
 
-void TEventSubscriptions::SetEventSubscriptionName(String _name)
+void TEventSubscriptions::SetEventSubscriptionName(const Utf16String& _name)
 {
     name = _name;
 }

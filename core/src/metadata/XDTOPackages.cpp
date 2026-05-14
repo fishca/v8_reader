@@ -5,19 +5,19 @@
 
 TXDTOPackages::TXDTOPackages() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data = nullptr;
     parent = nullptr;
 }
 
-TXDTOPackages::TXDTOPackages(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TXDTOPackages::TXDTOPackages(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     parent = _parent;
     root_data.reset();
 }
 
-TXDTOPackages::TXDTOPackages(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TXDTOPackages::TXDTOPackages(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     parent = _parent;
@@ -29,7 +29,7 @@ TXDTOPackages::~TXDTOPackages()
     // root_data будет освобожден в базовом классе
 }
 
-String TXDTOPackages::GetXDTOPackageName()
+Utf16String TXDTOPackages::GetXDTOPackageName() const
 {
     return name;
 }

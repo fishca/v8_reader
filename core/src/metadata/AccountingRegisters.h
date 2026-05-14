@@ -18,8 +18,14 @@ protected:
 
 public:
     TAccountingRegisters();
-    TAccountingRegisters(v8catalog *_parent, const String& _guid);
-    TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name);
+    TAccountingRegisters(v8catalog *_parent, const Utf16String& _guid);
+    TAccountingRegisters(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TAccountingRegisters(v8catalog *_parent, const TStringLike& _guid)
+        : TAccountingRegisters(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TAccountingRegisters(v8catalog *_parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TAccountingRegisters(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     ~TAccountingRegisters();
 
     void initializeFromTree() override;

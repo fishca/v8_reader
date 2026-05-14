@@ -7,17 +7,17 @@
 
 TCommandGroups::TCommandGroups() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommandGroups::TCommandGroups(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TCommandGroups::TCommandGroups(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TCommandGroups::TCommandGroups(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TCommandGroups::TCommandGroups(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TCommandGroups::~TCommandGroups()
 {
 }
 
-String TCommandGroups::GetCommandName()
+Utf16String TCommandGroups::GetCommandName() const
 {
     return name;
 }
 
-void TCommandGroups::SetCommandName(String _name)
+void TCommandGroups::SetCommandName(const Utf16String& _name)
 {
     name = _name;
 }

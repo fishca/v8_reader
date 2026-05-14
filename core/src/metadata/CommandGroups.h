@@ -20,13 +20,19 @@ private:
 
 public:
     TCommandGroups();
-    TCommandGroups(v8catalog* _parent, const String& _guid);
-    TCommandGroups(v8catalog* _parent, const String& _guid, const String& _name);
+    TCommandGroups(v8catalog* _parent, const Utf16String& _guid);
+    TCommandGroups(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TCommandGroups(v8catalog* _parent, const TStringLike& _guid)
+        : TCommandGroups(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TCommandGroups(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TCommandGroups(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TCommandGroups();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РіСЂСѓРїРїС‹ РєРѕРјР°РЅРґ
-    String GetCommandName();
-    void SetCommandName(String _name);
+    Utf16String GetCommandName() const;
+    void SetCommandName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

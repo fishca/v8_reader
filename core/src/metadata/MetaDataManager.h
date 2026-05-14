@@ -40,7 +40,7 @@
 
 class MetaDataManager {
 private:
-	std::map<String, std::vector<std::shared_ptr<MetaObject>>> ObjectsByType;
+	std::map<Utf16String, std::vector<std::shared_ptr<MetaObject>>> ObjectsByType;
 	std::vector<std::shared_ptr<TSessionParameters>> SessionParameters;
 	std::vector<std::shared_ptr<TRoles>> Roles;
 	std::vector<std::shared_ptr<TBots>> Bots;
@@ -60,10 +60,8 @@ private:
 public:
 	v8catalog* loadFromFile(const std::filesystem::path& filename);
 	v8catalog* loadFromFile16(const Utf16String& filename);
-	v8catalog* loadFromFile(const String& filename);
 	bool Initialize(v8catalog* cf);
-    void fill_md(v8catalog *cf, tree* tr, String guid_md);
-	std::shared_ptr<MetaObject> getObject(const String& type, const String& name);
+	std::shared_ptr<MetaObject> getObject(const Utf16String& type, const Utf16String& name);
 	std::vector<std::shared_ptr<TSessionParameters>>& getSessionParameters();
 	std::vector<std::shared_ptr<TRoles>>& getRoles();
 	std::vector<std::shared_ptr<TBots>>& getBots();

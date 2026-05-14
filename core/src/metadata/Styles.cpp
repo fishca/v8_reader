@@ -26,20 +26,20 @@ namespace
 
 TStyles::TStyles() : BaseMetadataObject()
 {
-    styleName = "";
+    name.clear();
     root_data.reset();
 }
 
-TStyles::TStyles(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TStyles::TStyles(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    styleName = "";
+    name.clear();
     initializeFromTree();
     root_data.reset();
 }
 
-TStyles::TStyles(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TStyles::TStyles(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-    styleName = _name;
+    name = _name;
     initializeFromTree();
     root_data.reset();
 }
@@ -48,14 +48,13 @@ TStyles::~TStyles()
 {
 }
 
-String TStyles::GetStyleName()
+Utf16String TStyles::GetStyleName() const
 {
-    return styleName;
+    return name;
 }
 
-void TStyles::SetStyleName(String _name)
+void TStyles::SetStyleName(const Utf16String& _name)
 {
-    styleName = _name;
     name = _name;
 }
 
@@ -89,12 +88,8 @@ void TStyles::initializeFromTree()
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
     {
-        name = nameNode->get_value();
-        styleName = name;
+        name = V8Utf16FromString(nameNode->get_value());
         return;
     }
-
-    if (styleName.IsEmpty())
-        styleName = name;
 }
 

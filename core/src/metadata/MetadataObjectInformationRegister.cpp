@@ -7,23 +7,28 @@
 
 namespace
 {
-    String FindFirstGuid(tree* node)
+	String ToVclString(const Utf16String& value)
+	{
+		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+	}
+
+    Utf16String FindFirstGuid(tree* node)
     {
         if (!node)
-            return L"";
+            return Utf16String();
 
         String value = Trim(node->get_value());
-        if (ModuleTextStorage::IsGuidLike(value))
-            return value;
+        if (ModuleTextStorage::IsGuidLike(V8Utf16FromString(value)))
+            return V8Utf16FromString(value);
 
         for (int i = 0; i < node->get_num_subnode(); i++)
         {
-            String found = FindFirstGuid(node->get_subnode(i));
-            if (!found.IsEmpty())
+            Utf16String found = FindFirstGuid(node->get_subnode(i));
+            if (!found.empty())
                 return found;
         }
 
-        return L"";
+        return Utf16String();
     }
 }
 
@@ -32,12 +37,12 @@ MetadataObjectInformationRegister::MetadataObjectInformationRegister()
 {
 }
 
-MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid)
+MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const Utf16String& _guid)
     : BaseMetadataObject(_parent, _guid)
 {
 }
 
-MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const String& _guid, const String& _name)
+MetadataObjectInformationRegister::MetadataObjectInformationRegister(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name)
     : BaseMetadataObject(_parent, _guid, _name)
 {
 }
@@ -130,12 +135,12 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
     for (int i = 0; i < CountCom; i++)
     {
         tree* commandNode = &(*root_data.get())[0][paths.cmdIdx][i + CountCom - DeltaCom];
-        String commandGuid = FindFirstGuid(commandNode);
+        Utf16String commandGuid = FindFirstGuid(commandNode);
         tree* itemNode = commandNode;
         for (size_t p = 0; p < paths.cmdItemPath.size(); p++)
             itemNode = &(*itemNode)[paths.cmdItemPath[p]];
         String NameCom = itemNode->get_value();
-        comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
+        comands.push_back(std::make_unique<TComand>(NameCom, ToVclString(commandGuid)));
     }
 
     // Макеты

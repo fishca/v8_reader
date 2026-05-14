@@ -7,17 +7,17 @@
 
 TInterfaces::TInterfaces() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TInterfaces::TInterfaces(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TInterfaces::TInterfaces(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TInterfaces::~TInterfaces()
 {
 }
 
-String TInterfaces::GetInterfaceName()
+Utf16String TInterfaces::GetInterfaceName() const
 {
     return name;
 }
 
-void TInterfaces::SetInterfaceName(String _name)
+void TInterfaces::SetInterfaceName(const Utf16String& _name)
 {
     name = _name;
 }

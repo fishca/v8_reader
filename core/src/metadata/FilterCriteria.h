@@ -20,13 +20,19 @@ private:
 
 public:
     TFilterCriteria();
-    TFilterCriteria(v8catalog* _parent, const String& _guid);
-    TFilterCriteria(v8catalog* _parent, const String& _guid, const String& _name);
+    TFilterCriteria(v8catalog* _parent, const Utf16String& _guid);
+    TFilterCriteria(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    TFilterCriteria(v8catalog* _parent, const TStringLike& _guid)
+        : TFilterCriteria(_parent, V8Utf16FromString(_guid)) {}
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    TFilterCriteria(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : TFilterCriteria(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name)) {}
     virtual ~TFilterCriteria();
 
     // РњРµС‚РѕРґС‹ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РёРјРµРЅРё РєСЂРёС‚РµСЂРёСЏ РѕС‚Р±РѕСЂР°
-    String GetFilterCriteriaName();
-    void SetFilterCriteriaName(String _name);
+    Utf16String GetFilterCriteriaName() const;
+    void SetFilterCriteriaName(const Utf16String& _name);
 
     // Р РµР°Р»РёР·Р°С†РёСЏ РІРёСЂС‚СѓР°Р»СЊРЅС‹С… РјРµС‚РѕРґРѕРІ BaseMetadataObject
     std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

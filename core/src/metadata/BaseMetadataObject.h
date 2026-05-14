@@ -23,20 +23,33 @@ class BaseMetadataObject : public MetadataEntity
 {
 public:
     // Общие поля
-    String name;
-    String guid;
+    Utf16String name;
+    Utf16String guid;
+	Utf16String guid16;
     std::unique_ptr<tree> root_data;
     v8catalog* parent;
 
     // Конструкторы
     BaseMetadataObject();
-    BaseMetadataObject(v8catalog* _parent, const String& _guid);
-    BaseMetadataObject(v8catalog* _parent, const String& _guid, const String& _name);
+    BaseMetadataObject(v8catalog* _parent, const Utf16String& _guid);
+    BaseMetadataObject(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+    template <typename TStringLike>
+    BaseMetadataObject(v8catalog* _parent, const TStringLike& _guid)
+        : BaseMetadataObject(_parent, V8Utf16FromString(_guid))
+    {
+    }
+
+    template <typename TStringLikeGuid, typename TStringLikeName>
+    BaseMetadataObject(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+        : BaseMetadataObject(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name))
+    {
+    }
     virtual ~BaseMetadataObject() = 0; // Чисто виртуальный деструктор
 
     // Виртуальные методы для получения имени и GUID
-    virtual String GetName();
-    virtual String GetGUID();
+    virtual Utf16String GetName();
+    virtual Utf16String GetGUID();
+	virtual Utf16String GetGUID16();
 
     // Чисто виртуальные методы для получения списков элементов метаданных
     virtual std::vector<std::unique_ptr<TRequisite>>& getAttributes() = 0;
@@ -49,14 +62,14 @@ public:
     virtual void initializeFromTree() = 0;
 
 	virtual bool HasEditableModuleText();
-	virtual String GetEditableModuleText();
-	virtual void SetEditableModuleText(const String& value);
-	virtual bool SaveEditableModuleText(const String& value, String& errorText);
+	virtual Utf16String GetEditableModuleText();
+	virtual void SetEditableModuleText(const Utf16String& value);
+	virtual bool SaveEditableModuleText(const Utf16String& value, Utf16String& errorText);
 	virtual ModuleTextLocation GetEditableModuleLocation();
 	virtual bool HasEditableModuleText(ModuleTextKind kind);
-	virtual String GetEditableModuleText(ModuleTextKind kind);
-	virtual void SetEditableModuleText(ModuleTextKind kind, const String& value);
-	virtual bool SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText);
+	virtual Utf16String GetEditableModuleText(ModuleTextKind kind);
+	virtual void SetEditableModuleText(ModuleTextKind kind, const Utf16String& value);
+	virtual bool SaveEditableModuleText(ModuleTextKind kind, const Utf16String& value, Utf16String& errorText);
 	virtual ModuleTextLocation GetEditableModuleLocation(ModuleTextKind kind);
 };
 

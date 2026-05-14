@@ -7,17 +7,17 @@
 
 TConstants::TConstants() : BaseMetadataObject()
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TConstants::TConstants(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TConstants::TConstants(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    name = "";
+    name = u"";
     root_data.reset();
 }
 
-TConstants::TConstants(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TConstants::TConstants(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
@@ -27,12 +27,12 @@ TConstants::~TConstants()
 {
 }
 
-String TConstants::GetConstantsName()
+Utf16String TConstants::GetConstantsName() const
 {
     return name;
 }
 
-void TConstants::SetConstantsName(String _name)
+void TConstants::SetConstantsName(const Utf16String& _name)
 {
     name = _name;
 }

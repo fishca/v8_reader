@@ -6,19 +6,19 @@
 
 TSubsystem::TSubsystem() : BaseMetadataObject()
 {
-	name = "";
+	name = u"";
 	root_data.reset();
 }
 
 TSubsystem::TSubsystem(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-	name = "";
+	name = u"";
 	root_data.reset();
 }
 
 TSubsystem::TSubsystem(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-	name = _name;
+	name = V8Utf16FromString(_name);
 	root_data.reset();
 }
 
@@ -28,12 +28,12 @@ TSubsystem::~TSubsystem()
 
 String TSubsystem::GetSubsystemName()
 {
-	return name;
+	return String(reinterpret_cast<const wchar_t*>(name.c_str()));
 }
 
 void TSubsystem::SetSubsystemName(String _name)
 {
-	name = _name;
+	name = V8Utf16FromString(_name);
 }
 
 std::vector<std::unique_ptr<TRequisite>>& TSubsystem::getAttributes()

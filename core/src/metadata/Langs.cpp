@@ -7,17 +7,17 @@
 
 TLangs::TLangs() : BaseMetadataObject()
 {
-	name = "";
+	name = u"";
 	root_data.reset();
 }
 
-TLangs::TLangs(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TLangs::TLangs(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-	name = "";
+	name = u"";
 	root_data.reset();
 }
 
-TLangs::TLangs(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TLangs::TLangs(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
 	name = _name;
 	root_data.reset();
@@ -27,12 +27,12 @@ TLangs::~TLangs()
 {
 }
 
-String TLangs::GetLangName()
+Utf16String TLangs::GetLangName() const
 {
 	return name;
 }
 
-void TLangs::SetLangName(String _name)
+void TLangs::SetLangName(const Utf16String& _name)
 {
 	name = _name;
 }

@@ -33,19 +33,13 @@ v8catalog* MetaDataManager::loadFromFile16(const Utf16String& filename)
     return loadFromFile(std::filesystem::path(filename));
 }
 
-v8catalog* MetaDataManager::loadFromFile(const String& filename)
-{
-    return loadFromFile16(V8Utf16FromString(filename));
-}
-
 bool MetaDataManager::Initialize(v8catalog* cf)
 {
 	std::unique_ptr<tree> tr;
 	tree* node;
 	v8catalog* cat;
 	v8file* filedata;
-	String meta;
-	String s;
+	Utf16String meta;
 	int ver;
 
 	if(!cf)
@@ -118,10 +112,10 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 		return false;
 	}
 
-	meta = node->get_value();
+	meta = V8Utf16FromString(node->get_value());
 	tr.reset();
 
-	filedata = cat->GetFile16(V8Utf16FromString(meta));
+	filedata = cat->GetFile16(meta);
 	if(!filedata)
 	{
 		return false;
@@ -136,7 +130,7 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 	return true;
 }
 
-std::shared_ptr<MetaObject> MetaDataManager::getObject(const String& type, const String& name)
+std::shared_ptr<MetaObject> MetaDataManager::getObject(const Utf16String& type, const Utf16String& name)
 {
 
 }
@@ -152,7 +146,6 @@ void PreFillingMD(tree* tr)
 //	tree* curNode;
 //	String cf_synonym;
 //	String cf_version;
-//	String s;
 //	bool ok;
 //	int structver;
 //	int offset_name;
@@ -356,286 +349,6 @@ void PreFillingMD(tree* tr)
 
 }
 
-// Процедура заполняет метаданные по корневому гуиду
-void MetaDataManager::fill_md(v8catalog *cf, tree* tr, String guid_md)
-{
-//	v8file *filedata;
-//	tree* tree_md;
-//	tree* node;
-//	String s;
-//
-//	tree* node_md = find_node_by_guid(tr, guid_md); //"cf4abea6-37b2-11d4-940f-008048da11f9"
-//
-//	int CountMD = (node_md->get_next())->get_value().ToInt();
-//
-//	tree* curNode = node_md->get_next();
-//	while (curNode)
-//	{
-//		curNode = curNode->get_next();
-//		if (curNode)
-//		{
-//			filedata = cf->GetFile(curNode->get_value());
-//			if(!filedata)
-//			{
-//				return;
-//			}
-//
-//			tree_md = get_treeFromV8file(filedata);
-//			if(!tree_md)
-//			{
-//				return;
-//			}
-//			node = tree_md;
-//
-//			if (guid_md == GUID_Catalogs)
-//			{
-//				node = &(*node)[0][1][9][1][2];
-//				auto val = node->get_value();
-//				TCatalogs* CurCatalogs = new TCatalogs(cf, curNode->get_value(), val);
-//				MainForm->mdCatalogs->Add(CurCatalogs);
-//			}
-//			else if (guid_md == GUID_Languages)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//
-//			else if (guid_md == GUID_CommonModules)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Roles)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_CommonTemplates)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_HTTPServices)
-//			{
-//				node = &(*node)[0][1][2][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_ScheduledJobs)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_CommonAttributes)
-//			{
-//				node = &(*node)[0][1][1][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_SessionParameters)
-//			{
-//				node = &(*node)[0][1][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_FunctionalOptionsParameters)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Subsystems)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Interfaces)
-//			{
-//				node = &(*node)[0][1][2][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Styles)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_FilterCriteria)
-//			{
-//				node = &(*node)[0][1][5][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_SettingsStorages)
-//			{
-//				node = &(*node)[0][1][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_EventSubscriptions)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_StyleItems)
-//			{
-//				node = &(*node)[0][1][3][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_CommonPictures)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_ExchangePlans)
-//			{
-//				node = &(*node)[0][1][12][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_WebServices)
-//			{
-//				node = &(*node)[0][1][2][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_FunctionalOptions)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_DefinedTypes)
-//			{
-//				node = &(*node)[0][1][3][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_XDTOPackages)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_WSReferences)
-//			{
-////				node = &(*node)[0][1][9][1][2];
-////				auto val = node->get_value();
-////				md_list.push_back(node->get_value());
-//			}
-//			else if (guid_md == GUID_Constants)
-//			{
-//				node = &(*node)[0][1][1][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Documents)
-//			{
-//				node = &(*node)[0][1][9][1][2];
-//				auto val = node->get_value();
-//				TDocuments* CurDocuments = new TDocuments(cf, curNode->get_value(), val);
-//				MainForm->mdDocuments->Add(CurDocuments);
-//			}
-//			else if (guid_md == GUID_CommonForms)
-//			{
-//				node = &(*node)[0][1][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_InformationRegisters)
-//			{
-//				node = &(*node)[0][1][15][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_CalculationRegisters)
-//			{
-//				node = &(*node)[0][1][15][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_BusinessProcesses)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Tasks)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_AccountingRegisters)
-//			{
-//				node = &(*node)[0][1][16][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_CommandGroups)
-//			{
-//				node = &(*node)[0][1][6][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_CommonCommands)
-//			{
-//				node = &(*node)[0][1][1][2][9][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Numerators)
-//			{
-//				node = &(*node)[0][1][1][2];
-//				auto val = node->get_value();
-//				TNumerators* CurNumerator = new TNumerators(cf, curNode->get_value(), val);
-//				MainForm->mdDocumentNumerators->Add(CurNumerator);
-//			}
-//			else if (guid_md == GUID_JournDocuments)
-//			{
-//				node = &(*node)[0][1][3][1][2];
-//				auto val = node->get_value();
-//				TJournals* CurJournal = new TJournals(cf, curNode->get_value(), val);
-//				MainForm->mdDocumentJournals->Add(CurJournal);
-//			}
-//			else if (guid_md == GUID_Reports)
-//			{
-//				node = &(*node)[0][1][3][1][2];
-//				auto val = node->get_value();
-//				TReports* CurReport = new TReports(cf, curNode->get_value(), val);
-//				MainForm->mdReports->Add(CurReport);
-//			}
-//			else if (guid_md == GUID_ChartOfCharacteristicTypes)
-//			{
-//				node = &(*node)[0][1][13][1][2];
-//				auto val = node->get_value();
-//				TChartOfCharacteristicTypes* CCT = new TChartOfCharacteristicTypes(cf, curNode->get_value(), val);
-//				MainForm->mdChartsOfCharacteristicTypes->Add(CCT);
-//			}
-//			else if (guid_md == GUID_ChartsOfAccounts)
-//			{
-//				node = &(*node)[0][1][15][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_ChartsOfCalculationTypes)
-//			{
-//				node = &(*node)[0][1][1][1][2];
-//				auto val = node->get_value();
-//			}
-//
-//			else if (guid_md == GUID_AccumulationRegisters)
-//			{
-//				node = &(*node)[0][1][13][1][2];
-//				auto val = node->get_value();
-//			}
-//			else if (guid_md == GUID_Sequences)
-//			{
-//				node = &(*node)[0][1][7][1][2];
-//				auto val = node->get_value();
-//				TSequences* CurSequence = new TSequences(cf, curNode->get_value(), val);
-//				MainForm->mdSequences->Add(CurSequence);
-//			}
-//			else if (guid_md == GUID_DataProcessors)
-//			{
-//				node = &(*node)[0][1][3][1][2];
-//				auto val = node->get_value();
-//				TDataProcessors* CurDataProcessor = new TDataProcessors(cf, curNode->get_value(), val);
-//				MainForm->mdDataProcessors->Add(CurDataProcessor);
-//			}
-//			else if (guid_md == GUID_Enums)
-//			{
-//				node = &(*node)[0][1][5][1][2];
-//				auto val = node->get_value();
-//				TEnums* CurEnums = new TEnums(cf, curNode->get_value(), val);
-//				MainForm->mdEnums->Add(CurEnums);
-//			}
-//
-//
-//		}
-//
-//	}
-
-}
-
 // Метод для получения списка параметров сеанса
 std::vector<std::shared_ptr<TSessionParameters>>& MetaDataManager::getSessionParameters()
 {
@@ -725,3 +438,6 @@ std::vector<std::shared_ptr<TConstants>>& MetaDataManager::getConstants()
 {
 	return Constants;
 }
+
+
+

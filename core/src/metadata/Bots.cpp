@@ -26,20 +26,20 @@ namespace
 
 TBots::TBots() : BaseMetadataObject()
 {
-    botName = "";
+    name.clear();
     root_data.reset();
 }
 
-TBots::TBots(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TBots::TBots(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    botName = "";
+    name.clear();
     initializeFromTree();
     root_data.reset();
 }
 
-TBots::TBots(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TBots::TBots(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-    botName = _name;
+    name = _name;
     initializeFromTree();
     root_data.reset();
 }
@@ -48,14 +48,13 @@ TBots::~TBots()
 {
 }
 
-String TBots::GetBotName()
+Utf16String TBots::GetBotName() const
 {
-    return botName;
+    return name;
 }
 
-void TBots::SetBotName(String _name)
+void TBots::SetBotName(const Utf16String& _name)
 {
-    botName = _name;
     name = _name;
 }
 
@@ -89,12 +88,8 @@ void TBots::initializeFromTree()
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
     {
-        name = nameNode->get_value();
-        botName = name;
+        name = V8Utf16FromString(nameNode->get_value());
         return;
     }
-
-    if (botName.IsEmpty())
-        botName = name;
 }
 

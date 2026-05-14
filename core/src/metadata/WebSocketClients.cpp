@@ -26,20 +26,20 @@ namespace
 
 TWebSocketClients::TWebSocketClients() : BaseMetadataObject()
 {
-    clientName = "";
+    name.clear();
     root_data.reset();
 }
 
-TWebSocketClients::TWebSocketClients(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TWebSocketClients::TWebSocketClients(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    clientName = "";
+    name.clear();
     initializeFromTree();
     root_data.reset();
 }
 
-TWebSocketClients::TWebSocketClients(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TWebSocketClients::TWebSocketClients(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-    clientName = _name;
+    name = _name;
     initializeFromTree();
     root_data.reset();
 }
@@ -48,14 +48,13 @@ TWebSocketClients::~TWebSocketClients()
 {
 }
 
-String TWebSocketClients::GetClientName()
+Utf16String TWebSocketClients::GetClientName() const
 {
-    return clientName;
+    return name;
 }
 
-void TWebSocketClients::SetClientName(String _name)
+void TWebSocketClients::SetClientName(const Utf16String& _name)
 {
-    clientName = _name;
     name = _name;
 }
 
@@ -89,12 +88,8 @@ void TWebSocketClients::initializeFromTree()
     tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
     if (nameNode && !nameNode->get_value().IsEmpty())
     {
-        name = nameNode->get_value();
-        clientName = name;
+        name = V8Utf16FromString(nameNode->get_value());
         return;
     }
-
-    if (clientName.IsEmpty())
-        clientName = name;
 }
 

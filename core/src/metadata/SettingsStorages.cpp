@@ -7,19 +7,19 @@
 
 TSettingsStorages::TSettingsStorages() : BaseMetadataObject()
 {
-    storageName = "";
+    name.clear();
     root_data.reset();
 }
 
-TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TSettingsStorages::TSettingsStorages(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
-    storageName = "";
+    name.clear();
     root_data.reset();
 }
 
-TSettingsStorages::TSettingsStorages(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TSettingsStorages::TSettingsStorages(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-    storageName = _name;
+    name = _name;
     root_data.reset();
 }
 
@@ -27,14 +27,14 @@ TSettingsStorages::~TSettingsStorages()
 {
 }
 
-String TSettingsStorages::GetStorageName()
+Utf16String TSettingsStorages::GetStorageName() const
 {
-    return storageName;
+    return name;
 }
 
-void TSettingsStorages::SetStorageName(String _name)
+void TSettingsStorages::SetStorageName(const Utf16String& _name)
 {
-    storageName = _name;
+    name = _name;
 }
 
 std::vector<std::unique_ptr<TRequisite>>& TSettingsStorages::getAttributes()

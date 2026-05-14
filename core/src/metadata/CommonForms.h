@@ -1,4 +1,4 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef CommonFormsH
 #define CommonFormsH
@@ -13,20 +13,28 @@ private:
 
 public:
 	TCommonForms();
-	TCommonForms(v8catalog* _parent, const String& _guid);
-	TCommonForms(v8catalog* _parent, const String& _guid, const String& _name);
+	TCommonForms(v8catalog* _parent, const Utf16String& _guid);
+	TCommonForms(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
+	template <typename TStringLike>
+	TCommonForms(v8catalog* _parent, const TStringLike& _guid)
+		: TCommonForms(_parent, V8Utf16FromString(_guid))
+	{}
+	template <typename TStringLikeGuid, typename TStringLikeName>
+	TCommonForms(v8catalog* _parent, const TStringLikeGuid& _guid, const TStringLikeName& _name)
+		: TCommonForms(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name))
+	{}
 	virtual ~TCommonForms();
 
-	String GetFormName();
-	void SetFormName(String _name);
-	String GetText();
-	void SetText(String _text);
+	Utf16String GetFormName();
+	void SetFormName(const Utf16String& _name);
+	Utf16String GetText();
+	void SetText(const Utf16String& _text);
 	ModuleTextDocument& GetTextDocument();
-	bool SaveTextToSource(const String& newText, String& errorText);
+	bool SaveTextToSource(const Utf16String& newText, Utf16String& errorText);
 	bool HasEditableModuleText() override;
-	String GetEditableModuleText() override;
-	void SetEditableModuleText(const String& value) override;
-	bool SaveEditableModuleText(const String& value, String& errorText) override;
+	Utf16String GetEditableModuleText() override;
+	void SetEditableModuleText(const Utf16String& value) override;
+	bool SaveEditableModuleText(const Utf16String& value, Utf16String& errorText) override;
 	ModuleTextLocation GetEditableModuleLocation() override;
 
 	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;

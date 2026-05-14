@@ -6,8 +6,15 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-//---------------------------------------------------------------------------
-// Базовые операции с узлами дерева
+
+namespace
+{
+	String ToVcl(const Utf16String& value)
+	{
+		return v8reader::vcl_bridge::Utf16ToString(value);
+	}
+}
+
 
 void initNode(VirtualTreeData* data, const String& name, int imageIndex, int age)
 {
@@ -22,12 +29,22 @@ void initNode(VirtualTreeData* data, const String& name, int imageIndex, int age
 	data->moduleDirty = false;
 }
 
+void initNode(VirtualTreeData* data, const Utf16String& name, int imageIndex, int age = DefaultTreeNodeAge)
+{
+	initNode(data, ToVcl(name), imageIndex, age);
+}
+
 PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const String& name, int imageIndex, int age)
 {
 	PVirtualNode childNode = tree->AddChild(parent);
 	VirtualTreeData* childData = static_cast<VirtualTreeData*>(tree->GetNodeData(childNode));
 	initNode(childData, name, imageIndex, age);
 	return childNode;
+}
+
+PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const Utf16String& name, int imageIndex, int age = DefaultTreeNodeAge)
+{
+	return addChildNode(tree, parent, ToVcl(name), imageIndex, age);
 }
 
 void addTabularSections(TVirtualStringTree* tree, PVirtualNode parent, const std::vector<std::unique_ptr<TTabular>>& items, int age)
@@ -349,6 +366,11 @@ String normalizeGuid(const String& guid)
 	return Trim(guid).LowerCase();
 }
 
+String normalizeGuid(const Utf16String& guid)
+{
+	return normalizeGuid(ToVcl(guid));
+}
+
 String GetNameSubsystem(v8catalog* cf, String& guid_md)
 {
 	String Result = "";
@@ -416,7 +438,7 @@ TSubsystem* findSubsystemByAnyGuid(v8catalog* cf, const MetadataVector<MetadataE
 		if (normalizeGuid(subsystem->guid) == targetGuid)
 			return subsystem;
 
-		String originalGuid = subsystem->guid;
+		String originalGuid = ToVcl(subsystem->guid);
 		if (normalizeGuid(GetSubsystemInnerGuid(cf, originalGuid)) == targetGuid)
 			return subsystem;
 	}
@@ -432,7 +454,7 @@ String getSubsystemDisplayNameByGuid(v8catalog* cf, const MetadataVector<Metadat
 
 	TSubsystem* subsystem = findSubsystemByAnyGuid(cf, subsystems, guid);
 	if (subsystem)
-		return subsystem->name;
+		return ToVcl(subsystem->name);
 
 	return guid;
 }
@@ -461,7 +483,7 @@ void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode par
 		PVirtualNode childNode = tree->AddChild(parentNode);
 		VirtualTreeData* childData = static_cast<VirtualTreeData*>(tree->GetNodeData(childNode));
 		childData->Name = childSubsystem
-			? childSubsystem->name
+			? ToVcl(childSubsystem->name)
 			: getSubsystemDisplayNameByGuid(cf, subsystems, childGuid);
 		childData->Age = 99;
 		childData->ImgIndex = imgIndex;
@@ -469,7 +491,7 @@ void addSubsystemChildrenToTreeByGuid(TVirtualStringTree* tree, PVirtualNode par
 		childData->MetadataObject = childSubsystem;
 		tree->Expanded[childNode] = true;
 
-		String nextGuid = childSubsystem ? childSubsystem->guid : childGuid;
+		String nextGuid = childSubsystem ? ToVcl(childSubsystem->guid) : childGuid;
 		addSubsystemChildrenToTreeByGuid(tree, childNode, cf, subsystems, nextGuid, imgIndex);
 	}
 }
@@ -478,7 +500,7 @@ void addSubsystemChildrenToTree(TVirtualStringTree* tree, PVirtualNode parentNod
 {
 	if (!tree || !cf || !parentSubsystem)
 		return;
-	addSubsystemChildrenToTreeByGuid(tree, parentNode, cf, subsystems, parentSubsystem->guid, imgIndex);
+	addSubsystemChildrenToTreeByGuid(tree, parentNode, cf, subsystems, ToVcl(parentSubsystem->guid), imgIndex);
 }
 
 std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const MetadataVector<MetadataEntity>& subsystems)
@@ -493,7 +515,7 @@ std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const Metad
 		if (!subsystem)
 			continue;
 
-		String subsystemGuid = subsystem->guid;
+		String subsystemGuid = ToVcl(subsystem->guid);
 		std::vector<String> childrenGuids;
 		GetListChildrenSubsystem(cf, subsystemGuid, childrenGuids);
 		if (childrenGuids.empty())
@@ -508,11 +530,11 @@ std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const Metad
 			TSubsystem* childSubsystem = findSubsystemByAnyGuid(cf, subsystems, childGuid);
 			if (childSubsystem)
 			{
-				String childFileGuid = normalizeGuid(childSubsystem->guid);
+				String childFileGuid = normalizeGuid(ToVcl(childSubsystem->guid));
 				if (!childFileGuid.IsEmpty())
 					childSubsystemGuids.insert(childFileGuid);
 
-				String originalChildGuid = childSubsystem->guid;
+				String originalChildGuid = ToVcl(childSubsystem->guid);
 				String childInnerGuid = normalizeGuid(GetSubsystemInnerGuid(cf, originalChildGuid));
 				if (!childInnerGuid.IsEmpty())
 					childSubsystemGuids.insert(childInnerGuid);
@@ -525,3 +547,4 @@ std::unordered_set<String> collectChildSubsystemGuids(v8catalog* cf, const Metad
 	}
 	return childSubsystemGuids;
 }
+

@@ -90,6 +90,7 @@ void fillExternalDataSourceTree(TVirtualStringTree* tree, PVirtualNode childNode
 // Вспомогательные функции для подсистем
 
 String normalizeGuid(const String& guid);
+String normalizeGuid(const Utf16String& guid);
 
 String GetNameSubsystem(v8catalog* cf, String& guid_md);
 String GetSubsystemInnerGuid(v8catalog* cf, String& guid_md);

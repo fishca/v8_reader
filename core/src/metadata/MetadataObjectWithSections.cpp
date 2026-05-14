@@ -7,6 +7,11 @@
 
 namespace
 {
+	String ToVclString(const Utf16String& value)
+	{
+		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+	}
+
 	bool SupportsMetadataObjectModuleKind(ModuleTextKind kind)
 	{
 		return kind == ModuleTextKind::Unknown
@@ -14,23 +19,23 @@ namespace
 			|| kind == ModuleTextKind::ManagerModule;
 	}
 
-	String FindFirstGuid(tree* node)
+	Utf16String FindFirstGuid(tree* node)
 	{
 		if (!node)
-			return L"";
+			return Utf16String();
 
 		String value = Trim(node->get_value());
-		if (ModuleTextStorage::IsGuidLike(value))
-			return value;
+		if (ModuleTextStorage::IsGuidLike(V8Utf16FromString(value)))
+			return V8Utf16FromString(value);
 
 		for (int i = 0; i < node->get_num_subnode(); i++)
 		{
-			String found = FindFirstGuid(node->get_subnode(i));
-			if (!found.IsEmpty())
+			Utf16String found = FindFirstGuid(node->get_subnode(i));
+			if (!found.empty())
 				return found;
 		}
 
-		return L"";
+		return Utf16String();
 	}
 
     tree* GetNodeByPath(tree* root, std::initializer_list<int> indexes)
@@ -75,14 +80,14 @@ MetadataObjectWithSections::MetadataObjectWithSections()
 	managerModuleDocument.loaded = false;
 }
 
-MetadataObjectWithSections::MetadataObjectWithSections(v8catalog* _parent, const String& _guid)
+MetadataObjectWithSections::MetadataObjectWithSections(v8catalog* _parent, const Utf16String& _guid)
     : BaseMetadataObject(_parent, _guid)
 {
 	objectModuleDocument.loaded = false;
 	managerModuleDocument.loaded = false;
 }
 
-MetadataObjectWithSections::MetadataObjectWithSections(v8catalog* _parent, const String& _guid, const String& _name)
+MetadataObjectWithSections::MetadataObjectWithSections(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name)
     : BaseMetadataObject(_parent, _guid, _name)
 {
 	objectModuleDocument.loaded = false;
@@ -129,17 +134,17 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             if (!itemNode || !tabularNode)
                 continue;
             String NameAttTab = itemNode->get_value();
-            String GuidAttTab;
+            Utf16String guidAttTab;
             tree* guidNode = GetNodeByPath(tabularNode, {0, 1, 5, 1, 1});
             if (guidNode)
-                GuidAttTab = Trim(guidNode->get_value());
+                guidAttTab = V8Utf16FromString(Trim(guidNode->get_value()));
 
-            auto tabular = std::make_unique<TTabular>(NameAttTab, GuidAttTab);
+            auto tabular = std::make_unique<TTabular>(NameAttTab, ToVclString(guidAttTab));
 
             std::unique_ptr<tree> tabularRootData;
-            if (parent && !GuidAttTab.IsEmpty())
+            if (parent && !guidAttTab.empty())
             {
-                v8file* tabularFile = parent->GetFile16(V8Utf16FromString(GuidAttTab));
+                v8file* tabularFile = parent->GetFile16(guidAttTab);
                 if (tabularFile)
                     tabularRootData.reset(get_treeFromV8file(tabularFile));
             }
@@ -180,12 +185,12 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         try
         {
             tree* commandNode = GetNodeByPath(root_data.get(), {0, paths.cmdIdx, i + CountCom - DeltaCom});
-            String commandGuid = FindFirstGuid(commandNode);
+            Utf16String commandGuid = FindFirstGuid(commandNode);
             tree* itemNode = GetNodeByPath(commandNode, paths.cmdItemPath);
             if (!itemNode)
                 continue;
             String NameCom = itemNode->get_value();
-            comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
+            comands.push_back(std::make_unique<TComand>(NameCom, ToVclString(commandGuid)));
         }
         catch (...)
         {
@@ -240,17 +245,17 @@ bool MetadataObjectWithSections::HasEditableModuleText()
 	return HasEditableModuleText(ModuleTextKind::ObjectModule);
 }
 
-String MetadataObjectWithSections::GetEditableModuleText()
+Utf16String MetadataObjectWithSections::GetEditableModuleText()
 {
 	return GetEditableModuleText(ModuleTextKind::ObjectModule);
 }
 
-void MetadataObjectWithSections::SetEditableModuleText(const String& value)
+void MetadataObjectWithSections::SetEditableModuleText(const Utf16String& value)
 {
 	SetEditableModuleText(ModuleTextKind::ObjectModule, value);
 }
 
-bool MetadataObjectWithSections::SaveEditableModuleText(const String& value, String& errorText)
+bool MetadataObjectWithSections::SaveEditableModuleText(const Utf16String& value, Utf16String& errorText)
 {
 	return SaveEditableModuleText(ModuleTextKind::ObjectModule, value, errorText);
 }
@@ -267,19 +272,19 @@ bool MetadataObjectWithSections::HasEditableModuleText(ModuleTextKind kind)
 
 	RefreshModuleDocument(kind);
 	ModuleTextDocument& document = GetModuleDocument(kind);
-	return !document.text.IsEmpty() || document.location.editable;
+	return !document.text.empty() || document.location.editable;
 }
 
-String MetadataObjectWithSections::GetEditableModuleText(ModuleTextKind kind)
+Utf16String MetadataObjectWithSections::GetEditableModuleText(ModuleTextKind kind)
 {
 	if (!SupportsMetadataObjectModuleKind(kind))
-		return L"";
+		return u"";
 
 	RefreshModuleDocument(kind);
 	return GetModuleDocument(kind).text;
 }
 
-void MetadataObjectWithSections::SetEditableModuleText(ModuleTextKind kind, const String& value)
+void MetadataObjectWithSections::SetEditableModuleText(ModuleTextKind kind, const Utf16String& value)
 {
 	if (!SupportsMetadataObjectModuleKind(kind))
 		return;
@@ -291,11 +296,11 @@ void MetadataObjectWithSections::SetEditableModuleText(ModuleTextKind kind, cons
 	document.loaded = true;
 }
 
-bool MetadataObjectWithSections::SaveEditableModuleText(ModuleTextKind kind, const String& value, String& errorText)
+bool MetadataObjectWithSections::SaveEditableModuleText(ModuleTextKind kind, const Utf16String& value, Utf16String& errorText)
 {
 	if (!SupportsMetadataObjectModuleKind(kind))
 	{
-		errorText = L"Неподдерживаемый вид модуля для объекта метаданных.";
+		errorText = u"Неподдерживаемый вид модуля для объекта метаданных.";
 		return false;
 	}
 

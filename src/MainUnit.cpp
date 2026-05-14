@@ -98,6 +98,16 @@ MessageRegistrator* msreg;
 static void get_cf_name(v8catalog* cf, Messager* mess);
 static void get_cf_name(tree* tr, Messager* mess);
 
+static String ToVclString(const Utf16String& value)
+{
+	return v8reader::vcl_bridge::Utf16ToString(value);
+}
+
+static Utf16String ToUtf16String(const String& value)
+{
+	return v8reader::vcl_bridge::StringToUtf16(value);
+}
+
 static const TColor DefaultHighlightKeywordColor = clNavy;
 static const TColor DefaultHighlightCommentColor = clGreen;
 static const TColor DefaultHighlightStringColor = clMaroon;
@@ -459,6 +469,11 @@ static void AddUniqueCandidate(std::vector<String>& values, const String& value)
 	}
 
 	values.push_back(value);
+}
+
+static void AddUniqueCandidate(std::vector<String>& values, const Utf16String& value)
+{
+	AddUniqueCandidate(values, ToVclString(value));
 }
 
 static bool ExtractBytesFromStream(TBytesStream* stream, TBytes& outBytes)
@@ -862,7 +877,7 @@ static bool TryExtractImageBytesFromSourceCf(const String& guid, TBytes& outByte
 	AddUniqueCandidate(roots, TPath::Combine(GetCurrentDir(), L"SourceCF"));
 	AddUniqueCandidate(roots, TPath::Combine(ExtractFilePath(ParamStr(0)), L"SourceCF"));
 
-	const String normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(guid);
+	const String normalizedGuid = ToVclString(ModuleTextStorage::NormalizeGuidFileName(guid));
 	std::vector<String> candidates;
 	AddUniqueCandidate(candidates, normalizedGuid);
 	for (int i = 0; i <= 7; ++i)
@@ -1740,7 +1755,7 @@ void TMainForm::FillVirtualTree() {
 					{
 						TSubsystem* CurSubsystem = static_cast<TSubsystem*>(mdObj);
 						String subsystemFileGuid = normalizeGuid(CurSubsystem->guid);
-						String originalGuid = CurSubsystem->guid;
+						String originalGuid = ToVclString(CurSubsystem->guid);
 						String subsystemInnerGuid = normalizeGuid(GetSubsystemInnerGuid(MainForm->GlobalCF.get(), originalGuid));
 						if (nestedSubsystemGuids.count(subsystemFileGuid) || nestedSubsystemGuids.count(subsystemInnerGuid))
 							continue;
@@ -1749,7 +1764,7 @@ void TMainForm::FillVirtualTree() {
 					PVirtualNode childNodeCom = VirtualStringTreeValue1C->AddChild(parentNodeCom);
 					VirtualTreeData *childDataCom = (VirtualTreeData*)VirtualStringTreeValue1C->GetNodeData(childNodeCom);
 
-					childDataCom->Name = mdObj->GetName();
+					childDataCom->Name = ToVclString(mdObj->GetName());
 					childDataCom->Age = 99;
 					childDataCom->ImgIndex = categoryCom.imgIndex;
 					childDataCom->text_module = L"";
@@ -3840,15 +3855,15 @@ bool TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePro
 		}
 	}
 
-	String errorText;
+	Utf16String errorText;
 	const bool saved = state.standalone
-		? ModuleTextStorage::SaveDocument(state.standaloneDocument, newText, errorText)
+		? ModuleTextStorage::SaveDocument(state.standaloneDocument, ToUtf16String(newText), errorText)
 		: (state.kind == ModuleTextKind::Unknown
-			? state.metadataObject->SaveEditableModuleText(newText, errorText)
-			: state.metadataObject->SaveEditableModuleText(state.kind, newText, errorText));
+			? state.metadataObject->SaveEditableModuleText(ToUtf16String(newText), errorText)
+			: state.metadataObject->SaveEditableModuleText(state.kind, ToUtf16String(newText), errorText));
 	if (!saved)
 	{
-		Application->MessageBox((L"Не удалось сохранить модуль:\r\n" + errorText).c_str(),
+		Application->MessageBox((L"Не удалось сохранить модуль:\r\n" + ToVclString(errorText)).c_str(),
 			L"Ошибка сохранения", MB_OK | MB_ICONERROR);
 		return false;
 	}
@@ -3865,7 +3880,7 @@ bool TMainForm::SaveModuleTabIfNeeded(ModuleEditorTabState& state, bool forcePro
 		}
 	}
 	if (mess)
-		mess->Status(L"Модуль сохранен: " + ModuleTextStorage::DescribeLocation(state.location));
+		mess->Status(L"Модуль сохранен: " + ToVclString(ModuleTextStorage::DescribeLocation(state.location)));
 	return true;
 }
 //---------------------------------------------------------------------------
@@ -3886,7 +3901,7 @@ void __fastcall TMainForm::MemoObjectChange(TObject *Sender)
 	}
 
 	if (state->dirty && mess)
-		mess->Status(L"Модуль изменен: " + ModuleTextStorage::DescribeLocation(state->location));
+		mess->Status(L"Модуль изменен: " + ToVclString(ModuleTextStorage::DescribeLocation(state->location)));
 	SyncCurrentModuleFromTab(GetActiveModuleTabState());
 }
 //---------------------------------------------------------------------------
@@ -3929,7 +3944,7 @@ void TMainForm::SetModuleEditorState(BaseMetadataObject* metadataObject, PVirtua
 
 	if (MemoObject)
 	{
-		bool editable = metadataObject && CurrentModuleLocation.editable && FileExists(CurrentModuleLocation.filePath);
+		bool editable = metadataObject && CurrentModuleLocation.editable && FileExists(ToVclString(CurrentModuleLocation.filePath));
 		MemoObject->ReadOnly = !editable;
 	}
 }
@@ -4040,8 +4055,8 @@ void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 		: nullptr;
 	if (mdObject)
 	{
-		constantsMetadataGuid = mdObject->guid;
-		constantsObjectName = mdObject->name;
+		constantsMetadataGuid = ToVclString(mdObject->guid);
+		constantsObjectName = ToVclString(mdObject->name);
 	}
 	else
 	{
@@ -4054,8 +4069,8 @@ void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 				: nullptr;
 			if (childObject)
 			{
-				constantsMetadataGuid = childObject->guid;
-				constantsObjectName = childObject->name;
+				constantsMetadataGuid = ToVclString(childObject->guid);
+				constantsObjectName = ToVclString(childObject->name);
 				break;
 			}
 			child = VirtualStringTreeValue1C->GetNextSibling(child);
@@ -4069,7 +4084,7 @@ void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 		return;
 	}
 
-	const String normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(constantsMetadataGuid);
+	const String normalizedGuid = ToVclString(ModuleTextStorage::NormalizeGuidFileName(constantsMetadataGuid));
 	const String explicitModuleDataGuid = normalizedGuid
 		+ (kind == ModuleTextKind::ManagerModule ? L".1" : L".0");
 
@@ -4084,12 +4099,12 @@ void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 
 	ModuleTextDocument document = ModuleTextStorage::LoadBySourceCfModuleDataGuid(
 		constantsMetadataGuid, explicitModuleDataGuid, kind);
-	if (document.text.IsEmpty() && !document.location.editable)
+	if (document.text.empty() && !document.location.editable)
 	{
 		document = ModuleTextStorage::LoadByMetadataObject(
 			GlobalCF.get(), constantsMetadataGuid, constantsObjectName, kind);
 	}
-	const String moduleText = document.text;
+	const String moduleText = ToVclString(document.text);
 	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(constantsObjectName, kind, caption));
 	ModuleEditorTabState* state = &ModuleTabs[tab];
 	state->node = node;
@@ -4101,12 +4116,12 @@ void TMainForm::ShowConstantsModule(ModuleTextKind kind, const String& caption)
 	state->originalText = moduleText;
 	state->dirty = false;
 	PopulateModuleTab(*state, moduleText);
-	state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
+	state->memo->ReadOnly = !(state->location.editable && FileExists(ToVclString(state->location.filePath)));
 	ActivateModuleTab(tab);
 
 	if (mess)
 	{
-		const String location = ModuleTextStorage::DescribeLocation(state->location);
+		const String location = ToVclString(ModuleTextStorage::DescribeLocation(state->location));
 		if (!location.IsEmpty())
 			mess->Status(caption + L": " + location);
 		else
@@ -4130,7 +4145,7 @@ void TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& capti
 	}
 
 	ModuleTextDocument document = ModuleTextStorage::LoadConfigurationModule(GlobalCF.get(), kind);
-	const String moduleText = document.text;
+	const String moduleText = ToVclString(document.text);
 	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(L"Конфигурация", kind, caption));
 	ModuleEditorTabState* state = &ModuleTabs[tab];
 	state->node = node;
@@ -4142,12 +4157,12 @@ void TMainForm::ShowConfigurationModule(ModuleTextKind kind, const String& capti
 	state->originalText = moduleText;
 	state->dirty = false;
 	PopulateModuleTab(*state, moduleText);
-	state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
+	state->memo->ReadOnly = !(state->location.editable && FileExists(ToVclString(state->location.filePath)));
 	ActivateModuleTab(tab);
 
 	if (mess)
 	{
-		const String location = ModuleTextStorage::DescribeLocation(state->location);
+		const String location = ToVclString(ModuleTextStorage::DescribeLocation(state->location));
 		if (!location.IsEmpty())
 			mess->Status(caption + L": " + location);
 		else
@@ -4311,7 +4326,7 @@ bool TMainForm::ShowCommonPicturePreviewForNode(VirtualTreeData* data)
 				continue;
 
 			std::vector<String> fileCandidates;
-			const String normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(guidCandidate);
+			const String normalizedGuid = ToVclString(ModuleTextStorage::NormalizeGuidFileName(guidCandidate));
 			AddUniqueCandidate(fileCandidates, guidCandidate);
 			AddUniqueCandidate(fileCandidates, normalizedGuid);
 			for (int i = 0; i <= 7; ++i)
@@ -4473,7 +4488,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 
 			CurrentStandaloneModuleDocument = ModuleTextStorage::LoadByMetadataObject(
 				targetParent, targetGuid, targetName, requestedKind);
-			moduleText = CurrentStandaloneModuleDocument.text;
+			moduleText = ToVclString(CurrentStandaloneModuleDocument.text);
 			moduleTextSelected = !moduleText.IsEmpty() || CurrentStandaloneModuleDocument.location.editable;
 			Data->moduleLocation = CurrentStandaloneModuleDocument.location;
 			Data->moduleEditable = Data->moduleLocation.editable;
@@ -4490,7 +4505,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 			{
 				CurrentStandaloneModuleDocument = ModuleTextStorage::LoadByMetadataObject(
 					enumObject->parent, enumObject->guid, enumObject->name, requestedKind);
-				moduleText = CurrentStandaloneModuleDocument.text;
+				moduleText = ToVclString(CurrentStandaloneModuleDocument.text);
 				moduleTextSelected = !moduleText.IsEmpty() || CurrentStandaloneModuleDocument.location.editable;
 				Data->moduleLocation = CurrentStandaloneModuleDocument.location;
 				Data->moduleEditable = Data->moduleLocation.editable;
@@ -4499,7 +4514,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 		else if (metadataObject && requestedKind != ModuleTextKind::Unknown &&
 			metadataObject->HasEditableModuleText(requestedKind))
 		{
-			moduleText = metadataObject->GetEditableModuleText(requestedKind);
+			moduleText = ToVclString(metadataObject->GetEditableModuleText(requestedKind));
 			moduleTextSelected = true;
 		}
 		else
@@ -4507,7 +4522,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 			TCommonModules* module = dynamic_cast<TCommonModules*>(Data->MetadataObject);
 			if (module)
 			{
-				moduleText = module->GetText();
+				moduleText = ToVclString(module->GetText());
 				moduleTextSelected = true;
 			}
 			else
@@ -4515,7 +4530,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 				TCommonForms* commonForm = dynamic_cast<TCommonForms*>(Data->MetadataObject);
 				if (commonForm)
 				{
-					moduleText = commonForm->GetText();
+					moduleText = ToVclString(commonForm->GetText());
 					moduleTextSelected = true;
 				}
 			}
@@ -4564,7 +4579,7 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 		return;
 	}
 
-	String objectName = editableObject ? editableObject->GetName() : L"";
+	String objectName = editableObject ? ToVclString(editableObject->GetName()) : L"";
 	String moduleName = Data ? Data->Name : L"Модуль";
 	tab = CreateModuleTab(tabKey, BuildModuleTabTitle(objectName, editableKind, moduleName));
 	ModuleEditorTabState* state = &ModuleTabs[tab];
@@ -4581,9 +4596,9 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 		state->location = CurrentStandaloneModuleDocument.location;
 		Data->moduleLocation = state->location;
 		Data->moduleEditable = state->location.editable;
-		state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
+		state->memo->ReadOnly = !(state->location.editable && FileExists(ToVclString(state->location.filePath)));
 		if (mess && Data->moduleEditable)
-			mess->Status(L"Модуль открыт для редактирования: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
+			mess->Status(L"Модуль открыт для редактирования: " + ToVclString(ModuleTextStorage::DescribeLocation(Data->moduleLocation)));
 	}
 	else if (editableObject && editableExists)
 	{
@@ -4595,9 +4610,9 @@ void TMainForm::ShowMetadataNodeText(PVirtualNode Node)
 			? editableObject->GetEditableModuleLocation()
 			: editableObject->GetEditableModuleLocation(editableKind);
 		Data->moduleEditable = Data->moduleLocation.editable;
-		state->memo->ReadOnly = !(state->location.editable && FileExists(state->location.filePath));
+		state->memo->ReadOnly = !(state->location.editable && FileExists(ToVclString(state->location.filePath)));
 		if (mess && Data->moduleEditable)
-			mess->Status(L"Модуль открыт для редактирования: " + ModuleTextStorage::DescribeLocation(Data->moduleLocation));
+			mess->Status(L"Модуль открыт для редактирования: " + ToVclString(ModuleTextStorage::DescribeLocation(Data->moduleLocation)));
 	}
 	else
 	{
