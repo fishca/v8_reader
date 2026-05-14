@@ -7,6 +7,16 @@
 
 namespace
 {
+    inline bool IsSpace16(char16_t c) { return c == 32 || c == 9 || c == 10 || c == 13; }
+    inline Utf16String TrimUtf16(const Utf16String& value) {
+        std::size_t start = 0; while (start < value.size() && IsSpace16(value[start])) ++start;
+        std::size_t end = value.size(); while (end > start && IsSpace16(value[end - 1])) --end;
+        return value.substr(start, end - start);
+    }
+    inline int ToIntDefUtf16(const Utf16String& value, int defValue) {
+        try { return std::stoi(std::wstring(reinterpret_cast<const wchar_t*>(value.c_str()), value.size())); }
+        catch (...) { return defValue; }
+    }
 	bool IsServiceTabularAttributeName(const Utf16String& value)
 	{
 		Utf16String trimmed = value;
@@ -86,7 +96,7 @@ namespace
 		if (!node)
 			return Utf16String();
 
-		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		Utf16String value = TrimUtf16(node->get_value());
 		if (!value.empty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.front() != u'#' && !IsServiceTabularAttributeName(value))
 			return value;
 
@@ -105,7 +115,7 @@ namespace
 		if (!node)
 			return;
 
-		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		Utf16String value = TrimUtf16(node->get_value());
 		if (!value.empty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.front() != u'#' && !IsServiceTabularAttributeName(value))
 			values.push_back(value);
 
@@ -141,7 +151,7 @@ namespace
 		for (const auto& countPath : countPaths)
 		{
 			tree* countNode = GetNodeByPath(root, countPath);
-			int count = countNode ? countNode->get_value().ToIntDef(0) : 0;
+			int count = countNode ? ToIntDefUtf16(countNode->get_value(), 0) : 0;
 			if (count <= 0)
 				continue;
 
@@ -166,7 +176,7 @@ namespace
 							if (!nameNode)
 								continue;
 
-							attributeName = V8Utf16FromString(Trim(nameNode->get_value()));
+							attributeName = TrimUtf16(nameNode->get_value());
 							if (attributeName.empty())
 								continue;
 
@@ -198,12 +208,12 @@ namespace
 
 	bool TryCollectCatalogTabularAttributesByGuid(tree* root, std::vector<std::unique_ptr<TRequisite>>& attributes)
 	{
-		tree* node = find_metadata_node_by_guid(root, GUID_AttCatalogs);
+		tree* node = find_metadata_node_by_guid(root, u"cf4abea7-37b2-11d4-940f-008048da11f9");
 		if (!node)
 			return false;
 
 		tree* countNode = node->get_next();
-		int count = countNode ? countNode->get_value().ToIntDef(0) : 0;
+		int count = countNode ? ToIntDefUtf16(countNode->get_value(), 0) : 0;
 		if (count <= 0)
 			return false;
 
@@ -242,11 +252,11 @@ namespace
 				if (!sectionNode || sectionNode->get_num_subnode() < 2)
 					continue;
 
-				Utf16String sectionGuid = V8Utf16FromString(Trim(sectionNode->get_subnode(0)->get_value()));
-				if (sectionGuid != V8Utf16FromString(EmbeddedTabularAttributeGuid))
+				Utf16String sectionGuid = TrimUtf16(sectionNode->get_subnode(0)->get_value());
+				if (sectionGuid != u"888744e1-b616-11d4-9436-004095e12fc7")
 					continue;
 
-				int count = sectionNode->get_subnode(1)->get_value().ToIntDef(0);
+				int count = ToIntDefUtf16(sectionNode->get_subnode(1)->get_value(), 0);
 				if (count <= 0)
 					return false;
 
@@ -278,12 +288,12 @@ namespace
 		if (root->get_num_subnode() > 0 && tryCollectFromContainer(root->get_subnode(0)))
 			return true;
 
-		tree* node = find_metadata_node_by_guid(root, EmbeddedTabularAttributeGuid);
+		tree* node = find_metadata_node_by_guid(root, u"888744e1-b616-11d4-9436-004095e12fc7");
 		if (!node)
 			return false;
 
 		tree* countNode = node->get_next();
-		int count = countNode ? countNode->get_value().ToIntDef(0) : 0;
+		int count = countNode ? ToIntDefUtf16(countNode->get_value(), 0) : 0;
 		if (count <= 0)
 			return false;
 

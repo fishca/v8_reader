@@ -67,7 +67,7 @@ bool MetaDataManager::Initialize(v8catalog* cf)
 		return false;
 	}
 
-	ver = node->get_value().ToInt();
+		try { ver = std::stoi(std::wstring(reinterpret_cast<const wchar_t*>(node->get_value().c_str()), node->get_value().size())); } catch (...) { return false; }
 	tr.reset();
 
 	if(ver < 100)

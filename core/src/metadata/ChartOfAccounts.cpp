@@ -8,12 +8,22 @@
 
 namespace
 {
+    inline bool IsSpace16(char16_t c) { return c == 32 || c == 9 || c == 10 || c == 13; }
+    inline Utf16String TrimUtf16(const Utf16String& value) {
+        std::size_t start = 0; while (start < value.size() && IsSpace16(value[start])) ++start;
+        std::size_t end = value.size(); while (end > start && IsSpace16(value[end - 1])) --end;
+        return value.substr(start, end - start);
+    }
+    inline int ToIntDefUtf16(const Utf16String& value, int defValue) {
+        try { return std::stoi(std::wstring(reinterpret_cast<const wchar_t*>(value.c_str()), value.size())); }
+        catch (...) { return defValue; }
+    }
 Utf16String FindFirstGuid(tree* node)
 	{
 		if (!node)
 		return Utf16String();
 
-		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		Utf16String value = TrimUtf16(node->get_value());
 		if (ModuleTextStorage::IsGuidLike(value))
 		return value;
 
@@ -61,7 +71,7 @@ void TChartOfAccounts::initializeFromTree()
 	tree* node_att = root_data.get();
 
 	node_att = &(*node_att)[0][7][1]; // количество элементов
-	int CountAtt = node_att->get_value().ToInt();
+	int CountAtt = ToIntDefUtf16(node_att->get_value(), 0);
 	int Delta = CountAtt - 2;
 	for (int i = 0; i < CountAtt; i++)
 	{
@@ -78,7 +88,7 @@ void TChartOfAccounts::initializeFromTree()
 	accflags.clear();
 	tree* node_acc = root_data.get();
 	node_acc = &(*node_acc)[0][8][1]; // количество элементов
-	int CountAcc = node_acc->get_value().ToInt();
+	int CountAcc = ToIntDefUtf16(node_acc->get_value(), 0);
 	int DeltaAcc = CountAcc - 2;
 	for (int i = 0; i < CountAcc; i++)
 	{
@@ -92,7 +102,7 @@ void TChartOfAccounts::initializeFromTree()
 	dimaccflags.clear();
 	tree* node_acc_dim = root_data.get();
 	node_acc_dim = &(*node_acc_dim)[0][9][1]; // количество элементов
-	int CountAcc_dim = node_acc_dim->get_value().ToInt();
+	int CountAcc_dim = ToIntDefUtf16(node_acc_dim->get_value(), 0);
 	int DeltaAcc_dim = CountAcc_dim - 2;
 	for (int i = 0; i < CountAcc_dim; i++)
 	{
@@ -107,7 +117,7 @@ void TChartOfAccounts::initializeFromTree()
 	tabulars.clear();
 	tree* node_att_t = root_data.get();
 	node_att_t = &(*node_att_t)[0][5][1]; // количество элементов
-	int CountAttTab = node_att_t->get_value().ToInt();
+	int CountAttTab = ToIntDefUtf16(node_att_t->get_value(), 0);
 	int DeltaTab = CountAttTab - 2;
 	for (int i = 0; i < CountAttTab; i++)
 	{
@@ -139,7 +149,7 @@ void TChartOfAccounts::initializeFromTree()
 	tree* node = root_data.get();
 	node = &(*node)[0][6][0];
 
-	int CountChild = (node->get_next())->get_value().ToInt();
+	int CountChild = ToIntDefUtf16((node->get_next())->get_value(), 0);
 	tree* curNodeChild = node->get_next();
 	while (curNodeChild)
 	{
@@ -158,7 +168,7 @@ void TChartOfAccounts::initializeFromTree()
 
 	node_att_c = &(*node_att_c)[0][3][1]; // количество элементов
 
-	int CountCom = node_att_c->get_value().ToInt();
+	int CountCom = ToIntDefUtf16(node_att_c->get_value(), 0);
 	int DeltaCom = CountCom - 2;
 	for (int i = 0; i < CountCom; i++)
 	{
@@ -173,7 +183,7 @@ void TChartOfAccounts::initializeFromTree()
 	tree* node_mox = root_data.get();
 	node_mox = &(*node_mox)[0][4][0];
 
-	int CountMox = (node_mox->get_next())->get_value().ToInt();
+	int CountMox = ToIntDefUtf16((node_mox->get_next())->get_value(), 0);
 	tree* curNodeChildMox = node_mox->get_next();
 	while (curNodeChildMox)
 	{

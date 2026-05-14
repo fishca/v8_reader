@@ -184,7 +184,7 @@ namespace
 		return candidates;
 	}
 
-	LegacyText ReadDiskFileRawText(const LegacyText& filePath, ModuleTextEncodingKind& encoding)
+	Utf16String ReadDiskFileRawText(const LegacyText& filePath, ModuleTextEncodingKind& encoding)
 	{
 		if (!FileExistsFs(filePath))
 		{
@@ -204,13 +204,9 @@ namespace
 		}
 
 		const std::vector<std::uint8_t>& payload = sb.Data();
-		TBytes bytes;
 		const int bytesCount = static_cast<int>(payload.size());
-		bytes.Length = bytesCount;
-		if (bytesCount > 0)
-			std::memcpy(&bytes[0], payload.data(), static_cast<std::size_t>(bytesCount));
 
-		return ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding);
+		return ModuleTextEncodingUtils::DecodeModuleText(payload, bytesCount, encoding);
 	}
 
 	bool TryReadDiskModuleFile(const LegacyText& filePath,
@@ -220,11 +216,11 @@ namespace
 										  ModuleTextDocument& document)
 	{
 		ModuleTextEncodingKind encoding;
-		LegacyText text = ReadDiskFileRawText(filePath, encoding);
+		Utf16String text = ReadDiskFileRawText(filePath, encoding);
 		if (!FileExistsFs(filePath))
 			return false;
 
-		if (!text.IsEmpty())
+		if (!text.empty())
 		{
 			const bool objectLikeModuleKind = kind == ModuleTextKind::ObjectModule
 				|| kind == ModuleTextKind::ManagerModule;
@@ -235,7 +231,7 @@ namespace
 				return false;
 		}
 
-		document.text = V8Utf16FromString(text);
+		document.text = text;
 		document.loaded = true;
 		document.dirty = false;
 		document.location.metadataGuid = V8Utf16FromString(metadataGuid);
@@ -350,8 +346,8 @@ namespace
 					continue;
 
 				ModuleTextEncodingKind encoding;
-				LegacyText metadataText = ReadDiskFileRawText(metadataFile, encoding);
-				if (metadataText.Pos(moduleName) <= 0)
+				Utf16String metadataText = ReadDiskFileRawText(metadataFile, encoding);
+				if (V8Utf16FromString(metadataText).find(V8Utf16FromString(moduleName)) == Utf16String::npos)
 					continue;
 
 				if (TryLoadFromSourceCfByGuid(objectGuid, kind, document))
@@ -413,7 +409,7 @@ namespace
 		return L"";
 	}
 
-	LegacyText ReadV8FileAsText(v8file* file)
+	Utf16String ReadV8FileAsText(v8file* file)
 	{
 		if (!file)
 			return L"";
@@ -423,14 +419,10 @@ namespace
 		{
 			file->SaveToByteStream(sb);
 			const std::vector<std::uint8_t>& payload = sb.Data();
-			TBytes bytes;
 			const int bytesCount = static_cast<int>(payload.size());
-			bytes.Length = bytesCount;
-			if (bytesCount > 0)
-				std::memcpy(&bytes[0], payload.data(), static_cast<std::size_t>(bytesCount));
 			ModuleTextEncodingKind encoding;
-			LegacyText text = ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding);
-			return text;
+			Utf16String text = ModuleTextEncodingUtils::DecodeModuleText(payload, bytesCount, encoding);
+			return ToVclString(text);
 		}
 		catch (...)
 		{
@@ -495,8 +487,8 @@ namespace
 			return metadataGuid;
 
 		v8file* metadataFile = parent->GetFile16(V8Utf16FromString(metadataGuid));
-		LegacyText metadataText = ReadV8FileAsText(metadataFile);
-		LegacyText objectGuid = ExtractConfigurationObjectGuid(metadataText);
+		Utf16String metadataText = ReadV8FileAsText(metadataFile);
+		LegacyText objectGuid = ExtractConfigurationObjectGuid(ToVclString(metadataText));
 		return objectGuid.IsEmpty() ? metadataGuid : objectGuid;
 	}
 
@@ -509,8 +501,8 @@ namespace
 		if (!file)
 			return L"";
 
-		LegacyText text = ReadV8FileAsText(file);
-		return ModuleTextStorage::LooksLike1CModuleText(text) ? text : L"";
+		Utf16String text = ReadV8FileAsText(file);
+		return ModuleTextStorage::LooksLike1CModuleText(text) ? ToVclString(text) : L"";
 	}
 
 	LegacyText TryReadModuleContainer(v8file* file, bool strictContainerOnly = false)
@@ -547,7 +539,7 @@ namespace
 				}
 
 				delete catalog;
-				if (!text.IsEmpty())
+				if (!text.empty())
 					return text;
 			}
 		}
@@ -555,7 +547,7 @@ namespace
 		{
 		}
 
-		LegacyText directText = ReadV8FileAsText(file);
+		Utf16String directText = ReadV8FileAsText(file);
 		if (strictContainerOnly)
 		{
 			if (LooksLikeStrictModuleBody(directText))
@@ -675,9 +667,9 @@ namespace ModuleTextStorage
 			{
 				v8file* dataModule = parent->GetFile16(V8Utf16FromString(candidates[i]));
 				LegacyText text = TryReadModuleContainer(dataModule, true);
-				if (!text.IsEmpty())
+				if (!text.empty())
 				{
-					document.text = V8Utf16FromString(text);
+					document.text = text;
 					document.location.moduleDataGuid = V8Utf16FromString(candidates[i]);
 					document.location.editable = false;
 					document.location.foundInSourceCF = false;
@@ -703,9 +695,9 @@ namespace ModuleTextStorage
 		{
 			v8file* dataForm = parent->GetFile16(V8Utf16FromString(metadataGuid + L".0"));
 			LegacyText text = TryReadModuleContainer(dataForm, true);
-			if (!text.IsEmpty())
+			if (!text.empty())
 			{
-				document.text = V8Utf16FromString(text);
+				document.text = text;
 				document.location.moduleDataGuid = V8Utf16FromString(metadataGuid + L".0");
 				document.location.editable = false;
 				document.location.foundInSourceCF = false;
@@ -755,9 +747,9 @@ namespace ModuleTextStorage
 			{
 				v8file* file = parent->GetFile16(V8Utf16FromString(candidates[i]));
 				LegacyText text = TryReadModuleContainer(file, true);
-				if (!text.IsEmpty())
+				if (!text.empty())
 				{
-					document.text = V8Utf16FromString(text);
+					document.text = text;
 					document.location.moduleDataGuid = V8Utf16FromString(candidates[i]);
 					document.location.editable = false;
 					document.location.foundInSourceCF = false;
@@ -838,9 +830,9 @@ namespace ModuleTextStorage
 				for (const auto& candidate : candidates)
 				{
 					LegacyText text = TryReadModuleContainer(parent->GetFile16(V8Utf16FromString(candidate)), true);
-					if (!text.IsEmpty())
+					if (!text.empty())
 					{
-						document.text = V8Utf16FromString(text);
+						document.text = text;
 						document.location.moduleDataGuid = V8Utf16FromString(candidate);
 						document.location.editable = false;
 						document.location.foundInSourceCF = false;
@@ -912,7 +904,7 @@ namespace ModuleTextStorage
 		{
 			{
 				v8reader::core::io::StdFileStream out(ToFsPath(tmp), v8reader::core::io::FileOpenMode::CreateTruncate);
-				ModuleTextEncodingUtils::WriteTextWithEncoding(out, LegacyText(reinterpret_cast<const wchar_t*>(newText.c_str())), document.location.encoding);
+				ModuleTextEncodingUtils::WriteTextWithEncoding(out, newText, document.location.encoding);
 			}
 
 			if (FileExistsFs(target) && !DeleteFileFs(target))

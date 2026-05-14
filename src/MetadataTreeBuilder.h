@@ -45,6 +45,7 @@ constexpr int DefaultTreeNodeAge = 30;
 void initNode(VirtualTreeData* data, const String& name, int imageIndex, int age = DefaultTreeNodeAge);
 
 PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const String& name, int imageIndex, int age = DefaultTreeNodeAge);
+PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const Utf16String& name, int imageIndex, int age = DefaultTreeNodeAge);
 
 template <typename Collection, typename NameGetter>
 void addSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sectionName, int sectionImageIndex, int itemImageIndex, const Collection& items, NameGetter getName, int age = DefaultTreeNodeAge)

@@ -1,5 +1,5 @@
-п»ї//=====================================================//
-//      РњРѕРґСѓР»СЊ РїРѕ СЂР°Р±РѕС‚Рµ СЃ С„Р°Р№Р»Р°РјРё 1РЎ                  //
+//=====================================================//
+//      Модуль по работе с файлами 1С                  //
 //      (c) awa                                        //
 //                                                     //
 //                                                     //
@@ -18,11 +18,16 @@
 
 using ByteVector = std::vector<std::uint8_t>;
 using Utf16String = std::u16string;
-using LegacyText = System::UnicodeString;
+using LegacyText = Utf16String;
 
 inline Utf16String V8Utf16FromString(const Utf16String& value)
 {
 	return value;
+}
+
+inline Utf16String V8Utf16FromString(const char16_t* value)
+{
+	return value ? Utf16String(value) : Utf16String();
 }
 
 template <typename TStringLike>
@@ -50,6 +55,34 @@ inline std::filesystem::path V8PathFromString(const wchar_t* value)
 {
 	return std::filesystem::path(value ? value : L"");
 }
+
+
+#include <cwctype>
+
+inline Utf16String Trim(const Utf16String& value)
+{
+    std::size_t start = 0;
+    while (start < value.size() && std::iswspace(static_cast<wchar_t>(value[start]))) ++start;
+    std::size_t end = value.size();
+    while (end > start && std::iswspace(static_cast<wchar_t>(value[end - 1]))) --end;
+    return value.substr(start, end - start);
+}
+
+inline int StrToInt(const Utf16String& value)
+{
+    return std::stoi(std::wstring(reinterpret_cast<const wchar_t*>(value.c_str()), value.size()));
+}
+
+inline bool operator==(const Utf16String& left, const wchar_t* right)
+{
+    return left == V8Utf16FromString(right);
+}
+inline bool operator==(const wchar_t* left, const Utf16String& right)
+{
+    return V8Utf16FromString(left) == right;
+}
+inline bool operator!=(const Utf16String& left, const wchar_t* right) { return !(left == right); }
+inline bool operator!=(const wchar_t* left, const Utf16String& right) { return !(left == right); }
 
 namespace v8reader::core::io
 {
@@ -103,7 +136,7 @@ struct fat_item
 {
 	int header_start;
 	int data_start;
-	int ff; // РІСЃРµРіРґР° 7fffffff
+	int ff; // всегда 7fffffff
 };
 
 //===========================================================================
@@ -111,25 +144,25 @@ struct fat_item8316
 {
 	__int64 header_start;
 	__int64 data_start;
-	__int64 ff; // РІСЃРµРіРґР° 7fffffff
+	__int64 ff; // всегда 7fffffff
 };
 
 //===========================================================================
 struct catalog_header
 {
-	int start_empty; // РЅР°С‡Р°Р»Рѕ РїРµСЂРІРѕРіРѕ РїСѓСЃС‚РѕРіРѕ Р±Р»РѕРєР°
-	int page_size;   // СЂР°Р·РјРµСЂ СЃС‚СЂР°РЅРёС†С‹ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
-	int version;     // РІРµСЂСЃРёСЏ
-	int zero;        // РІСЃРµРіРґР° РЅРѕР»СЊ?
+	int start_empty; // начало первого пустого блока
+	int page_size;   // размер страницы по умолчанию
+	int version;     // версия
+	int zero;        // всегда ноль?
 };
 
 //===========================================================================
 struct catalog_header8316
 {
-	__int64 start_empty; // РЅР°С‡Р°Р»Рѕ РїРµСЂРІРѕРіРѕ РїСѓСЃС‚РѕРіРѕ Р±Р»РѕРєР°
-	int page_size;       // СЂР°Р·РјРµСЂ СЃС‚СЂР°РЅРёС†С‹ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
-	int version;         // РІРµСЂСЃРёСЏ
-	int zero;            // РІСЃРµРіРґР° РЅРѕР»СЊ?
+	__int64 start_empty; // начало первого пустого блока
+	int page_size;       // размер страницы по умолчанию
+	int version;         // версия
+	int zero;            // всегда ноль?
 };
 
 
@@ -163,23 +196,23 @@ class v8file
 
 	FileIsCatalog iscatalog;
 
-	v8catalog* self; // СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РєР°С‚Р°Р»РѕРі, РµСЃР»Рё С„Р°Р№Р» СЏРІР»СЏРµС‚СЃСЏ РєР°С‚Р°Р»РѕРіРѕРј
+	v8catalog* self; // указатель на каталог, если файл является каталогом
 
-	v8file* next;      // СЃР»РµРґСѓСЋС‰РёР№ С„Р°Р№Р» РІ РєР°С‚Р°Р»РѕРіРµ
-	v8file* previous;  // РїСЂРµРґС‹РґСѓС‰РёР№ С„Р°Р№Р» РІ РєР°С‚Р°Р»РѕРіРµ
+	v8file* next;      // следующий файл в каталоге
+	v8file* previous;  // предыдущий файл в каталоге
 
-	bool is_opened;    // РїСЂРёР·РЅР°Рє РѕС‚РєСЂС‹С‚РѕРіРѕ С„Р°Р№Р»Р° (РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ РїРѕС‚РѕРє data)
+	bool is_opened;    // признак открытого файла (инициализирован поток data)
 
-	int start_data;   // РЅР°С‡Р°Р»Рѕ Р±Р»РѕРєР° РґР°РЅРЅС‹С… С„Р°Р№Р»Р° РІ РєР°С‚Р°Р»РѕРіРµ (0 РѕР·РЅР°С‡Р°РµС‚, С‡С‚Рѕ С„Р°Р№Р» РІ РєР°С‚Р°Р»РѕРіРµ РЅРµ Р·Р°РїРёСЃР°РЅ)
-	int start_header; // РЅР°С‡Р°Р»Рѕ Р±Р»РѕРєР° Р·Р°РіРѕР»РѕРІРєР° С„Р°Р№Р»Р° РІ РєР°С‚Р°Р»РѕРіРµ
+	int start_data;   // начало блока данных файла в каталоге (0 означает, что файл в каталоге не записан)
+	int start_header; // начало блока заголовка файла в каталоге
 
-	bool is_datamodified;   // РїСЂРёР·РЅР°Рє РјРѕРґРёС„РёС†РёСЂРѕРІР°РЅРЅРѕСЃС‚Рё РґР°РЅРЅС‹С… С„Р°Р№Р»Р° (С‚СЂРµР±СѓРµС‚СЃСЏ Р·Р°РїРёСЃСЊ РІ РєР°С‚Р°Р»РѕРі РїСЂРё Р·Р°РєСЂС‹С‚РёРё)
-	bool is_headermodified; // РїСЂРёР·РЅР°Рє РјРѕРґРёС„РёС†РёСЂРѕРІР°РЅРЅРѕСЃС‚Рё Р·Р°РіРѕР»РѕРІРєР° С„Р°Р№Р»Р° (С‚СЂРµР±СѓРµС‚СЃСЏ Р·Р°РїРёСЃСЊ РІ РєР°С‚Р°Р»РѕРі РїСЂРё Р·Р°РєСЂС‹С‚РёРё)
+	bool is_datamodified;   // признак модифицированности данных файла (требуется запись в каталог при закрытии)
+	bool is_headermodified; // признак модифицированности заголовка файла (требуется запись в каталог при закрытии)
 
-	bool is_destructed; // РїСЂРёР·РЅР°Рє, С‡С‚Рѕ СЂР°Р±РѕС‚Р°РµС‚ РґРµСЃС‚СЂСѓРєС‚РѕСЂ
-	bool flushed;       // РїСЂРёР·РЅР°Рє, С‡С‚Рѕ РїСЂРѕРёСЃС…РѕРґРёС‚ СЃР±СЂРѕСЃ
+	bool is_destructed; // признак, что работает деструктор
+	bool flushed;       // признак, что происходит сброс
 //	bool readonly;
-	bool selfzipped; // РџСЂРёР·РЅР°Рє, С‡С‚Рѕ С„Р°Р№Р» СЏРІР»СЏРµС‚СЃСЏ Р·Р°РїР°РєРѕРІР°РЅРЅС‹Рј РЅРµР·Р°РІРёСЃРёРјРѕ РѕС‚ РїСЂРёР·РЅР°РєР° zipped РєР°С‚Р°Р»РѕРіР°
+	bool selfzipped; // Признак, что файл является запакованным независимо от признака zipped каталога
 
   public:
 	v8file(v8catalog* _parent, const Utf16String& _name, v8file* _previous, int _start_data, int _start_header, __int64* _time_create, __int64* _time_modify);
@@ -196,16 +229,16 @@ class v8file
 	int Read(void* Buffer, int Start, int Length);
 	int Read(ByteVector& Buffer, int Start, int Length);
 
-    // РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
+    // дозапись/перезапись частично
 	int Write(const void* Buffer, int Start, int Length);
-    // РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
+    // дозапись/перезапись частично
 	int Write(const ByteVector& Buffer, int Start, int Length);
 
-    // РїРµСЂРµР·Р°РїРёСЃСЊ С†РµР»РёРєРѕРј
+    // перезапись целиком
 	int Write(const void* Buffer, int Length);
-    // РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
+    // дозапись/перезапись частично
 	int Write(v8reader::core::io::IByteStream& Stream, int Start, int Length);
-    // РїРµСЂРµР·Р°РїРёСЃСЊ С†РµР»РёРєРѕРј
+    // перезапись целиком
 	int Write(v8reader::core::io::IByteStream& Stream);
 
 	Utf16String GetFileName();
@@ -225,7 +258,7 @@ class v8file
 	bool Open();
 	void Close();
 
-    // РїРµСЂРµР·Р°РїРёСЃСЊ С†РµР»РёРєРѕРј Рё Р·Р°РєСЂС‹С‚РёРµ С„Р°Р№Р»Р° (РґР»СЏ СЌРєРѕРЅРѕРјРёРё РїР°РјСЏС‚Рё РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ data С„Р°Р№Р»Р°)
+    // перезапись целиком и закрытие файла (для экономии памяти не используется data файла)
 	int WriteAndClose(v8reader::core::io::IByteStream& Stream, int Length = -1);
 
 	void GetTimeCreate(FILETIME* ft);
@@ -248,28 +281,28 @@ class v8catalog
 
 	V8RecursiveMutex *Lock;
 
-	v8file* file; // С„Р°Р№Р», РєРѕС‚РѕСЂС‹Рј СЏРІР»СЏРµС‚СЃСЏ РєР°С‚Р°Р»РѕРі. Р”Р»СЏ РєРѕСЂРЅРµРІРѕРіРѕ РєР°С‚Р°Р»РѕРіР° NULL
+	v8file* file; // файл, которым является каталог. Для корневого каталога NULL
 
-	v8reader::core::io::IByteStream* data; // РїРѕС‚РѕРє РєР°С‚Р°Р»РѕРіР°. Р•СЃР»Рё file РЅРµ NULL (РєР°С‚Р°Р»РѕРі РЅРµ РєРѕСЂРЅРµРІРѕР№), СЃРѕРІРїР°РґР°РµС‚ СЃ file->data
-	v8reader::core::io::IByteStream* cfu;  // РїРѕС‚РѕРє С„Р°Р№Р»Р° cfu. РЎСѓС‰РµСЃС‚РІСѓРµС‚ С‚РѕР»СЊРєРѕ РїСЂРё is_cfu == true
+	v8reader::core::io::IByteStream* data; // поток каталога. Если file не NULL (каталог не корневой), совпадает с file->data
+	v8reader::core::io::IByteStream* cfu;  // поток файла cfu. Существует только при is_cfu == true
 
 	void initialize(int Offset = 0);
 
 
-	v8file* first; // РїРµСЂРІС‹Р№ С„Р°Р№Р» РІ РєР°С‚Р°Р»РѕРіРµ
-	v8file* last;  // РїРѕСЃР»РµРґРЅРёР№ С„Р°Р№Р» РІ РєР°С‚Р°Р»РѕРіРµ
+	v8file* first; // первый файл в каталоге
+	v8file* last;  // последний файл в каталоге
 
-	std::map<Utf16String, v8file*> files; // РЎРѕРѕС‚РІРµС‚СЃС‚РІРёРµ РёРјРµРЅ Рё С„Р°Р№Р»РѕРІ
+	std::map<Utf16String, v8file*> files; // Соответствие имен и файлов
 
-	int     start_empty; // РЅР°С‡Р°Р»Рѕ РїРµСЂРІРѕРіРѕ РїСѓСЃС‚РѕРіРѕ Р±Р»РѕРєР°
+	int     start_empty; // начало первого пустого блока
     __int64 start_empty8316;
 
-	int page_size;   // СЂР°Р·РјРµСЂ СЃС‚СЂР°РЅРёС†С‹ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+	int page_size;   // размер страницы по умолчанию
 
-	int version; // РІРµСЂСЃРёСЏ
+	int version; // версия
 
-	bool zipped; // РїСЂРёР·РЅР°Рє Р·Р°Р·РёРїРѕРІР°РЅРЅРѕСЃС‚Рё С„Р°Р№Р»РѕРІ РєР°С‚Р°Р»РѕРіР°
-	bool is_cfu; // РїСЂРёР·РЅР°Рє С„Р°Р№Р»Р° cfu (С„Р°Р№Р» Р·Р°РїР°РєРѕРІР°РЅ deflate'РѕРј)
+	bool zipped; // признак зазипованности файлов каталога
+	bool is_cfu; // признак файла cfu (файл запакован deflate'ом)
 	bool iscatalog;
 	bool iscatalogdefined;
 
@@ -281,30 +314,30 @@ class v8catalog
 
 	void free_block(int start);
 
-    // РІРѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ РЅР°С‡Р°Р»Р° Р±Р»РѕРєР°
+    // возвращает адрес начала блока
 	int write_block(v8reader::core::io::IByteStream& block, int start, bool use_page_size, int len = -1);
 
-    // РІРѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ РЅР°С‡Р°Р»Р° Р±Р»РѕРєР°
+    // возвращает адрес начала блока
 	int write_datablock(v8reader::core::io::IByteStream& block, int start, bool _zipped = false, int len = -1);
 
 	v8reader::core::io::IByteStream* read_datablock(int start, int offset = 0);
 
 	int get_nextblock(int start);
 
-	bool is_destructed; // РїСЂРёР·РЅР°Рє, С‡С‚Рѕ СЂР°Р±РѕС‚Р°РµС‚ РґРµСЃС‚СЂСѓРєС‚РѕСЂ
-	bool flushed;       // РїСЂРёР·РЅР°Рє, С‡С‚Рѕ РїСЂРѕРёСЃС…РѕРґРёС‚ СЃР±СЂРѕСЃ
-	bool leave_data;    // РїСЂРёР·РЅР°Рє, С‡С‚Рѕ РЅРµ РЅСѓР¶РЅРѕ СѓРґР°Р»СЏС‚СЊ РѕСЃРЅРѕРІРЅРѕР№ РїРѕС‚РѕРє (data) РїСЂРё СѓРЅРёС‡С‚РѕР¶РµРЅРёРё РѕР±СЉРµРєС‚Р°
+	bool is_destructed; // признак, что работает деструктор
+	bool flushed;       // признак, что происходит сброс
+	bool leave_data;    // признак, что не нужно удалять основной поток (data) при уничтожении объекта
 
   public:
 //	bool readonly;
-	v8catalog(v8file* f);   // СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„Р°Р№Р»Р°
+	v8catalog(v8file* f);   // создать каталог из файла
 	template <typename TStringLike>
 	explicit v8catalog(const TStringLike& name) : v8catalog(V8PathFromString(name)) {}
 	template <typename TStringLike>
 	v8catalog(const TStringLike& name, bool _zipped) : v8catalog(V8PathFromString(name), _zipped) {}
-	v8catalog(const std::filesystem::path& path); // СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„РёР·РёС‡РµСЃРєРѕРіРѕ С„Р°Р№Р»Р° (cf, epf, erf, hbk, cfu)
-	v8catalog(const std::filesystem::path& path, bool _zipped); // СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„РёР·РёС‡РµСЃРєРѕРіРѕ С„Р°Р№Р»Р° (cf, epf, erf, hbk, cfu)
-	v8catalog(v8reader::core::io::IByteStream* stream, bool _zipped, bool leave_stream = false); // СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· РїРѕС‚РѕРєР°
+	v8catalog(const std::filesystem::path& path); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
+	v8catalog(const std::filesystem::path& path, bool _zipped); // создать каталог из физического файла (cf, epf, erf, hbk, cfu)
+	v8catalog(v8reader::core::io::IByteStream* stream, bool _zipped, bool leave_stream = false); // создать каталог из потока
 
 	~v8catalog();
 
@@ -316,7 +349,7 @@ class v8catalog
 	v8file* GetFile16(const Utf16String& fileName);
 	v8file* GetFirst();
 
-    // CreateFile РІ win64 РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ РєР°Рє CreateFileW, РїСЂРёС€Р»РѕСЃСЊ Р·Р°РјРµРЅРёС‚СЊ РЅР° РјР°Р»РµРЅСЊРєСѓСЋ Р±СѓРєРІСѓ
+    // CreateFile в win64 определяется как CreateFileW, пришлось заменить на маленькую букву
 	template <typename TStringLike>
 	v8file* createFile(const TStringLike& fileName, bool _selfzipped = false) { return createFile16(V8Utf16FromString(fileName), _selfzipped); }
 	v8file* createFile(const wchar_t* fileName, bool _selfzipped = false) { return createFile16(V8Utf16FromString(fileName), _selfzipped); }

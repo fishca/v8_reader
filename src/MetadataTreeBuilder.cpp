@@ -42,7 +42,7 @@ PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const S
 	return childNode;
 }
 
-PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const Utf16String& name, int imageIndex, int age = DefaultTreeNodeAge)
+PVirtualNode addChildNode(TVirtualStringTree* tree, PVirtualNode parent, const Utf16String& name, int imageIndex, int age)
 {
 	return addChildNode(tree, parent, ToVcl(name), imageIndex, age);
 }
@@ -286,22 +286,28 @@ void fillEnumTree(TVirtualStringTree* tree, PVirtualNode childNode, VirtualTreeD
 
 namespace
 {
-	void addStringSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sectionName, int sectionImageIndex, int itemImageIndex, const std::vector<String>& items)
-	{
-		PVirtualNode sectionNode = nullptr;
-		for (const auto& item : items)
-		{
-			if (!item.IsEmpty())
-			{
+void addStringSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sectionName, int sectionImageIndex, int itemImageIndex, const std::vector<String>& items)
+{
+    PVirtualNode sectionNode = nullptr;
+    for (const auto& item : items)
+    {
+        if (!item.IsEmpty())
+        {
+            if (!sectionNode)
+                sectionNode = addChildNode(tree, parent, sectionName, sectionImageIndex);
+            addChildNode(tree, sectionNode, item, itemImageIndex);
+        }
+    }
+}
 
-				if (!sectionNode)
-					sectionNode = addChildNode(tree, parent, sectionName, sectionImageIndex);
-
-				addChildNode(tree, sectionNode, item, itemImageIndex);
-
-			}
-		}
-	}
+void addStringSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sectionName, int sectionImageIndex, int itemImageIndex, const std::vector<Utf16String>& items)
+{
+    std::vector<String> converted;
+    converted.reserve(items.size());
+    for (const auto& item : items)
+        converted.push_back(ToVcl(item));
+    addStringSection(tree, parent, sectionName, sectionImageIndex, itemImageIndex, converted);
+}
 
 	void fillExternalTableTree(TVirtualStringTree* tree, PVirtualNode parent, const TExternalDataSourceTable& tableData, int imgIndex)
 	{
@@ -424,7 +430,7 @@ void GetListChildrenSubsystem(v8catalog* cf, String& guid_md, std::vector<String
 	{
 		curNodeChild = curNodeChild->get_next();
 		if (curNodeChild)
-			child.push_back(curNodeChild->get_value());
+			child.push_back(ToVcl(curNodeChild->get_value()));
 	}
 }
 

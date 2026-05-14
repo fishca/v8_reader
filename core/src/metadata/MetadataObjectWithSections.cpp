@@ -7,6 +7,18 @@
 
 namespace
 {
+    inline bool IsSpace16(char16_t c) { return c == 32 || c == 9 || c == 10 || c == 13; }
+    inline Utf16String TrimUtf16(const Utf16String& value) {
+        std::size_t start = 0;
+        while (start < value.size() && IsSpace16(value[start])) ++start;
+        std::size_t end = value.size();
+        while (end > start && IsSpace16(value[end - 1])) --end;
+        return value.substr(start, end - start);
+    }
+    inline int ToIntDefUtf16(const Utf16String& value, int defValue) {
+        try { return std::stoi(std::wstring(reinterpret_cast<const wchar_t*>(value.c_str()), value.size())); }
+        catch (...) { return defValue; }
+    }
 
 	bool SupportsMetadataObjectModuleKind(ModuleTextKind kind)
 	{
@@ -20,7 +32,7 @@ namespace
 		if (!node)
 			return Utf16String();
 
-		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		Utf16String value = TrimUtf16(node->get_value());
 		if (ModuleTextStorage::IsGuidLike(value))
 			return value;
 
@@ -98,10 +110,10 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
 {
     if (!root_data || !paths.getFormNameFunc) return;
 
-    // Р РµРєРІРёР·РёС‚С‹
+    // Реквизиты
     attributes.clear();
     tree* node_att = GetNodeByPath(root_data.get(), {0, paths.attIdx, 1});
-    int CountAtt = node_att ? node_att->get_value().ToIntDef(0) : 0;
+    int CountAtt = node_att ? ToIntDefUtf16(node_att->get_value(), 0) : 0;
     int Delta = CountAtt - 2;
     for (int i = 0; i < CountAtt; i++)
     {
@@ -116,12 +128,12 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // РўР°Р±Р»РёС‡РЅС‹Рµ С‡Р°СЃС‚Рё
+    // Табличные части
     tabulars.clear();
     if (paths.hasTabulars)
     {
         tree* node_att_t = GetNodeByPath(root_data.get(), {0, paths.tabIdx, 1});
-        int CountAttTab = node_att_t ? node_att_t->get_value().ToIntDef(0) : 0;
+        int CountAttTab = node_att_t ? ToIntDefUtf16(node_att_t->get_value(), 0) : 0;
         int DeltaTab = CountAttTab - 2;
         for (int i = 0; i < CountAttTab; i++)
         {
@@ -133,7 +145,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             Utf16String guidAttTab;
             tree* guidNode = GetNodeByPath(tabularNode, {0, 1, 5, 1, 1});
             if (guidNode)
-                guidAttTab = V8Utf16FromString(Trim(guidNode->get_value()));
+                guidAttTab = TrimUtf16(guidNode->get_value());
 
             auto tabular = std::make_unique<TTabular>(NameAttTab, guidAttTab);
 
@@ -150,7 +162,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // Р¤РѕСЂРјС‹
+    // Формы
     forms.clear();
     tree* node = GetNodeByPath(root_data.get(), {0, paths.formsIdx, 0});
     tree* curNodeChild = node ? node->get_next() : nullptr;
@@ -171,10 +183,10 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // РљРѕРјР°РЅРґС‹
+    // Команды
     comands.clear();
     tree* node_att_c = GetNodeByPath(root_data.get(), {0, paths.cmdIdx, 1});
-    int CountCom = node_att_c ? node_att_c->get_value().ToIntDef(0) : 0;
+    int CountCom = node_att_c ? ToIntDefUtf16(node_att_c->get_value(), 0) : 0;
     int DeltaCom = CountCom - 2;
     for (int i = 0; i < CountCom; i++)
     {
@@ -193,7 +205,7 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         }
     }
 
-    // РњР°РєРµС‚С‹
+    // Макеты
     moxels.clear();
     tree* node_mox = GetNodeByPath(root_data.get(), {0, paths.moxIdx, 0});
     tree* curNodeChildMox = node_mox ? node_mox->get_next() : nullptr;
@@ -296,7 +308,7 @@ bool MetadataObjectWithSections::SaveEditableModuleText(ModuleTextKind kind, con
 {
 	if (!SupportsMetadataObjectModuleKind(kind))
 	{
-		errorText = u"РќРµРїРѕРґРґРµСЂР¶РёРІР°РµРјС‹Р№ РІРёРґ РјРѕРґСѓР»СЏ РґР»СЏ РѕР±СЉРµРєС‚Р° РјРµС‚Р°РґР°РЅРЅС‹С….";
+		errorText = u"Неподдерживаемый вид модуля для объекта метаданных.";
 		return false;
 	}
 

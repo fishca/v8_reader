@@ -8,49 +8,33 @@
 
 namespace
 {
-	LegacyText Utf16ToVclString(std::u16string_view value)
+	Utf16String Utf16ViewToString(std::u16string_view value)
 	{
-#ifndef _DELPHI_STRING_UNICODE
-		std::vector<wchar_t> buffer(value.size() + 1);
-		for (std::size_t i = 0; i < value.size(); ++i)
-			buffer[i] = static_cast<wchar_t>(value[i]);
-		buffer[value.size()] = 0;
-		return LegacyText(buffer.data());
-#else
-		return LegacyText(reinterpret_cast<const wchar_t*>(value.data()), static_cast<int>(value.size()));
-#endif
+		return Utf16String(value.data(), value.size());
 	}
 
-	std::u16string VclStringToUtf16(const LegacyText& value)
+	std::u16string Utf16StringToView(const Utf16String& value)
 	{
-#ifndef _DELPHI_STRING_UNICODE
-		const int ws = value.WideCharBufSize();
-		std::vector<wchar_t> buffer(ws);
-		value.WideChar(buffer.data(), ws);
-		return std::u16string(reinterpret_cast<const char16_t*>(buffer.data()));
-#else
-		return std::u16string(reinterpret_cast<const char16_t*>(value.c_str()), value.Length());
-#endif
+		return std::u16string(value.data(), value.size());
 	}
 }
 
 tree* parse_1Ctext_u16(std::u16string_view text, std::u16string_view path)
 {
-	return parse_1Ctext(Utf16ToVclString(text), Utf16ToVclString(path));
+	return parse_1Ctext(Utf16ViewToString(text), Utf16ViewToString(path));
 }
 
 std::u16string outtext_u16(tree* t)
 {
-	return VclStringToUtf16(outtext(t));
+	return Utf16StringToView(outtext(t));
 }
 
 tree* find_node_by_guid_u16(tree* root, std::u16string_view target_guid)
 {
-	return find_node_by_guid(root, Utf16ToVclString(target_guid));
+	return find_node_by_guid(root, Utf16ViewToString(target_guid));
 }
 
 tree* find_metadata_node_by_guid_u16(tree* root, std::u16string_view target_guid)
 {
-	return find_metadata_node_by_guid(root, Utf16ToVclString(target_guid));
+	return find_metadata_node_by_guid(root, Utf16ViewToString(target_guid));
 }
-
