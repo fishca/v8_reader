@@ -25,7 +25,7 @@ namespace ModuleTextEncodingUtils
 		return checked > 0 && zeroOdd * 2 >= checked;
 	}
 
-	inline String DecodeModuleText(const TBytes& sourceBytes, int sourceSize, ModuleTextEncodingKind& encoding)
+	inline LegacyText DecodeModuleText(const TBytes& sourceBytes, int sourceSize, ModuleTextEncodingKind& encoding)
 	{
 		encoding = ModuleTextEncodingKind::Unknown;
 
@@ -46,13 +46,13 @@ namespace ModuleTextEncodingUtils
 
 			TBytes unicodeBytes = TEncoding::Convert(enc, TEncoding::Unicode, bytes, off, sourceSize - off);
 			if (!unicodeBytes.empty())
-				return String((wchar_t*)&unicodeBytes[0], unicodeBytes.Length / 2);
+				return LegacyText((wchar_t*)&unicodeBytes[0], unicodeBytes.Length / 2);
 		}
 
 		if (LooksLikeUtf16Le(bytes, sourceSize))
 		{
 			encoding = ModuleTextEncodingKind::Utf16Le;
-			return String((wchar_t*)&bytes[0], sourceSize / 2);
+			return LegacyText((wchar_t*)&bytes[0], sourceSize / 2);
 		}
 
 		try
@@ -63,11 +63,11 @@ namespace ModuleTextEncodingUtils
 		catch (...)
 		{
 			encoding = ModuleTextEncodingKind::Ansi;
-			return String((char*)&bytes[0], sourceSize);
+			return LegacyText((char*)&bytes[0], sourceSize);
 		}
 	}
 
-	inline void WriteTextWithEncoding(v8reader::core::io::IByteStream& stream, const String& text, ModuleTextEncodingKind encoding)
+	inline void WriteTextWithEncoding(v8reader::core::io::IByteStream& stream, const LegacyText& text, ModuleTextEncodingKind encoding)
 	{
 		TBytes bytes;
 

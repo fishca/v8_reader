@@ -8,24 +8,24 @@
 
 TEnums::TEnums()
 {
-	guid   = "";
-	name   = "";
+	guid   = u"";
+	name   = u"";
 	parent = NULL;
 }
 
-TEnums::TEnums(v8catalog *_parent, const String& _guid)
+TEnums::TEnums(v8catalog *_parent, const Utf16String& _guid)
 {
 	guid      = _guid;
 	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
+	root_data.reset(get_treeFromV8file(parent->GetFile16(_guid)));
 }
 
-TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
+TEnums::TEnums(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name)
 {
 	name      = _name;
 	guid      = _guid;
 	parent    = _parent;
-	root_data.reset(get_treeFromV8file(parent->GetFile16(V8Utf16FromString(_guid))));
+	root_data.reset(get_treeFromV8file(parent->GetFile16(_guid)));
 
 	// Получаем значения перечисления
 	attributes.clear();
@@ -39,7 +39,7 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 		try {
 			tree* node_att_att = root_data.get();
 			node_att_att = &(*node_att_att)[0][6][i+CountAtt-Delta][0][1][2];
-			String NameAtt = node_att_att->get_value();
+			Utf16String NameAtt = V8Utf16FromString(node_att_att->get_value());
 			attributes.push_back(NameAtt);  // здесь уже имена
 
 		} catch (...) {
@@ -58,7 +58,7 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 		curNodeChild = curNodeChild->get_next();
 		if (curNodeChild)
 		{
-			String NameForm = GetNameFormCatalogs(parent, curNodeChild->get_value());
+			Utf16String NameForm = V8Utf16FromString(GetNameFormCatalogs(parent, curNodeChild->get_value()));
 			forms.push_back(NameForm);  // здесь уже имена
 		}
 	}
@@ -75,7 +75,7 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 	{
 		tree* node_com = root_data.get();
 		node_com = &(*node_com)[0][5][i+CountCom-DeltaCom][0][1][3][2][9][2];
-		String NameCom = node_com->get_value();
+		Utf16String NameCom = V8Utf16FromString(node_com->get_value());
 		comands.push_back(NameCom);  // здесь уже имена
 	}
 
@@ -91,7 +91,7 @@ TEnums::TEnums(v8catalog *_parent, const String& _guid, const String& _name)
 		curNodeChildMox = curNodeChildMox->get_next();
 		if (curNodeChildMox)
 		{
-			String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
+			Utf16String NameMox = V8Utf16FromString(GetNameMoxCatalogs(parent, curNodeChildMox->get_value()));
 			moxels.push_back(NameMox);  // здесь уже имена
 		}
 

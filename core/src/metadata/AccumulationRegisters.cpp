@@ -25,7 +25,7 @@ static InfoRegisterTreePaths GetAccumulationRegistersPaths()
 	
     paths.moxIdx = 3;
 	
-    paths.getFormNameFunc = GetNameFormCatalogs;
+    paths.getFormNameFunc = GetNameFormCatalogs16;
 	return paths;
 }
 

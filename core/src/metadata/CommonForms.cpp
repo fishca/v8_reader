@@ -4,52 +4,6 @@
 #include "CommonForms.h"
 //---------------------------------------------------------------------------
 
-namespace
-{
-	bool LooksLike1CModuleText(const String& value)
-	{
-		return value.Pos(L"Процедура ") > 0
-			|| value.Pos(L"Функция ") > 0
-			|| value.Pos(L"КонецПроцедуры") > 0
-			|| value.Pos(L"КонецФункции") > 0
-			|| value.Pos(L"\n") > 0;
-	}
-
-	String FindEmbeddedModuleText(tree* node)
-	{
-		if (!node)
-			return L"";
-
-		if (node->get_type() == nd_string && LooksLike1CModuleText(node->get_value()))
-			return node->get_value();
-
-		for (int i = 0; i < node->get_num_subnode(); i++)
-		{
-			String found = FindEmbeddedModuleText(node->get_subnode(i));
-			if (!found.IsEmpty())
-				return found;
-		}
-
-		return L"";
-	}
-
-	String GetManagedFormModuleText(tree* root)
-	{
-		if (!root || root->get_num_subnode() <= 0)
-			return L"";
-
-		tree* formRoot = root->get_subnode(0);
-		if (!formRoot || formRoot->get_num_subnode() <= 2)
-			return L"";
-
-		tree* moduleNode = formRoot->get_subnode(2);
-		if (!moduleNode || moduleNode->get_type() != nd_string)
-			return L"";
-
-		return moduleNode->get_value();
-	}
-}
-
 TCommonForms::TCommonForms() : BaseMetadataObject()
 {
     name = u"";

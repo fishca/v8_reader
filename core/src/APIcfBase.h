@@ -18,6 +18,12 @@
 
 using ByteVector = std::vector<std::uint8_t>;
 using Utf16String = std::u16string;
+using LegacyText = System::UnicodeString;
+
+inline Utf16String V8Utf16FromString(const Utf16String& value)
+{
+	return value;
+}
 
 template <typename TStringLike>
 inline Utf16String V8Utf16FromString(const TStringLike& value)

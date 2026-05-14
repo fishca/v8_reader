@@ -14,32 +14,16 @@ class TMDObject : public MetadataEntity
 {
 public:
 
-	String name;
-	String guid;
+	Utf16String name;
+	Utf16String guid;
 
 	TMDObject()
 	{
-		name = "";
-		guid = "";
+		name = u"";
+		guid = u"";
 	};
 	virtual void CreateMD() = 0;
 	virtual ~TMDObject();
-
-//	std::vector<String> attributes;  // список реквизитов
-//	std::vector<String> comands;     // список команд
-//	std::vector<String> moxels;      // список макетов
-//	std::vector<String> tabulars;    // список табличных частей
-//	std::vector<String> forms;       // список форм
-//
-//	TMDObject();
-//	TMDObject(v8catalog *_parent, const String& _guid);
-//	TMDObject(v8catalog *_parent, const String& _guid, const String& _name);
-//	~TMDObject();
-//	String GetName();
-//	String GetGUID();
-//	void SetName();
-//	void SetGUID();
-
 };
 
 class TMDObjectManager

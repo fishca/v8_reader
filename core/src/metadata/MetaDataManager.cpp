@@ -144,8 +144,8 @@ void PreFillingMD(tree* tr)
 //	tree* node_Catalogs;
 //	tree* node_md;
 //	tree* curNode;
-//	String cf_synonym;
-//	String cf_version;
+//	LegacyText cf_synonym;
+//	LegacyText cf_version;
 //	bool ok;
 //	int structver;
 //	int offset_name;

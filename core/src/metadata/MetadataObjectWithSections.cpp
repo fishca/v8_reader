@@ -7,10 +7,6 @@
 
 namespace
 {
-	String ToVclString(const Utf16String& value)
-	{
-		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
-	}
 
 	bool SupportsMetadataObjectModuleKind(ModuleTextKind kind)
 	{
@@ -24,9 +20,9 @@ namespace
 		if (!node)
 			return Utf16String();
 
-		String value = Trim(node->get_value());
-		if (ModuleTextStorage::IsGuidLike(V8Utf16FromString(value)))
-			return V8Utf16FromString(value);
+		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		if (ModuleTextStorage::IsGuidLike(value))
+			return value;
 
 		for (int i = 0; i < node->get_num_subnode(); i++)
 		{
@@ -114,8 +110,8 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             itemNode = GetNodeByPath(itemNode, paths.attItemPath);
             if (!itemNode)
                 continue;
-            String NameAtt = itemNode->get_value();
-            attributes.push_back(std::make_unique<TRequisite>(NameAtt, ""));
+            Utf16String NameAtt = V8Utf16FromString(itemNode->get_value());
+            attributes.push_back(std::make_unique<TRequisite>(NameAtt, u""));
         } catch (...) {
         }
     }
@@ -133,13 +129,13 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             tree* itemNode = GetNodeByPath(tabularNode, paths.tabItemPath);
             if (!itemNode || !tabularNode)
                 continue;
-            String NameAttTab = itemNode->get_value();
+            Utf16String NameAttTab = V8Utf16FromString(itemNode->get_value());
             Utf16String guidAttTab;
             tree* guidNode = GetNodeByPath(tabularNode, {0, 1, 5, 1, 1});
             if (guidNode)
                 guidAttTab = V8Utf16FromString(Trim(guidNode->get_value()));
 
-            auto tabular = std::make_unique<TTabular>(NameAttTab, ToVclString(guidAttTab));
+            auto tabular = std::make_unique<TTabular>(NameAttTab, guidAttTab);
 
             std::unique_ptr<tree> tabularRootData;
             if (parent && !guidAttTab.empty())
@@ -165,8 +161,8 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         {
             try
             {
-                String guid_md = curNodeChild->get_value();
-                String NameForm = paths.getFormNameFunc(parent, guid_md);
+                Utf16String guid_md = V8Utf16FromString(curNodeChild->get_value());
+                Utf16String NameForm = paths.getFormNameFunc(parent, guid_md);
                 forms.push_back(std::make_unique<TForm1C>(NameForm, guid_md));
             }
             catch (...)
@@ -189,8 +185,8 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
             tree* itemNode = GetNodeByPath(commandNode, paths.cmdItemPath);
             if (!itemNode)
                 continue;
-            String NameCom = itemNode->get_value();
-            comands.push_back(std::make_unique<TComand>(NameCom, ToVclString(commandGuid)));
+            Utf16String NameCom = V8Utf16FromString(itemNode->get_value());
+            comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
         }
         catch (...)
         {
@@ -208,8 +204,8 @@ void MetadataObjectWithSections::initializeFromTreeWithPaths(const MetadataTreeP
         {
             try
             {
-                String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
-                moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
+                Utf16String NameMox = GetNameMoxCatalogs16(parent, V8Utf16FromString(curNodeChildMox->get_value()));
+                moxels.push_back(std::make_unique<TMoxel>(NameMox, u""));
             }
             catch (...)
             {

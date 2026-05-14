@@ -90,6 +90,11 @@ static void addNestedModuleTextNode(TVirtualStringTree* tree, PVirtualNode paren
 	moduleData->moduleEditable = false;
 }
 
+static void addNestedModuleTextNode(TVirtualStringTree* tree, PVirtualNode parent, BaseMetadataObject* metadataObject, const Utf16String& itemGuid, const String& name, ModuleTextKind kind, int imageIndex)
+{
+	addNestedModuleTextNode(tree, parent, metadataObject, ToVcl(itemGuid), name, kind, imageIndex);
+}
+
 template <typename Collection>
 static void addMetadataItemSection(TVirtualStringTree* tree, PVirtualNode parent, const String& sectionName, int sectionImageIndex, int itemImageIndex, const Collection& items, BaseMetadataObject* metadataObject, ModuleTextKind moduleKind, const String& moduleNodeName)
 {

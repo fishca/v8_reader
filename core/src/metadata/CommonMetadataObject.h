@@ -1,4 +1,4 @@
-п»ї//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #ifndef CommonMetadataObjectH
 #define CommonMetadataObjectH
@@ -17,70 +17,70 @@
 
 class CommonMetadataObject : public MetaObject {
 public:
-    // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹ Рё РґРµСЃС‚СЂСѓРєС‚РѕСЂ
+    // Конструкторы и деструктор
     CommonMetadataObject();
 	CommonMetadataObject(const std::string& name, const std::string& synonym = "", const std::string& comment = "");
     virtual ~CommonMetadataObject() = default;
 
-//    // Р—Р°РїСЂРµС‚ РєРѕРїРёСЂРѕРІР°РЅРёСЏ, СЂР°Р·СЂРµС€РµРЅРёРµ РїРµСЂРµРјРµС‰РµРЅРёСЏ
+//    // Запрет копирования, разрешение перемещения
 //    CommonMetadataObject(const CommonMetadataObject&) = delete;
 //    CommonMetadataObject& operator=(const CommonMetadataObject&) = delete;
 //    CommonMetadataObject(CommonMetadataObject&&) noexcept = default;
 //    CommonMetadataObject& operator=(CommonMetadataObject&&) noexcept = default;
 //
-//    // === РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ СЂРµРєРІРёР·РёС‚Р°РјРё ===
+//    // === Методы управления реквизитами ===
 //
 //    /**
-//     * @brief Р”РѕР±Р°РІРёС‚СЊ СЂРµРєРІРёР·РёС‚
-//     * @param requisite РЈРЅРёРєР°Р»СЊРЅС‹Р№ СѓРєР°Р·Р°С‚РµР»СЊ РЅР° СЂРµРєРІРёР·РёС‚
-//     * @return РЎСЃС‹Р»РєР° РЅР° РґРѕР±Р°РІР»РµРЅРЅС‹Р№ СЂРµРєРІРёР·РёС‚ (РґР»СЏ С†РµРїРѕС‡РєРё РІС‹Р·РѕРІРѕРІ)
+//     * @brief Добавить реквизит
+//     * @param requisite Уникальный указатель на реквизит
+//     * @return Ссылка на добавленный реквизит (для цепочки вызовов)
 //     */
 //    Requisite& addRequisite(std::unique_ptr<Requisite> requisite);
 //
 //    /**
-//     * @brief РЎРѕР·РґР°С‚СЊ Рё РґРѕР±Р°РІРёС‚СЊ СЂРµРєРІРёР·РёС‚
-//     * @param name РРјСЏ СЂРµРєРІРёР·РёС‚Р°
-//     * @param type РўРёРї СЂРµРєРІРёР·РёС‚Р°
-//     * @param description РћРїРёСЃР°РЅРёРµ
-//     * @param required РћР±СЏР·Р°С‚РµР»СЊРЅРѕСЃС‚СЊ
-//     * @return РЎСЃС‹Р»РєР° РЅР° СЃРѕР·РґР°РЅРЅС‹Р№ СЂРµРєРІРёР·РёС‚
+//     * @brief Создать и добавить реквизит
+//     * @param name Имя реквизита
+//     * @param type Тип реквизита
+//     * @param description Описание
+//     * @param required Обязательность
+//     * @return Ссылка на созданный реквизит
 //     */
 //    Requisite& createRequisite(const std::string& name,
-//                              const std::string& type = "String",
+//                              const std::string& type = "LegacyText",
 //                              const std::string& description = "",
 //                              bool required = false);
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЂРµРєРІРёР·РёС‚ РїРѕ РёРјРµРЅРё
-//     * @param name РРјСЏ СЂРµРєРІРёР·РёС‚Р°
-//     * @return РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЂРµРєРІРёР·РёС‚ РёР»Рё nullptr, РµСЃР»Рё РЅРµ РЅР°Р№РґРµРЅ
+//     * @brief Получить реквизит по имени
+//     * @param name Имя реквизита
+//     * @return Указатель на реквизит или nullptr, если не найден
 //     */
 //    Requisite* getRequisite(const std::string& name);
 //    const Requisite* getRequisite(const std::string& name) const;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЂРµРєРІРёР·РёС‚ РїРѕ РёРЅРґРµРєСЃСѓ
+//     * @brief Получить реквизит по индексу
 //     */
 //    Requisite* getRequisite(size_t index);
 //    const Requisite* getRequisite(size_t index) const;
 //
 //    /**
-//     * @brief РџСЂРѕРІРµСЂРёС‚СЊ РЅР°Р»РёС‡РёРµ СЂРµРєРІРёР·РёС‚Р°
+//     * @brief Проверить наличие реквизита
 //     */
 //    bool hasRequisite(const std::string& name) const;
 //
 //    /**
-//     * @brief РЈРґР°Р»РёС‚СЊ СЂРµРєРІРёР·РёС‚
-//     * @return true, РµСЃР»Рё СЂРµРєРІРёР·РёС‚ Р±С‹Р» СѓРґР°Р»РµРЅ
+//     * @brief Удалить реквизит
+//     * @return true, если реквизит был удален
 //     */
 //    bool removeRequisite(const std::string& name);
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ РєРѕР»РёС‡РµСЃС‚РІРѕ СЂРµРєРІРёР·РёС‚РѕРІ
+//     * @brief Получить количество реквизитов
 //     */
 //    size_t getRequisiteCount() const;
 //
-//    // === РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ С„РѕСЂРјР°РјРё ===
+//    // === Методы управления формами ===
 //
 //    Form& addForm(std::unique_ptr<Form> form);
 //    Form& createForm(const std::string& name,
@@ -93,7 +93,7 @@ public:
 //    bool removeForm(const std::string& name);
 //    size_t getFormCount() const;
 //
-//    // === РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ РєРѕРјР°РЅРґР°РјРё ===
+//    // === Методы управления командами ===
 //
 //    Command& addCommand(std::unique_ptr<Command> command);
 //    Command& createCommand(const std::string& name,
@@ -105,7 +105,7 @@ public:
 //    bool removeCommand(const std::string& name);
 //    size_t getCommandCount() const;
 //
-//    // === РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ РјР°РєРµС‚Р°РјРё ===
+//    // === Методы управления макетами ===
 //
 //    Layout& addLayout(std::unique_ptr<Layout> layout);
 //    Layout& createLayout(const std::string& name,
@@ -118,7 +118,7 @@ public:
 //    bool removeLayout(const std::string& name);
 //    size_t getLayoutCount() const;
 //
-//    // === РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ С‚Р°Р±Р»РёС‡РЅС‹РјРё С‡Р°СЃС‚СЏРјРё ===
+//    // === Методы управления табличными частями ===
 //
 //    TablePart& addTablePart(std::unique_ptr<TablePart> tablePart);
 //    TablePart& createTablePart(const std::string& name,
@@ -129,11 +129,11 @@ public:
 //    bool removeTablePart(const std::string& name);
 //    size_t getTablePartCount() const;
 //
-//    // === РњРµС‚РѕРґС‹ СѓРїСЂР°РІР»РµРЅРёСЏ РєРѕР»РѕРЅРєР°РјРё (РґР»СЏ СЃРїРёСЃРєРѕРІ) ===
+//    // === Методы управления колонками (для списков) ===
 //
 //    Column& addColumn(std::unique_ptr<Column> column);
 //    Column& createColumn(const std::string& name,
-//                        const std::string& type = "String",
+//                        const std::string& type = "LegacyText",
 //                        int width = 100);
 //    Column* getColumn(const std::string& name);
 //    const Column* getColumn(const std::string& name) const;
@@ -141,177 +141,177 @@ public:
 //    bool removeColumn(const std::string& name);
 //    size_t getColumnCount() const;
 //
-//    // === РњРµС‚РѕРґС‹ СЃРµСЂРёР°Р»РёР·Р°С†РёРё/РґРµСЃРµСЂРёР°Р»РёР·Р°С†РёРё ===
+//    // === Методы сериализации/десериализации ===
 //
 //    /**
-//     * @brief РЎРµСЂРёР°Р»РёР·РѕРІР°С‚СЊ РѕР±СЉРµРєС‚ РІ XML
-//     * @param parent Р РѕРґРёС‚РµР»СЊСЃРєРёР№ XML-СѓР·РµР»
+//     * @brief Сериализовать объект в XML
+//     * @param parent Родительский XML-узел
 //     */
 //    virtual void toXML(tinyxml2::XMLElement* parent) const override;
 //
 //    /**
-//     * @brief Р”РµСЃРµСЂРёР°Р»РёР·РѕРІР°С‚СЊ РѕР±СЉРµРєС‚ РёР· XML
-//     * @param element XML-СЌР»РµРјРµРЅС‚
+//     * @brief Десериализовать объект из XML
+//     * @param element XML-элемент
 //     */
 //    virtual bool fromXML(const tinyxml2::XMLElement* element) override;
 //
 //    /**
-//     * @brief РЎРµСЂРёР°Р»РёР·РѕРІР°С‚СЊ РѕР±СЉРµРєС‚ РІ JSON
+//     * @brief Сериализовать объект в JSON
 //     */
 //    virtual nlohmann::json toJSON() const override;
 //
 //    /**
-//     * @brief Р”РµСЃРµСЂРёР°Р»РёР·РѕРІР°С‚СЊ РѕР±СЉРµРєС‚ РёР· JSON
+//     * @brief Десериализовать объект из JSON
 //     */
 //    virtual bool fromJSON(const nlohmann::json& json) override;
 //
-//    // === РњРµС‚РѕРґС‹ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ UI ===
+//    // === Методы для работы с UI ===
 //
 //    /**
-//     * @brief Р—Р°РїРѕР»РЅРёС‚СЊ TreeView
-//     * @param parent Р РѕРґРёС‚РµР»СЊСЃРєРёР№ СѓР·РµР» TreeView
-//     * @param treeView РЈРєР°Р·Р°С‚РµР»СЊ РЅР° TreeView
+//     * @brief Заполнить TreeView
+//     * @param parent Родительский узел TreeView
+//     * @param treeView Указатель на TreeView
 //     */
 //    virtual void populateTreeView(TTreeNode* parent, TTreeView* treeView) const override;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє СЃРІРѕР№СЃС‚РІ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РІ PropertyGrid
-//     * @return РЎРїРёСЃРѕРє РїР°СЂ "РєР»СЋС‡-Р·РЅР°С‡РµРЅРёРµ"
+//     * @brief Получить список свойств для отображения в PropertyGrid
+//     * @return Список пар "ключ-значение"
 //     */
 //    virtual std::vector<std::pair<std::string, std::string>> getProperties() const override;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє СЂРµРєРІРёР·РёС‚РѕРІ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ
+//     * @brief Получить список реквизитов для отображения в таблице
 //     */
 //    std::vector<const Requisite*> getRequisitesForDisplay() const;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє С„РѕСЂРј РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+//     * @brief Получить список форм для отображения
 //     */
 //    std::vector<const Form*> getFormsForDisplay() const;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє РєРѕРјР°РЅРґ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+//     * @brief Получить список команд для отображения
 //     */
 //    std::vector<const Command*> getCommandsForDisplay() const;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє РјР°РєРµС‚РѕРІ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+//     * @brief Получить список макетов для отображения
 //     */
 //    std::vector<const Layout*> getLayoutsForDisplay() const;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє С‚Р°Р±Р»РёС‡РЅС‹С… С‡Р°СЃС‚РµР№ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+//     * @brief Получить список табличных частей для отображения
 //     */
 //    std::vector<const TablePart*> getTablePartsForDisplay() const;
 //
 //    /**
-//     * @brief РџРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє РєРѕР»РѕРЅРѕРє РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+//     * @brief Получить список колонок для отображения
 //     */
 //    std::vector<const Column*> getColumnsForDisplay() const;
 //
-//    // === РњРµС‚РѕРґС‹ РїРѕРёСЃРєР° Рё С„РёР»СЊС‚СЂР°С†РёРё ===
+//    // === Методы поиска и фильтрации ===
 //
 //    /**
-//     * @brief РќР°Р№С‚Рё СЂРµРєРІРёР·РёС‚ РїРѕ РёРјРµРЅРё (СЃ РїРѕРґРґРµСЂР¶РєРѕР№ РїРѕРґСЃС‚СЂРѕРєРё)
-//     * @param searchText РўРµРєСЃС‚ РґР»СЏ РїРѕРёСЃРєР°
-//     * @param caseSensitive РЈС‡РёС‚С‹РІР°С‚СЊ СЂРµРіРёСЃС‚СЂ
-//     * @return Р’РµРєС‚РѕСЂ РЅР°Р№РґРµРЅРЅС‹С… СЂРµРєРІРёР·РёС‚РѕРІ
+//     * @brief Найти реквизит по имени (с поддержкой подстроки)
+//     * @param searchText Текст для поиска
+//     * @param caseSensitive Учитывать регистр
+//     * @return Вектор найденных реквизитов
 //     */
 //    std::vector<const Requisite*> searchRequisites(const std::string& searchText,
 //                                                  bool caseSensitive = false) const;
 //
 //    /**
-//     * @brief РќР°Р№С‚Рё С„РѕСЂРјСѓ РїРѕ РёРјРµРЅРё РёР»Рё С‚РёРїСѓ
+//     * @brief Найти форму по имени или типу
 //     */
 //    std::vector<const Form*> searchForms(const std::string& searchText,
 //                                        bool searchInType = true) const;
 //
 //    /**
-//     * @brief Р¤РёР»СЊС‚СЂРѕРІР°С‚СЊ СЂРµРєРІРёР·РёС‚С‹ РїРѕ С‚РёРїСѓ
+//     * @brief Фильтровать реквизиты по типу
 //     */
 //    std::vector<const Requisite*> filterRequisitesByType(const std::string& type) const;
 //
 //    /**
-//     * @brief Р¤РёР»СЊС‚СЂРѕРІР°С‚СЊ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ СЂРµРєРІРёР·РёС‚С‹
+//     * @brief Фильтровать обязательные реквизиты
 //     */
 //    std::vector<const Requisite*> getRequiredRequisites() const;
 //
-//    // === Р’Р°Р»РёРґР°С†РёСЏ ===
+//    // === Валидация ===
 //
 //    /**
-//     * @brief РџСЂРѕРІРµСЂРёС‚СЊ РІР°Р»РёРґРЅРѕСЃС‚СЊ РѕР±СЉРµРєС‚Р°
-//     * @param errors Р’РµРєС‚РѕСЂ РґР»СЏ Р·Р°РїРёСЃРё РѕС€РёР±РѕРє
-//     * @return true, РµСЃР»Рё РѕР±СЉРµРєС‚ РІР°Р»РёРґРµРЅ
+//     * @brief Проверить валидность объекта
+//     * @param errors Вектор для записи ошибок
+//     * @return true, если объект валиден
 //     */
 //    virtual bool validate(std::vector<std::string>& errors) const override;
 //
 //    /**
-//     * @brief РџСЂРѕРІРµСЂРёС‚СЊ СѓРЅРёРєР°Р»СЊРЅРѕСЃС‚СЊ РёРјРµРЅ СЂРµРєРІРёР·РёС‚РѕРІ
+//     * @brief Проверить уникальность имен реквизитов
 //     */
 //    bool validateRequisiteNames(std::vector<std::string>& errors) const;
 //
-//    // === РџР°С‚С‚РµСЂРЅ Visitor ===
+//    // === Паттерн Visitor ===
 //
 //    /**
-//     * @brief РџСЂРёРЅСЏС‚СЊ РїРѕСЃРµС‚РёС‚РµР»СЏ
-//     * @param visitor РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РїРѕСЃРµС‚РёС‚РµР»СЏ
+//     * @brief Принять посетителя
+//     * @param visitor Указатель на посетителя
 //     */
 //    virtual void accept(Visitor* visitor) override;
 //
-//    // === РњРµС‚РѕРґС‹ РєР»РѕРЅРёСЂРѕРІР°РЅРёСЏ ===
+//    // === Методы клонирования ===
 //
 //    /**
-//     * @brief РЎРѕР·РґР°С‚СЊ РіР»СѓР±РѕРєСѓСЋ РєРѕРїРёСЋ РѕР±СЉРµРєС‚Р°
+//     * @brief Создать глубокую копию объекта
 //     */
 //    virtual std::unique_ptr<CommonMetadataObject> clone() const;
 //
 //    /**
-//     * @brief РЎРѕР·РґР°С‚СЊ РіР»СѓР±РѕРєСѓСЋ РєРѕРїРёСЋ СЃ РЅРѕРІС‹Рј РёРјРµРЅРµРј
+//     * @brief Создать глубокую копию с новым именем
 //     */
 //    std::unique_ptr<CommonMetadataObject> cloneWithName(const std::string& newName) const;
 //
-//    // === Р“РµС‚С‚РµСЂС‹ Рё СЃРµС‚С‚РµСЂС‹ РґР»СЏ СЃС‚Р°С‚РёСЃС‚РёРєРё ===
+//    // === Геттеры и сеттеры для статистики ===
 //
 //    size_t getTotalPropertiesCount() const;
 //    size_t getTotalElementsCount() const;
 //
-//    // === РњРµС‚РѕРґС‹ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєРѕРЅС‚РµР№РЅРµСЂР°РјРё ===
+//    // === Методы для работы с контейнерами ===
 //
 //    /**
-//     * @brief РћС‡РёСЃС‚РёС‚СЊ РІСЃРµ СЃРІРѕР№СЃС‚РІР°
+//     * @brief Очистить все свойства
 //     */
 //    void clearAllProperties();
 //
 //    /**
-//     * @brief РЎРѕСЂС‚РёСЂРѕРІР°С‚СЊ СЂРµРєРІРёР·РёС‚С‹ РїРѕ РёРјРµРЅРё
-//     * @param ascending РџРѕ РІРѕР·СЂР°СЃС‚Р°РЅРёСЋ (true) РёР»Рё СѓР±С‹РІР°РЅРёСЋ (false)
+//     * @brief Сортировать реквизиты по имени
+//     * @param ascending По возрастанию (true) или убыванию (false)
 //     */
 //    void sortRequisitesByName(bool ascending = true);
 //
 //    /**
-//     * @brief РЎРѕСЂС‚РёСЂРѕРІР°С‚СЊ С„РѕСЂРјС‹ РїРѕ С‚РёРїСѓ, Р·Р°С‚РµРј РїРѕ РёРјРµРЅРё
+//     * @brief Сортировать формы по типу, затем по имени
 //     */
 //    void sortForms();
 //
-//    // === РћРїРµСЂР°С†РёРё РёРјРїРѕСЂС‚Р°/СЌРєСЃРїРѕСЂС‚Р° ===
+//    // === Операции импорта/экспорта ===
 //
 //    /**
-//     * @brief РРјРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ СЂРµРєРІРёР·РёС‚С‹ РёР· CSV
+//     * @brief Импортировать реквизиты из CSV
 //     */
 //    bool importRequisitesFromCSV(const std::string& filename);
 //
 //    /**
-//     * @brief Р­РєСЃРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ СЂРµРєРІРёР·РёС‚С‹ РІ CSV
+//     * @brief Экспортировать реквизиты в CSV
 //     */
 //    bool exportRequisitesToCSV(const std::string& filename) const;
 //
-//    // === РРЅРґРµРєСЃР°С†РёСЏ РґР»СЏ Р±С‹СЃС‚СЂРѕРіРѕ РїРѕРёСЃРєР° ===
+//    // === Индексация для быстрого поиска ===
 //
 //    void rebuildIndexes();
 //
 //protected:
-//    // РљРѕРЅС‚РµР№РЅРµСЂС‹ РґР»СЏ СЃРІРѕР№СЃС‚РІ
+//    // Контейнеры для свойств
 //    std::vector<std::unique_ptr<Requisite>> requisites;
 //    std::vector<std::unique_ptr<Form>> forms;
 //    std::vector<std::unique_ptr<Command>> commands;
@@ -319,7 +319,7 @@ public:
 //    std::vector<std::unique_ptr<TablePart>> tableParts;
 //    std::vector<std::unique_ptr<Column>> columns;
 //
-//    // РРЅРґРµРєСЃС‹ РґР»СЏ Р±С‹СЃС‚СЂРѕРіРѕ РїРѕРёСЃРєР°
+//    // Индексы для быстрого поиска
 //    std::unordered_map<std::string, Requisite*> requisiteIndex;
 //    std::unordered_map<std::string, Form*> formIndex;
 //    std::unordered_map<std::string, Command*> commandIndex;
@@ -327,22 +327,22 @@ public:
 //    std::unordered_map<std::string, TablePart*> tablePartIndex;
 //    std::unordered_map<std::string, Column*> columnIndex;
 //
-//    // Р¤Р»Р°Рі РёР·РјРµРЅРµРЅРёСЏ (РґР»СЏ РѕРїС‚РёРјРёР·Р°С†РёРё)
+//    // Флаг изменения (для оптимизации)
 //    mutable bool indexesDirty;
 //
-//    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹
+//    // Вспомогательные методы
 //    void updateIndexes() const;
 //    void addToIndexes();
 //    void removeFromIndexes();
 //
-//    // Р’РёСЂС‚СѓР°Р»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ РґР»СЏ РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅРёСЏ РІ РїРѕС‚РѕРјРєР°С…
+//    // Виртуальные методы для переопределения в потомках
 //    virtual void afterRequisiteAdded(Requisite& requisite);
 //    virtual void beforeRequisiteRemoved(Requisite& requisite);
 //    virtual void afterFormAdded(Form& form);
 //    virtual void beforeFormRemoved(Form& form);
 //
 //private:
-//    // РџСЂРёРІР°С‚РЅС‹Рµ РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹
+//    // Приватные вспомогательные методы
 //    template<typename T>
 //    T* findInVector(const std::vector<std::unique_ptr<T>>& container,
 //                   const std::string& name) const;

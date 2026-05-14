@@ -17,7 +17,7 @@ static MetadataTreePaths GetChartOfCalculationTypesPaths()
 	paths.cmdIdx = 5;
 	paths.cmdItemPath = {0, 1, 3, 2, 9, 2};
 	paths.moxIdx = 6;
-	paths.getFormNameFunc = GetNameFormCatalogs;
+	paths.getFormNameFunc = GetNameFormCatalogs16;
 	paths.hasTabulars = true;
 	return paths;
 }

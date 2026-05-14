@@ -8,19 +8,14 @@
 
 namespace
 {
-	String ToVclString(const Utf16String& value)
-	{
-		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
-	}
-
-	Utf16String FindFirstGuid(tree* node)
+Utf16String FindFirstGuid(tree* node)
 	{
 		if (!node)
 		return Utf16String();
 
-		String value = Trim(node->get_value());
-		if (ModuleTextStorage::IsGuidLike(V8Utf16FromString(value)))
-		return V8Utf16FromString(value);
+		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		if (ModuleTextStorage::IsGuidLike(value))
+		return value;
 
 		for (int i = 0; i < node->get_num_subnode(); i++)
 		{
@@ -71,8 +66,8 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		try {
 			tree* node_att_att = root_data.get();
 			node_att_att = &(*node_att_att)[0][3][i+CountAtt-Delta][0][1][1][1][2];
-			String NameAtt = node_att_att->get_value();
-			attributes.push_back(std::make_unique<TRequisite>(NameAtt, ""));
+			Utf16String NameAtt = V8Utf16FromString(node_att_att->get_value());
+			attributes.push_back(std::make_unique<TRequisite>(NameAtt, u""));
 
 		} catch (...) {
 		}
@@ -88,7 +83,7 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 	{
 		tree* tabularNode = &(*root_data.get())[0][5][i+CountAttTab-DeltaTab];
 		tree* node_att_tab = &(*tabularNode)[0][1][5][1][2];
-		String NameAttTab = node_att_tab->get_value();
+		Utf16String NameAttTab = V8Utf16FromString(node_att_tab->get_value());
 		Utf16String guidAttTab;
 		try {
 			guidAttTab = V8Utf16FromString((*tabularNode)[0][1][5][1][1].get_value());
@@ -96,7 +91,7 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 			guidAttTab.clear();
 		}
 
-		auto tabular = std::make_unique<TTabular>(NameAttTab, ToVclString(guidAttTab));
+		auto tabular = std::make_unique<TTabular>(NameAttTab, guidAttTab);
 		std::unique_ptr<tree> tabularRootData;
 		if (parent && !guidAttTab.empty())
 		{
@@ -122,8 +117,8 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		curNodeChild = curNodeChild->get_next();
 		if (curNodeChild)
 		{
-			String formGuid = curNodeChild->get_value();
-			String NameForm = GetNameFormPVH(parent, formGuid);
+			Utf16String formGuid = V8Utf16FromString(curNodeChild->get_value());
+			Utf16String NameForm = GetNameFormPVH16(parent, formGuid);
 			forms.push_back(std::make_unique<TForm1C>(NameForm, formGuid));
 		}
 	}
@@ -142,8 +137,8 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		tree* commandNode = &(*root_data.get())[0][6][i+CountCom-DeltaCom];
 		Utf16String commandGuid = FindFirstGuid(commandNode);
 		tree* node_com = &(*commandNode)[0][1][3][2][9][2];
-		String NameCom = node_com->get_value();
-		comands.push_back(std::make_unique<TComand>(NameCom, ToVclString(commandGuid)));
+		Utf16String NameCom = V8Utf16FromString(node_com->get_value());
+		comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
 	}
 	// Получаем макеты
 	auto& moxels = getLayouts();
@@ -158,8 +153,8 @@ void TChartOfCharacteristicTypes::initializeFromTree()
 		curNodeChildMox = curNodeChildMox->get_next();
 		if (curNodeChildMox)
 		{
-			String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
-			moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
+			Utf16String NameMox = GetNameMoxCatalogs16(parent, V8Utf16FromString(curNodeChildMox->get_value()));
+			moxels.push_back(std::make_unique<TMoxel>(NameMox, u""));
 		}
 
 	}

@@ -16,7 +16,7 @@ static MetadataTreePaths GetDataProcessorsPaths()
 	paths.cmdIdx = 5;
 	paths.cmdItemPath = {0, 1, 2, 9, 2};
 	paths.moxIdx = 4;
-	paths.getFormNameFunc = GetNameFormReports;
+	paths.getFormNameFunc = GetNameFormReports16;
 	paths.hasTabulars = true;
 	return paths;
 }

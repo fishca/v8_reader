@@ -8,20 +8,20 @@
 
 namespace
 {
-	String Utf16ToVclString(std::u16string_view value)
+	LegacyText Utf16ToVclString(std::u16string_view value)
 	{
 #ifndef _DELPHI_STRING_UNICODE
 		std::vector<wchar_t> buffer(value.size() + 1);
 		for (std::size_t i = 0; i < value.size(); ++i)
 			buffer[i] = static_cast<wchar_t>(value[i]);
 		buffer[value.size()] = 0;
-		return String(buffer.data());
+		return LegacyText(buffer.data());
 #else
-		return String(reinterpret_cast<const wchar_t*>(value.data()), static_cast<int>(value.size()));
+		return LegacyText(reinterpret_cast<const wchar_t*>(value.data()), static_cast<int>(value.size()));
 #endif
 	}
 
-	std::u16string VclStringToUtf16(const String& value)
+	std::u16string VclStringToUtf16(const LegacyText& value)
 	{
 #ifndef _DELPHI_STRING_UNICODE
 		const int ws = value.WideCharBufSize();

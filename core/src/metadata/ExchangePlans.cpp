@@ -28,17 +28,17 @@ namespace
         return current;
     }
 
-    bool IsGuidLikeValue(const String& value)
+    bool IsGuidLikeValue(const Utf16String& value)
     {
-        String trimmed = Trim(value);
-        if (trimmed.Length() != 36)
+        Utf16String trimmed = value;
+        if (trimmed.size() != 36)
             return false;
 
-        for (int i = 1; i <= trimmed.Length(); i++)
+        for (std::size_t i = 0; i < trimmed.size(); i++)
         {
-            wchar_t ch = trimmed[i];
-            bool isHex = (ch >= L'0' && ch <= L'9') || (ch >= L'a' && ch <= L'f') || (ch >= L'A' && ch <= L'F');
-            bool isDash = (ch == L'-');
+            char16_t ch = trimmed[i];
+            bool isHex = (ch >= u'0' && ch <= u'9') || (ch >= u'a' && ch <= u'f') || (ch >= u'A' && ch <= u'F');
+            bool isDash = (ch == u'-');
             if (!isHex && !isDash)
                 return false;
         }
@@ -46,39 +46,39 @@ namespace
         return true;
     }
 
-    bool IsNumericLikeValue(const String& value)
+    bool IsNumericLikeValue(const Utf16String& value)
     {
-        String trimmed = Trim(value);
-        if (trimmed.IsEmpty())
+        Utf16String trimmed = value;
+        if (trimmed.empty())
             return false;
 
-        for (int i = 1; i <= trimmed.Length(); i++)
+        for (std::size_t i = 0; i < trimmed.size(); i++)
         {
-            wchar_t ch = trimmed[i];
-            if (!((ch >= L'0' && ch <= L'9') || ch == L'.' || ch == L',' || ch == L'-'))
+            char16_t ch = trimmed[i];
+            if (!((ch >= u'0' && ch <= u'9') || ch == u'.' || ch == u',' || ch == u'-'))
                 return false;
         }
 
         return true;
     }
 
-    String FindFirstMeaningfulString(tree* node)
+    Utf16String FindFirstMeaningfulString(tree* node)
     {
         if (!node)
-            return L"";
+            return Utf16String();
 
-        String value = Trim(node->get_value());
-        if (!value.IsEmpty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.SubString(1, 1) != L"#")
+        Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+        if (!value.empty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.front() != u'#')
             return value;
 
         for (int i = 0; i < node->get_num_subnode(); i++)
         {
-            String nested = FindFirstMeaningfulString(node->get_subnode(i));
-            if (!nested.IsEmpty())
+            Utf16String nested = FindFirstMeaningfulString(node->get_subnode(i));
+            if (!nested.empty())
                 return nested;
         }
 
-        return L"";
+        return Utf16String();
     }
 
     bool TryCollectExchangePlanAttributes(tree* root, std::vector<std::unique_ptr<TRequisite>>& attributes)
@@ -96,17 +96,17 @@ namespace
                 tree* current = countNode;
                 while ((current = current->get_next()) != nullptr)
                 {
-                    String attributeName;
+                    Utf16String attributeName;
 
 tree* nameNode = GetNodeByPath(current, {0, 1, 1, 1, 2});
                     if (nameNode)
-                        attributeName = Trim(nameNode->get_value());
+                        attributeName = V8Utf16FromString(Trim(nameNode->get_value()));
 
-                    if (attributeName.IsEmpty())
+                    if (attributeName.empty())
                         attributeName = FindFirstMeaningfulString(current);
 
-                    if (!attributeName.IsEmpty())
-                        parsed.push_back(std::make_unique<TRequisite>(attributeName, L""));
+                    if (!attributeName.empty())
+                        parsed.push_back(std::make_unique<TRequisite>(attributeName, u""));
 
                     if ((int)parsed.size() >= count)
                         break;
@@ -159,23 +159,23 @@ tree* nameNode = GetNodeByPath(current, {0, 1, 1, 1, 2});
                         if (!itemNode)
                             continue;
 
-                        String attributeName;
+                        Utf16String attributeName;
                         for (const auto& namePath : namePaths)
                         {
                             tree* nameNode = GetNodeByPath(itemNode, namePath);
                             if (!nameNode)
                                 continue;
 
-                            attributeName = Trim(nameNode->get_value());
-                            if (!attributeName.IsEmpty())
+                            attributeName = V8Utf16FromString(Trim(nameNode->get_value()));
+                            if (!attributeName.empty())
                                 break;
                         }
 
-                        if (attributeName.IsEmpty())
+                        if (attributeName.empty())
                             attributeName = FindFirstMeaningfulString(itemNode);
 
-                        if (!attributeName.IsEmpty() && attributeName != Trim(FindFirstMeaningfulString(root)))
-                            parsed.push_back(std::make_unique<TRequisite>(attributeName, L""));
+                        if (!attributeName.empty() && attributeName != Trim(FindFirstMeaningfulString(root)))
+                            parsed.push_back(std::make_unique<TRequisite>(attributeName, u""));
                     }
                     catch (...)
                     {
@@ -210,18 +210,18 @@ tree* nameNode = GetNodeByPath(current, {0, 1, 1, 1, 2});
         tree* current = countNode;
         while ((current = current->get_next()) != nullptr)
         {
-            String tabularName;
+            Utf16String tabularName;
             tree* nameNode = GetNodeByPath(current, {0, 1, 1, 1, 2});
             if (nameNode)
-                tabularName = Trim(nameNode->get_value());
+                tabularName = V8Utf16FromString(Trim(nameNode->get_value()));
 
-            if (tabularName.IsEmpty())
+            if (tabularName.empty())
                 tabularName = FindFirstMeaningfulString(current);
 
-            if (tabularName.IsEmpty())
+            if (tabularName.empty())
                 continue;
 
-            auto tabular = std::make_unique<TTabular>(tabularName, L"");
+            auto tabular = std::make_unique<TTabular>(tabularName, u"");
 
             tree* tabularAttributesNode = GetNodeByPath(current, {0, 1, 1, 1, 2});
             tabular->initializeFromTree(tabularAttributesNode ? tabularAttributesNode : current);
@@ -256,16 +256,16 @@ bool TryCollectExchangePlanCommands(tree* root, std::vector<std::unique_ptr<TCom
     tree* current = countNode;
     while ((current = current->get_next()) != nullptr)
     {
-        String commandName;
+        Utf16String commandName;
         tree* nameNode = GetNodeByPath(current, {0, 1, 3, 2, 9, 2});
         if (nameNode)
-            commandName = Trim(nameNode->get_value());
+            commandName = V8Utf16FromString(Trim(nameNode->get_value()));
 
-        if (commandName.IsEmpty())
+        if (commandName.empty())
             commandName = FindFirstMeaningfulString(current);
 
-        if (!commandName.IsEmpty())
-            parsed.push_back(std::make_unique<TComand>(commandName, L""));
+        if (!commandName.empty())
+            parsed.push_back(std::make_unique<TComand>(commandName, u""));
 
         if ((int)parsed.size() >= count)
             break;
@@ -298,14 +298,14 @@ bool TryCollectExchangePlanForms(v8catalog* parent, tree* root, std::vector<std:
     tree* current = countNode;
     while ((current = current->get_next()) != nullptr)
     {
-        String guid_md = Trim(current->get_value());
-        if (guid_md.IsEmpty())
+        Utf16String guid_md = V8Utf16FromString(Trim(current->get_value()));
+        if (guid_md.empty())
             continue;
 
-        String formName = GetNameFormCatalogs(parent, guid_md);
+        Utf16String formName = GetNameFormCatalogs16(parent, guid_md);
 
-        if (!formName.IsEmpty())
-            parsed.push_back(std::make_unique<TForm1C>(formName, L""));
+        if (!formName.empty())
+            parsed.push_back(std::make_unique<TForm1C>(formName, u""));
 
         if ((int)parsed.size() >= count)
             break;
@@ -338,12 +338,12 @@ bool TryCollectExchangePlanLayouts(v8catalog* parent, tree* root, std::vector<st
     tree* current = countNode;
     while ((current = current->get_next()) != nullptr)
     {
-        String guid_md = Trim(current->get_value());
-        if (guid_md.IsEmpty())
+        Utf16String guid_md = V8Utf16FromString(Trim(current->get_value()));
+        if (guid_md.empty())
             continue;
 
-        String layoutName = GetNameMoxCatalogs(parent, guid_md);
-        if (!layoutName.IsEmpty())
+        Utf16String layoutName = GetNameMoxCatalogs16(parent, guid_md);
+        if (!layoutName.empty())
             parsed.push_back(std::make_unique<TMoxel>(layoutName, guid_md));
 
         if ((int)parsed.size() >= count)
@@ -368,7 +368,7 @@ static MetadataTreePaths GetExchangePlansPaths()
     paths.cmdIdx = 7;
     paths.cmdItemPath = {0, 1, 3, 2, 9, 2};
     paths.moxIdx = 4;
-    paths.getFormNameFunc = GetNameFormCatalogs;
+    paths.getFormNameFunc = GetNameFormCatalogs16;
     paths.hasTabulars = true;
     return paths;
 }

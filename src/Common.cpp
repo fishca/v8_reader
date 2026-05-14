@@ -192,3 +192,39 @@ String GetNameMoxCatalogs(v8catalog* cf, String& guid_md)
     return GetNameFromTreePath(cf, guid_md, path);
 }
 
+Utf16String GetNameFromTreePath16(v8catalog* cf, const Utf16String& guid_md, const std::vector<int>& path)
+{
+    String legacyGuid = v8reader::vcl_bridge::Utf16ToString(guid_md);
+    return V8Utf16FromString(GetNameFromTreePath(cf, legacyGuid, path));
+}
+
+Utf16String GetNameFormCatalogs16(v8catalog* cf, const Utf16String& guid_md)
+{
+    std::vector<int> path = {0, 1, 1, 1, 2};
+    return GetNameFromTreePath16(cf, guid_md, path);
+}
+
+Utf16String GetNameFormReports16(v8catalog* cf, const Utf16String& guid_md)
+{
+    std::vector<int> path = {0, 1, 1, 1, 1, 2};
+    return GetNameFromTreePath16(cf, guid_md, path);
+}
+
+Utf16String GetNameFormPVH16(v8catalog* cf, const Utf16String& guid_md)
+{
+    std::vector<int> path = {0, 1, 1, 2};
+    return GetNameFromTreePath16(cf, guid_md, path);
+}
+
+Utf16String GetNameFormDescriptor16(v8catalog* cf, const Utf16String& guid_md)
+{
+    std::vector<int> path = {0, 1, 1, 2};
+    return GetNameFromTreePath16(cf, guid_md, path);
+}
+
+Utf16String GetNameMoxCatalogs16(v8catalog* cf, const Utf16String& guid_md)
+{
+    std::vector<int> path = {0, 1, 2, 2};
+    return GetNameFromTreePath16(cf, guid_md, path);
+}
+

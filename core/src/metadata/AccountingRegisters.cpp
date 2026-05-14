@@ -26,7 +26,7 @@ static InfoRegisterTreePaths GetAccountingRegistersPaths()
 
     paths.moxIdx = 4;
 
-    paths.getFormNameFunc = GetNameFormPVH;
+    paths.getFormNameFunc = GetNameFormPVH16;
     return paths;
 }
 

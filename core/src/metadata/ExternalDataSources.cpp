@@ -6,11 +6,6 @@
 
 namespace
 {
-	String ToVclString(const Utf16String& value)
-	{
-		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
-	}
-
 	tree* GetNodeByPath(tree* root, std::initializer_list<int> indexes)
 	{
 		tree* current = root;
@@ -90,7 +85,7 @@ namespace
 	}
 
 	void ReadFileList(tree* root, int sectionIndex, v8catalog* parent,
-		std::initializer_list<int> namePath, std::vector<String>& target)
+		std::initializer_list<int> namePath, std::vector<Utf16String>& target)
 	{
 		tree* section = GetSection(root, sectionIndex);
 		int count = GetSectionCount(root, sectionIndex);
@@ -105,12 +100,12 @@ namespace
 
 			Utf16String itemName = GetFileNameByPath(parent, V8Utf16FromString(guidNode->get_value()), namePath);
 			if (!itemName.empty())
-				target.push_back(ToVclString(itemName));
+				target.push_back(itemName);
 		}
 	}
 
 	void ReadInlineList(tree* root, int sectionIndex, std::initializer_list<int> namePath,
-		std::vector<String>& target)
+		std::vector<Utf16String>& target)
 	{
 		tree* section = GetSection(root, sectionIndex);
 		int count = GetSectionCount(root, sectionIndex);
@@ -122,7 +117,7 @@ namespace
 			tree* itemNode = section->get_subnode(i + 2);
 			Utf16String itemName = GetValueByPath(itemNode, namePath);
 			if (!itemName.empty())
-				target.push_back(ToVclString(itemName));
+				target.push_back(itemName);
 		}
 	}
 
@@ -143,18 +138,18 @@ namespace
 		}
 		catch (...)
 		{
-			tableData.name = ToVclString(guid);
+			tableData.name = guid;
 			return tableData;
 		}
 		tree* root = GetPayloadRoot(tableTree.get());
 
-		tableData.name = ToVclString(GetFirstValueByPath(root, {
+		tableData.name = GetFirstValueByPath(root, {
 			{1, 1, 1, 2},
 			{0, 1, 1, 2},
 			{1, 0, 1, 2}
-		}));
-		if (tableData.name.IsEmpty())
-			tableData.name = ToVclString(guid);
+		});
+		if (tableData.name.empty())
+			tableData.name = guid;
 		ReadFileList(root, 3, parent, {1, 1, 2}, tableData.forms);
 		ReadFileList(root, 4, parent, {1, 2, 2}, tableData.layouts);
 		ReadInlineList(root, 5, {0, 1, 3, 2, 9, 2}, tableData.commands);
@@ -180,18 +175,18 @@ namespace
 		}
 		catch (...)
 		{
-			cubeData.name = ToVclString(guid);
+			cubeData.name = guid;
 			return cubeData;
 		}
 		tree* root = GetPayloadRoot(cubeTree.get());
 
-		cubeData.name = ToVclString(GetFirstValueByPath(root, {
+		cubeData.name = GetFirstValueByPath(root, {
 			{1, 1, 1, 2},
 			{0, 1, 1, 2},
 			{1, 0, 1, 2}
-		}));
-		if (cubeData.name.IsEmpty())
-			cubeData.name = ToVclString(guid);
+		});
+		if (cubeData.name.empty())
+			cubeData.name = guid;
 		ReadFileList(root, 3, parent, {1, 1, 2}, cubeData.forms);
 		ReadFileList(root, 4, parent, {1, 2, 2}, cubeData.layouts);
 		ReadInlineList(root, 5, {0, 1, 3, 2, 9, 2}, cubeData.commands);
@@ -220,19 +215,19 @@ TExternalDataSources::TExternalDataSources()
 	root_data.reset();
 }
 
-TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid)
+TExternalDataSources::TExternalDataSources(v8catalog* _parent, const Utf16String& _guid)
 	: BaseMetadataObject(_parent, _guid)
 {
-	name = V8Utf16FromString(_guid);
+	name = _guid;
 	if (root_data)
 		initializeFromTree();
 	root_data.reset();
 }
 
-TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid, const String& _name)
+TExternalDataSources::TExternalDataSources(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name)
 	: BaseMetadataObject(_parent, _guid, _name)
 {
-	name = V8Utf16FromString(_name);
+	name = _name;
 	if (root_data)
 		initializeFromTree();
 	root_data.reset();

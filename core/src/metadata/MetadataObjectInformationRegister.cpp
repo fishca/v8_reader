@@ -7,19 +7,15 @@
 
 namespace
 {
-	String ToVclString(const Utf16String& value)
-	{
-		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
-	}
 
     Utf16String FindFirstGuid(tree* node)
     {
         if (!node)
             return Utf16String();
 
-        String value = Trim(node->get_value());
-        if (ModuleTextStorage::IsGuidLike(V8Utf16FromString(value)))
-            return V8Utf16FromString(value);
+        Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+        if (ModuleTextStorage::IsGuidLike(value))
+            return value;
 
         for (int i = 0; i < node->get_num_subnode(); i++)
         {
@@ -67,8 +63,8 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
             tree* itemNode = &(*root_data.get())[0][paths.attIdx][i + CountAtt - Delta];
             for (size_t p = 0; p < paths.attItemPath.size(); p++)
                 itemNode = &(*itemNode)[paths.attItemPath[p]];
-            String NameAtt = itemNode->get_value();
-            attributes.push_back(std::make_unique<TRequisite>(NameAtt, ""));
+            Utf16String NameAtt = V8Utf16FromString(itemNode->get_value());
+            attributes.push_back(std::make_unique<TRequisite>(NameAtt, u""));
         } catch (...) {
         }
     }
@@ -85,8 +81,8 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
             tree* itemNode = &(*root_data.get())[0][paths.dimIdx][i + CountDim - DeltaDim];
             for (size_t p = 0; p < paths.dimItemPath.size(); p++)
                 itemNode = &(*itemNode)[paths.dimItemPath[p]];
-            String NameDim = itemNode->get_value();
-            dimensions.push_back(std::make_unique<TRequisite>(NameDim, ""));
+            Utf16String NameDim = V8Utf16FromString(itemNode->get_value());
+            dimensions.push_back(std::make_unique<TRequisite>(NameDim, u""));
         } catch (...) {
         }
     }
@@ -103,8 +99,8 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
             tree* itemNode = &(*root_data.get())[0][paths.resIdx][i + CountRes - DeltaRes];
             for (size_t p = 0; p < paths.resItemPath.size(); p++)
                 itemNode = &(*itemNode)[paths.resItemPath[p]];
-            String NameRes = itemNode->get_value();
-            resources.push_back(std::make_unique<TRequisite>(NameRes, ""));
+            Utf16String NameRes = V8Utf16FromString(itemNode->get_value());
+            resources.push_back(std::make_unique<TRequisite>(NameRes, u""));
         } catch (...) {
         }
     }
@@ -120,8 +116,8 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         curNodeChild = curNodeChild->get_next();
         if (curNodeChild)
         {
-            String guid_md = curNodeChild->get_value();
-            String NameForm = paths.getFormNameFunc(parent, guid_md);
+            Utf16String guid_md = V8Utf16FromString(curNodeChild->get_value());
+            Utf16String NameForm = paths.getFormNameFunc(parent, guid_md);
             forms.push_back(std::make_unique<TForm1C>(NameForm, guid_md));
         }
     }
@@ -139,8 +135,8 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         tree* itemNode = commandNode;
         for (size_t p = 0; p < paths.cmdItemPath.size(); p++)
             itemNode = &(*itemNode)[paths.cmdItemPath[p]];
-        String NameCom = itemNode->get_value();
-        comands.push_back(std::make_unique<TComand>(NameCom, ToVclString(commandGuid)));
+        Utf16String NameCom = V8Utf16FromString(itemNode->get_value());
+        comands.push_back(std::make_unique<TComand>(NameCom, commandGuid));
     }
 
     // Макеты
@@ -154,8 +150,8 @@ void MetadataObjectInformationRegister::initializeFromTreeWithPaths(const InfoRe
         curNodeChildMox = curNodeChildMox->get_next();
         if (curNodeChildMox)
         {
-            String NameMox = GetNameMoxCatalogs(parent, curNodeChildMox->get_value());
-            moxels.push_back(std::make_unique<TMoxel>(NameMox, ""));
+            Utf16String NameMox = GetNameMoxCatalogs16(parent, V8Utf16FromString(curNodeChildMox->get_value()));
+            moxels.push_back(std::make_unique<TMoxel>(NameMox, u""));
         }
     }
 }

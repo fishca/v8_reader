@@ -16,7 +16,7 @@ static MetadataTreePaths GetTasksPaths()
 	paths.cmdIdx = 8;
 	paths.cmdItemPath = {0, 1, 3, 2, 9, 2};
 	paths.moxIdx = 3;
-	paths.getFormNameFunc = GetNameFormDescriptor;
+	paths.getFormNameFunc = GetNameFormDescriptor16;
 	paths.hasTabulars = true;
 	return paths;
 }
@@ -26,14 +26,14 @@ TTasks::TTasks()
 {
 }
 
-TTasks::TTasks(v8catalog *_parent, const String& _guid)
+TTasks::TTasks(v8catalog *_parent, const Utf16String& _guid)
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-TTasks::TTasks(v8catalog *_parent, const String& _guid, const String& _name)
+TTasks::TTasks(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();

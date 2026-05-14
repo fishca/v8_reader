@@ -7,10 +7,10 @@
 
 namespace
 {
-	bool IsServiceTabularAttributeName(const String& value)
+	bool IsServiceTabularAttributeName(const Utf16String& value)
 	{
-		String trimmed = Trim(value);
-		return trimmed == L"Реквизиты" || trimmed == L"Реквизит";
+		Utf16String trimmed = value;
+		return trimmed == V8Utf16FromString(L"Реквизиты") || trimmed == V8Utf16FromString(L"Реквизит");
 	}
 
 	tree* GetNodeByPath(tree* root, std::initializer_list<int> indexes)
@@ -47,17 +47,17 @@ namespace
 		return current;
 	}
 
-	bool IsGuidLikeValue(const String& value)
+	bool IsGuidLikeValue(const Utf16String& value)
 	{
-		String trimmed = Trim(value);
-		if (trimmed.Length() != 36)
+		Utf16String trimmed = value;
+		if (trimmed.size() != 36)
 			return false;
 
-		for (int i = 1; i <= trimmed.Length(); i++)
+		for (std::size_t i = 0; i < trimmed.size(); i++)
 		{
-			wchar_t ch = trimmed[i];
-			bool isHex = (ch >= L'0' && ch <= L'9') || (ch >= L'a' && ch <= L'f') || (ch >= L'A' && ch <= L'F');
-			bool isDash = (ch == L'-');
+			char16_t ch = trimmed[i];
+			bool isHex = (ch >= u'0' && ch <= u'9') || (ch >= u'a' && ch <= u'f') || (ch >= u'A' && ch <= u'F');
+			bool isDash = (ch == u'-');
 			if (!isHex && !isDash)
 				return false;
 		}
@@ -65,48 +65,48 @@ namespace
 		return true;
 	}
 
-	bool IsNumericLikeValue(const String& value)
+	bool IsNumericLikeValue(const Utf16String& value)
 	{
-		String trimmed = Trim(value);
-		if (trimmed.IsEmpty())
+		Utf16String trimmed = value;
+		if (trimmed.empty())
 			return false;
 
-		for (int i = 1; i <= trimmed.Length(); i++)
+		for (std::size_t i = 0; i < trimmed.size(); i++)
 		{
-			wchar_t ch = trimmed[i];
-			if (!((ch >= L'0' && ch <= L'9') || ch == L'.' || ch == L',' || ch == L'-'))
+			char16_t ch = trimmed[i];
+			if (!((ch >= u'0' && ch <= u'9') || ch == u'.' || ch == u',' || ch == u'-'))
 				return false;
 		}
 
 		return true;
 	}
 
-	String FindFirstMeaningfulString(tree* node)
+	Utf16String FindFirstMeaningfulString(tree* node)
 	{
 		if (!node)
-			return L"";
+			return Utf16String();
 
-		String value = Trim(node->get_value());
-		if (!value.IsEmpty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.SubString(1, 1) != L"#" && !IsServiceTabularAttributeName(value))
+		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		if (!value.empty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.front() != u'#' && !IsServiceTabularAttributeName(value))
 			return value;
 
 		for (int i = 0; i < node->get_num_subnode(); i++)
 		{
-			String nested = FindFirstMeaningfulString(node->get_subnode(i));
-			if (!nested.IsEmpty())
+			Utf16String nested = FindFirstMeaningfulString(node->get_subnode(i));
+			if (!nested.empty())
 				return nested;
 		}
 
-		return L"";
+		return Utf16String();
 	}
 
-	void CollectMeaningfulStrings(tree* node, std::vector<String>& values)
+	void CollectMeaningfulStrings(tree* node, std::vector<Utf16String>& values)
 	{
 		if (!node)
 			return;
 
-		String value = Trim(node->get_value());
-		if (!value.IsEmpty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.SubString(1, 1) != L"#" && !IsServiceTabularAttributeName(value))
+		Utf16String value = V8Utf16FromString(Trim(node->get_value()));
+		if (!value.empty() && !IsGuidLikeValue(value) && !IsNumericLikeValue(value) && value.front() != u'#' && !IsServiceTabularAttributeName(value))
 			values.push_back(value);
 
 		for (int i = 0; i < node->get_num_subnode(); i++)
@@ -159,26 +159,26 @@ namespace
 						if (!itemNode)
 							continue;
 
-						String attributeName = L"";
+						Utf16String attributeName;
 						for (const auto& namePath : namePaths)
 						{
 							tree* nameNode = GetNodeByPath(itemNode, namePath);
 							if (!nameNode)
 								continue;
 
-							attributeName = Trim(nameNode->get_value());
-							if (attributeName.IsEmpty())
+							attributeName = V8Utf16FromString(Trim(nameNode->get_value()));
+							if (attributeName.empty())
 								continue;
 
 							break;
 						}
 
-						if (attributeName.IsEmpty())
+						if (attributeName.empty())
 							attributeName = FindFirstMeaningfulString(itemNode);
 
-						if (!attributeName.IsEmpty())
+						if (!attributeName.empty())
 						{
-							attributes.push_back(std::make_unique<TRequisite>(attributeName, ""));
+							attributes.push_back(std::make_unique<TRequisite>(attributeName, u""));
 							collected++;
 							break;
 						}
@@ -211,14 +211,14 @@ namespace
 		tree* current = countNode;
 		while ((current = current->get_next()) != nullptr)
 		{
-			String attributeName = FindFirstMeaningfulString(current);
-			if (attributeName.IsEmpty())
+			Utf16String attributeName = FindFirstMeaningfulString(current);
+			if (attributeName.empty())
 				continue;
 
 			if (IsServiceTabularAttributeName(attributeName))
 				continue;
 
-			attributes.push_back(std::make_unique<TRequisite>(attributeName, ""));
+			attributes.push_back(std::make_unique<TRequisite>(attributeName, u""));
 			collected++;
 			if (collected >= count)
 				break;
@@ -242,8 +242,8 @@ namespace
 				if (!sectionNode || sectionNode->get_num_subnode() < 2)
 					continue;
 
-				String sectionGuid = Trim(sectionNode->get_subnode(0)->get_value());
-				if (sectionGuid != EmbeddedTabularAttributeGuid)
+				Utf16String sectionGuid = V8Utf16FromString(Trim(sectionNode->get_subnode(0)->get_value()));
+				if (sectionGuid != V8Utf16FromString(EmbeddedTabularAttributeGuid))
 					continue;
 
 				int count = sectionNode->get_subnode(1)->get_value().ToIntDef(0);
@@ -253,14 +253,14 @@ namespace
 				int collected = 0;
 				for (int itemIndex = 2; itemIndex < sectionNode->get_num_subnode(); itemIndex++)
 				{
-					String attributeName = FindFirstMeaningfulString(sectionNode->get_subnode(itemIndex));
-					if (attributeName.IsEmpty())
+					Utf16String attributeName = FindFirstMeaningfulString(sectionNode->get_subnode(itemIndex));
+					if (attributeName.empty())
 						continue;
 
 					if (IsServiceTabularAttributeName(attributeName))
 						continue;
 
-					attributes.push_back(std::make_unique<TRequisite>(attributeName, ""));
+					attributes.push_back(std::make_unique<TRequisite>(attributeName, u""));
 					collected++;
 					if (collected >= count)
 						break;
@@ -291,14 +291,14 @@ namespace
 		tree* current = countNode;
 		while ((current = current->get_next()) != nullptr)
 		{
-			String attributeName = FindFirstMeaningfulString(current);
-			if (attributeName.IsEmpty())
+			Utf16String attributeName = FindFirstMeaningfulString(current);
+			if (attributeName.empty())
 				continue;
 
 			if (IsServiceTabularAttributeName(attributeName))
 				continue;
 
-			attributes.push_back(std::make_unique<TRequisite>(attributeName, ""));
+			attributes.push_back(std::make_unique<TRequisite>(attributeName, u""));
 			collected++;
 			if (collected >= count)
 				break;
@@ -314,7 +314,7 @@ TTabular::TTabular()
 
 }
 
-TTabular::TTabular(String _name, String _guid)
+TTabular::TTabular(const Utf16String& _name, const Utf16String& _guid)
 {
 	name = _name;
     guid = _guid;
@@ -360,12 +360,12 @@ void TTabular::initializeFromTree(tree* root)
 
 	if (attributes.empty())
 	{
-		std::vector<String> rawValues;
+		std::vector<Utf16String> rawValues;
 		CollectMeaningfulStrings(root, rawValues);
 		for (const auto& rawValue : rawValues)
 		{
-			String value = Trim(rawValue);
-			if (value.IsEmpty() || value == name)
+			Utf16String value = rawValue;
+			if (value.empty() || value == name)
 				continue;
 
 			bool alreadyExists = false;

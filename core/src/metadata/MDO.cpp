@@ -4,10 +4,8 @@
 #include "MDO.h"
 //---------------------------------------------------------------------------
 
-TMDO::TMDO() : name(""), guid("")
+TMDO::TMDO() : name(u""), guid(u"")
 {
-//	name = "";
-//	guid = "";
 }
 
 TMDO::~TMDO()
@@ -15,22 +13,22 @@ TMDO::~TMDO()
 
 }
 
-void TMDO::SetName(String _name)
+void TMDO::SetName(const Utf16String& _name)
 {
 	name = _name;
 }
 
-void TMDO::SetGUID(String _guid)
+void TMDO::SetGUID(const Utf16String& _guid)
 {
 	guid = _guid;
 }
 
-System::String TMDO::GetName()
+Utf16String TMDO::GetName()
 {
 	return name;
 }
 
-System::String TMDO::GetGUID()
+Utf16String TMDO::GetGUID()
 {
 	return guid;
 }

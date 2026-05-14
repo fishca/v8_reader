@@ -10,15 +10,15 @@ TSubsystem::TSubsystem() : BaseMetadataObject()
 	root_data.reset();
 }
 
-TSubsystem::TSubsystem(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+TSubsystem::TSubsystem(v8catalog* _parent, const Utf16String& _guid) : BaseMetadataObject(_parent, _guid)
 {
 	name = u"";
 	root_data.reset();
 }
 
-TSubsystem::TSubsystem(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+TSubsystem::TSubsystem(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name) : BaseMetadataObject(_parent, _guid, _name)
 {
-	name = V8Utf16FromString(_name);
+	name = _name;
 	root_data.reset();
 }
 
@@ -26,14 +26,14 @@ TSubsystem::~TSubsystem()
 {
 }
 
-String TSubsystem::GetSubsystemName()
+Utf16String TSubsystem::GetSubsystemName()
 {
-	return String(reinterpret_cast<const wchar_t*>(name.c_str()));
+	return name;
 }
 
-void TSubsystem::SetSubsystemName(String _name)
+void TSubsystem::SetSubsystemName(const Utf16String& _name)
 {
-	name = V8Utf16FromString(_name);
+	name = _name;
 }
 
 std::vector<std::unique_ptr<TRequisite>>& TSubsystem::getAttributes()

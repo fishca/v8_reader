@@ -1,4 +1,4 @@
-﻿#include "APIcfBase.h"
+#include "APIcfBase.h"
 #include "../include/v8reader_core/io/IByteStream.h"
 #include "../include/v8reader_core/io/MemoryByteStream.h"
 #include "../include/v8reader_core/io/StdFileStream.h"
@@ -14,10 +14,10 @@
 
 #define CHUNK 65536
 
-// РјР°СЃСЃРёРІ РґР»СЏ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ С‡РёСЃР»Р° РІ С€РµСЃС‚РЅР°РґС†Р°С‚РёСЂРёС‡РЅСѓСЋ СЃС‚СЂРѕРєСѓ
+// массив для преобразования числа в шестнадцатиричную строку
 const char _bufhex[] = "0123456789abcdef";
 
-// С€Р°Р±Р»РѕРЅ Р·Р°РіРѕР»РѕРІРєР° Р±Р»РѕРєР°
+// шаблон заголовка блока
 const char _block_header_template[]    = "\r\n00000000 00000000 00000000 \r\n";
 const char _empty_catalog_template[16] = {0xff,0xff,0xff,0x7f,0,2,0,0,0,0,0,0,0,0,0,0};
 const char _empty_catalog_template8316[8] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
@@ -124,7 +124,7 @@ int min(int value1, int value2)
 #endif
 
 //===========================================================================
-// РїСЂРµРѕР±СЂР°Р·СѓРµС‚ С€РµСЃС‚РЅР°РґС†Р°С‚РёСЂРёС‡РЅСѓСЋ РІРѕСЃСЊРјРёСЃРёРјРІРѕР»СЊРЅСѓСЋ СЃС‚СЂРѕРєСѓ РІ С‡РёСЃР»Рѕ
+// преобразует шестнадцатиричную восьмисимвольную строку в число
 int hex_to_int(char* hexstr)
 {
 	int res = 0;
@@ -161,7 +161,7 @@ int hex_to_int16(char* hexstr)
 
 
 //===========================================================================
-// РїСЂРµРѕР±СЂР°Р·СѓРµС‚ С‡РёСЃР»Рѕ РІ С€РµСЃС‚РЅР°РґС†Р°С‚РёСЂРёС‡РЅСѓСЋ РІРѕСЃСЊРјРёСЃРёРјРІРѕР»СЊРЅСѓСЋ СЃС‚СЂРѕРєСѓ
+// преобразует число в шестнадцатиричную восьмисимвольную строку
 char* int_to_hex(char* hexstr, int dec)
 {
 	int _t1 = dec;
@@ -282,7 +282,7 @@ static std::unique_ptr<MemoryByteStream> read_block_16_core(IByteStream& stream_
 }
 
 //===========================================================================
-// С‡РёС‚Р°РµС‚ Р±Р»РѕРє РёР· РїРѕС‚РѕРєР° РєР°С‚Р°Р»РѕРіР° stream_from, СЃРѕР±РёСЂР°СЏ РµРіРѕ РїРѕ СЃС‚СЂР°РЅРёС†Р°Рј
+// читает блок из потока каталога stream_from, собирая его по страницам
 IByteStream* read_block(IByteStream& stream_from, int start, IByteStream* stream_to = NULL)
 {
 	if(!stream_to)
@@ -302,7 +302,7 @@ IByteStream* read_block(IByteStream& stream_from, int start, IByteStream* stream
 }
 
 //===========================================================================
-// С‡РёС‚Р°РµС‚ Р±Р»РѕРє РёР· РїРѕС‚РѕРєР° РєР°С‚Р°Р»РѕРіР° stream_from, СЃРѕР±РёСЂР°СЏ РµРіРѕ РїРѕ СЃС‚СЂР°РЅРёС†Р°Рј
+// читает блок из потока каталога stream_from, собирая его по страницам
 IByteStream* read_block_16(IByteStream& stream_from, __int64 start, IByteStream* stream_to = NULL)
 {
 	if(!stream_to)
@@ -323,7 +323,7 @@ IByteStream* read_block_16(IByteStream& stream_from, __int64 start, IByteStream*
 
 
 //===========================================================================
-//РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РІСЂРµРјРµРЅРё
+//преобразование времени
 void V8timeToFileTime(const __int64* v8t, FILETIME* ft)
 {
 	FILETIME lft;
@@ -358,7 +358,7 @@ void setCurrentTime(__int64* v8t)
 //===========================================================================
 
 //********************************************************
-// РљР»Р°СЃСЃ v8file
+// Класс v8file
 
 //===========================================================================
 v8file::v8file(v8catalog* _parent, const Utf16String& _name, v8file* _previous,
@@ -506,13 +506,13 @@ int v8file::Read(ByteVector& Buffer, int Start, int Length)
 }
 
 ////---------------------------------------------------------------------------
-//// РџРѕС‚РѕРєРѕРЅРµР±РµР·РѕРїР°СЃРЅР°СЏ С„СѓРЅРєС†РёСЏ!
+//// Потоконебезопасная функция!
 //IByteStream* v8file::get_data()
 //{
 //	return data;
 //}
 
-// РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
+// дозапись/перезапись частично
 int v8file::Write(const void* Buffer, int Start, int Length)
 {
 //	if(readonly) return 0;
@@ -531,7 +531,7 @@ int v8file::Write(const void* Buffer, int Start, int Length)
 }
 
 //===========================================================================
-// РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
+// дозапись/перезапись частично
 int v8file::Write(const ByteVector& Buffer, int Start, int Length)
 {
 	V8ScopedLock guard(Lock);
@@ -553,7 +553,7 @@ int v8file::Write(const ByteVector& Buffer, int Start, int Length)
 }
 
 //===========================================================================
-// РїРµСЂРµР·Р°РїРёСЃСЊ С†РµР»РёРєРѕРј
+// перезапись целиком
 int v8file::Write(const void* Buffer, int Length)
 {
 //	if(readonly) return 0;
@@ -571,7 +571,7 @@ int v8file::Write(const void* Buffer, int Length)
 	return static_cast<int>(data->Write(Buffer, static_cast<std::size_t>(Length)));
 }
 
-// РґРѕР·Р°РїРёСЃСЊ/РїРµСЂРµР·Р°РїРёСЃСЊ С‡Р°СЃС‚РёС‡РЅРѕ
+// дозапись/перезапись частично
 int v8file::Write(IByteStream& Stream, int Start, int Length)
 {
 	V8ScopedLock guard(Lock);
@@ -611,7 +611,7 @@ int v8file::Write(IByteStream& Stream, int Start, int Length)
 }
 
 //===========================================================================
-// РїРµСЂРµР·Р°РїРёСЃСЊ С†РµР»РёРєРѕРј
+// перезапись целиком
 int v8file::Write(IByteStream& Stream)
 {
 	V8ScopedLock guard(Lock);
@@ -707,7 +707,7 @@ bool v8file::IsCatalog()
 	Lock->Acquire();
 	if(iscatalog == iscatalog_unknown)
     {
-		// СЌРјРїРёСЂРёС‡РµСЃРєРёР№ РјРµС‚РѕРґ?
+		// эмпирический метод?
 		if(!is_opened)
 			if(!Open())
 				{
@@ -864,7 +864,7 @@ void v8file::DeleteFile()
 	is_datamodified = false;
 	is_headermodified = false;
 	//Lock->Release();
-	//delete this; // СЃСѓРёС†РёРґ
+	//delete this; // суицид
 }
 
 //===========================================================================
@@ -1083,7 +1083,7 @@ void v8file::Flush()
 //===========================================================================
 
 //********************************************************
-// РљР»Р°СЃСЃ v8catalog
+// Класс v8catalog
 
 bool v8catalog::Is8316()
 {
@@ -1113,7 +1113,7 @@ bool v8catalog::IsCatalog()
 	iscatalogdefined = true;
 	iscatalog = false;
 
-	// СЌРјРїРёСЂРёС‡РµСЃРєРёР№ РјРµС‚РѕРґ?
+	// эмпирический метод?
 	_filelen = data->Size();
 	if(_filelen == 16)
 	{
@@ -1168,7 +1168,7 @@ bool v8catalog::IsCatalog()
 }
 
 //===========================================================================
-// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„РёР·РёС‡РµСЃРєРѕРіРѕ С„Р°Р№Р»Р° .cf
+// создать каталог из физического файла .cf
 v8catalog::v8catalog(const std::filesystem::path& path)
 {
 	Lock = new V8RecursiveMutex();
@@ -1231,7 +1231,7 @@ v8catalog::v8catalog(const std::filesystem::path& path)
 }
 
 //===========================================================================
-// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„РёР·РёС‡РµСЃРєРѕРіРѕ С„Р°Р№Р»Р°
+// создать каталог из физического файла
 v8catalog::v8catalog(const std::filesystem::path& path, bool _zipped)
 {
 	Lock = new V8RecursiveMutex();
@@ -1277,7 +1277,7 @@ v8catalog::v8catalog(const std::filesystem::path& path, bool _zipped)
 }
 
 //===========================================================================
-// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· РїРѕС‚РѕРєР°
+// создать каталог из потока
 v8catalog::v8catalog(IByteStream* stream, bool _zipped, bool leave_stream)
 {
 	Lock = new V8RecursiveMutex();
@@ -1311,7 +1311,7 @@ v8catalog::v8catalog(IByteStream* stream, bool _zipped, bool leave_stream)
 }
 
 //===========================================================================
-// СЃРѕР·РґР°С‚СЊ РєР°С‚Р°Р»РѕРі РёР· С„Р°Р№Р»Р°
+// создать каталог из файла
 v8catalog::v8catalog(v8file* f)
 {
 	is_cfu = false;
@@ -1484,7 +1484,7 @@ void v8catalog::initialize(int Offset)
 //	is_destructed = false;
 //	catalog_header _ch;
 //	int _temp;
-//	String _name;
+//	LegacyText _name;
 //	fat_item _fi;
 //	char* _temp_buf;
 //	MemoryByteStream* _file_header;
@@ -1771,10 +1771,10 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 	char* _t;
 	int firststart, nextstart, blocklen, curlen;
 	bool isfirstblock = true;
-	bool addwrite = false; // РїСЂРёР·РЅР°Рє, С‡С‚Рѕ РЅР°РґРѕ РґРѕР·Р°РїРёСЃР°С‚СЊ С„Р°Р№Р» РїСЂРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё СЂР°Р·РјРµСЂР° СЃС‚СЂР°РЅРёС†С‹ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+	bool addwrite = false; // признак, что надо дозаписать файл при использовании размера страницы по умолчанию
 
 	Lock->Acquire();
-	if(data->Size() == 16 && start != 16) // РµСЃР»Рё РєР°С‚Р°Р»РѕРі РїСѓСЃС‚РѕР№, РЅР°РґРѕ РІС‹РґРµР»РёС‚СЊ РїРµСЂРІСѓСЋ СЃС‚СЂР°РЅРёС†Сѓ!!!
+	if(data->Size() == 16 && start != 16) // если каталог пустой, надо выделить первую страницу!!!
 	{
 		MemoryByteStream* _ts = new MemoryByteStream;
 		write_block(*_ts, 16, true);
@@ -1792,7 +1792,7 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 	{
 		if(start == start_empty)
 		{
-        	// РїРёС€РµРј РІ СЃРІРѕР±РѕРґРЅС‹Р№ Р±Р»РѕРє
+        	// пишем в свободный блок
 			data->Seek(start, SeekOrigin::Begin);
 			ReadBufferExact(*data, temp_buf, 31);
 			blocklen = hex_to_int(&temp_buf[11]);
@@ -1803,7 +1803,7 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 		}
 		else if(start == data->Size())
 		{
-        	// РїРёС€РµРј РІ РЅРѕРІС‹Р№ Р±Р»РѕРє
+        	// пишем в новый блок
 			memcpy(temp_buf, _block_header_template, 31);
 			blocklen = use_page_size ? len > page_size ? len : page_size : len;
 			int_to_hex(&temp_buf[11], blocklen);
@@ -1813,7 +1813,7 @@ int v8catalog::write_block(IByteStream& block, int start, bool use_page_size, in
 		}
 		else
 		{
-        	// РїРёС€РµРј РІ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ Р±Р»РѕРє
+        	// пишем в существующий блок
 			data->Seek(start, SeekOrigin::Begin);
 			ReadBufferExact(*data, temp_buf, 31);
 			blocklen = hex_to_int(&temp_buf[11]);

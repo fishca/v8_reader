@@ -1,39 +1,18 @@
-﻿# P6 — Уход от `String` в core
+﻿# P6 - LegacyText cleanup in core
 
-## Текущее состояние
-- Прямой VCL уже убран из `core/src`.
-- Зависимость от RTL через `String` остаётся в 129 файлах.
-- После последнего шага сборка проходит (`Compile/build.bat`).
+## Current state
+- Direct VCL includes are absent from core/src and core/include.
+- Legacy RTL text usage is now isolated behind the `LegacyText` alias.
+- Public/domain metadata DTOs are moved toward `Utf16String`.
+- Full project build passes via `Compile/build.bat`.
 
-## Стратегия
-1. Сначала убрать `String` с границ API (публичные хедеры core).
-2. Затем переводить доменные модули на `std::u16string` блоками.
-3. VCL-совместимость оставлять только в `src` адаптерах.
-4. После каждого блока — полная сборка.
+## Next migration target
+1. Replace `LegacyText` in `Parse_tree.*` with `Utf16String` and std helpers.
+2. Replace `LegacyText` in `ModuleTextStorage.cpp` and `ModuleTextEncodingUtils.h` with `Utf16String`/byte-vector codecs.
+3. Move remaining RTL conversion adapters to `src` only.
+4. Keep building after every file group.
 
-## Порядок миграции (безболезненный)
-1. `core/src/APIcfBase.h/.cpp`
-- Перевод публичных сигнатур `String` -> `Utf16String` (или `std::u16string`).
-- Сохранить временные обертки только в `src/APIcfBase_vcl_adapter.h`.
-
-2. `core/src/metadata/ModuleTextStorage.h/.cpp`
-- Поля/параметры `String` -> `std::u16string`.
-- Внутренние утилиты пути/поиска тоже на `std::u16string` + конвертеры на границах файловой системы.
-
-3. `core/src/metadata/Parse_tree.h/.cpp` + `ParseTreeCore.cpp`
-- Перевести дерево и парсер на `std::u16string` как основной тип.
-- Удалить зависимость на `TStringBuilder` в пользу std-контейнеров.
-
-4. База метамодели
-- `BaseMetadataObject.*`
-- `MetadataObjectWithSections.*`
-- `MetaObject.*`, `Property.*`
-- Последовательно заменить `String` в полях/геттерах/сеттерах.
-
-5. Остальные metadata-классы волнами
-- По 10-15 файлов за итерацию с компиляцией.
-
-## Критерии завершения
-- `rg -n "\bString\b" core/src core/include` -> 0 (кроме явно разрешенных transitional-адаптеров в `src`).
-- `APIcfBase.h` не тянет `System.hpp`.
-- Проект стабильно собирается.
+## Completion criteria
+- `rg -n "\\bLegacyText\\b" core/src core/include` returns 0.
+- No RTL/VCL text aliases remain in core public headers.
+- `Compile/build.bat` stays green.

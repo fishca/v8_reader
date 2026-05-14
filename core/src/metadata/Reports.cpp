@@ -16,7 +16,7 @@ static MetadataTreePaths GetReportsPaths()
 	paths.cmdIdx = 7;
 	paths.cmdItemPath = {0, 1, 2, 9, 2};
 	paths.moxIdx = 3;
-	paths.getFormNameFunc = GetNameFormReports;
+	paths.getFormNameFunc = GetNameFormReports16;
 	paths.hasTabulars = true;
 	return paths;
 }
@@ -27,14 +27,14 @@ TReports::TReports()
 	root_data.reset();
 }
 
-TReports::TReports(v8catalog *_parent, const String& _guid)
+TReports::TReports(v8catalog *_parent, const Utf16String& _guid)
 	: MetadataObjectWithSections(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
-TReports::TReports(v8catalog *_parent, const String& _guid, const String& _name)
+TReports::TReports(v8catalog *_parent, const Utf16String& _guid, const Utf16String& _name)
 	: MetadataObjectWithSections(_parent, _guid, _name)
 {
 	initializeFromTree();

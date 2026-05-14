@@ -16,7 +16,7 @@ static MetadataTreePaths GetCatalogsPaths()
 	paths.cmdIdx = 4;
 	paths.cmdItemPath = {0, 1, 3, 2, 9, 2};
 	paths.moxIdx = 3;
-	paths.getFormNameFunc = GetNameFormCatalogs;
+	paths.getFormNameFunc = GetNameFormCatalogs16;
 	paths.hasTabulars = true;
 	return paths;
 }

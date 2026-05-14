@@ -35,7 +35,7 @@ namespace
             || ch == L'\n';
     }
 
-    bool is_number_fast(const String& value)
+    bool is_number_fast(const LegacyText& value)
     {
         const int len = value.Length();
         if(len == 0) return false;
@@ -54,7 +54,7 @@ namespace
         return true;
     }
 
-    bool is_number_exp_fast(const String& value)
+    bool is_number_exp_fast(const LegacyText& value)
     {
         const int len = value.Length();
         if(len == 0) return false;
@@ -91,7 +91,7 @@ namespace
         return i > len;
     }
 
-    bool is_guid_fast(const String& value)
+    bool is_guid_fast(const LegacyText& value)
     {
         static const int expected_len = 36;
         if(value.Length() != expected_len) return false;
@@ -110,7 +110,7 @@ namespace
         return true;
     }
 
-    bool is_link_fast(const String& value)
+    bool is_link_fast(const LegacyText& value)
     {
         const int len = value.Length();
         if(len < 34) return false;
@@ -129,7 +129,7 @@ namespace
         return true;
     }
 
-    bool is_base64_fast(const String& value, int start_index)
+    bool is_base64_fast(const LegacyText& value, int start_index)
     {
         for(int i = start_index; i <= value.Length(); ++i)
         {
@@ -143,7 +143,7 @@ extern MessageRegistrator* msreg;
 #define error if(msreg) msreg->AddError
 
 //---------------------------------------------------------------------------
-tree::tree(const String& _value, const node_type _type, tree* _parent)
+tree::tree(const LegacyText& _value, const node_type _type, tree* _parent)
 {
 	value = _value;
 	type = _type;
@@ -184,7 +184,7 @@ tree::~tree()
 }
 
 //---------------------------------------------------------------------------
-tree* tree::add_child(const String& _value, const node_type _type)
+tree* tree::add_child(const LegacyText& _value, const node_type _type)
 {
 	return new tree(_value, _type, this);
 }
@@ -202,7 +202,7 @@ tree* tree::add_node()
 }
 
 //---------------------------------------------------------------------------
-String& tree::get_value()
+LegacyText& tree::get_value()
 {
 	return value;
 }
@@ -214,7 +214,7 @@ node_type tree::get_type()
 }
 
 //---------------------------------------------------------------------------
-void tree::set_value(const String& v, const node_type t)
+void tree::set_value(const LegacyText& v, const node_type t)
 {
 	value = v;
 	type = t;
@@ -240,7 +240,7 @@ tree* tree::get_subnode(int _index)
 }
 
 //---------------------------------------------------------------------------
-tree* tree::get_subnode(const String& node_name)
+tree* tree::get_subnode(const LegacyText& node_name)
 {
 	tree* t = first;
 	while(t)
@@ -290,7 +290,7 @@ tree& tree::operator [](int _index)
 }
 
 //---------------------------------------------------------------------------
-void tree::outtext(String& text)
+void tree::outtext(LegacyText& text)
 {
 	node_type lt;
 	TReplaceFlags _ReplaceAll;
@@ -338,21 +338,21 @@ void tree::outtext(String& text)
 }
 
 //---------------------------------------------------------------------------
-String tree::path()
+LegacyText tree::path()
 {
-	String p = L"";
+	LegacyText p = L"";
 	tree* t;
 
 	if(!this) return L":??"; //-V704
 	for(t = this; t->parent; t = t->parent)
 	{
-		p = String(L":") + t->index + p;
+		p = LegacyText(L":") + t->index + p;
 	}
 	return p;
 }
 
 //---------------------------------------------------------------------------
-node_type classification_value(const String& value)
+node_type classification_value(const LegacyText& value)
 {
 	if(value.Length() == 0) return nd_empty;
 	if(is_number_fast(value)) return nd_number;
@@ -365,7 +365,7 @@ node_type classification_value(const String& value)
 	return nd_unknown;
 }
 
-tree* parse_1Cstream(v8reader::core::io::IByteStream& str, const String& path)
+tree* parse_1Cstream(v8reader::core::io::IByteStream& str, const LegacyText& path)
 {
 	const std::uint64_t position = str.Position();
 	const std::uint64_t size = str.Size();
@@ -394,7 +394,7 @@ tree* parse_1Cstream(v8reader::core::io::IByteStream& str, const String& path)
 	ModuleTextEncodingKind encoding = ModuleTextEncodingKind::Unknown;
 	return parse_1Ctext(ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding), path);
 }
-tree* parse_1Ctext(const String& text, const String& path)
+tree* parse_1Ctext(const LegacyText& text, const LegacyText& path)
 {
 	TStringBuilder* __curvalue__;
 
@@ -406,7 +406,7 @@ tree* parse_1Ctext(const String& text, const String& path)
 		s_nonstring // режим ввода значения не строки
 	}state = s_value;
 
-	String curvalue;
+	LegacyText curvalue;
 	tree* ret;
 	tree* t;
 	int len = text.Length();
@@ -460,7 +460,7 @@ tree* parse_1Ctext(const String& text, const String& path)
 						t->add_child(L"", nd_empty);
 						break;
 					default:
-						//curvalue = String(sym);
+						//curvalue = LegacyText(sym);
 						__curvalue__->Clear();
 						__curvalue__->Append(sym);
 						state = s_nonstring;
@@ -504,13 +504,13 @@ tree* parse_1Ctext(const String& text, const String& path)
 				if(sym == L'"'){
 					state = s_quote_or_endstring;
 				}
-				//else curvalue += String(sym);
+				//else curvalue += LegacyText(sym);
 				else __curvalue__->Append(sym);
 				break;
 			case s_quote_or_endstring:
 				if(sym == L'"')
 				{
-					//curvalue += String(sym);
+					//curvalue += LegacyText(sym);
 					__curvalue__->Append(sym);
 					state = s_string;
 				}
@@ -585,7 +585,7 @@ tree* parse_1Ctext(const String& text, const String& path)
 						state = s_delimitier;
 						break;
 					default:
-						//curvalue += String(sym);
+						//curvalue += LegacyText(sym);
 						__curvalue__->Append(sym);
 						break;
 				}
@@ -638,7 +638,7 @@ tree* parse_1Ctext(const String& text, const String& path)
 }
 
 // проверка формата потока
-bool test_parse_1Ctext(v8reader::core::io::IByteStream& str, const String& path)
+bool test_parse_1Ctext(v8reader::core::io::IByteStream& str, const LegacyText& path)
 {
 	tree* parsed = parse_1Cstream(str, path);
 	if(parsed)
@@ -649,14 +649,14 @@ bool test_parse_1Ctext(v8reader::core::io::IByteStream& str, const String& path)
 	return false;
 }
 
-String outtext(tree* t)
+LegacyText outtext(tree* t)
 {
-	String text;
+	LegacyText text;
 	if(t) if(t->get_first()) t->get_first()->outtext(text);
 	return text;
 }
 
-tree* find_node_by_guid(tree* root, const String& target_guid)
+tree* find_node_by_guid(tree* root, const LegacyText& target_guid)
 {
     if (!root)
     	return NULL;
@@ -681,7 +681,7 @@ tree* find_node_by_guid(tree* root, const String& target_guid)
 
 namespace
 {
-	tree* find_metadata_node_by_guid_impl(tree* root, const String& target_guid, tree*& fallback, int& bestCount)
+	tree* find_metadata_node_by_guid_impl(tree* root, const LegacyText& target_guid, tree*& fallback, int& bestCount)
 	{
 		if (!root)
 			return NULL;
@@ -714,7 +714,7 @@ namespace
 	}
 }
 
-tree* find_metadata_node_by_guid(tree* root, const String& target_guid)
+tree* find_metadata_node_by_guid(tree* root, const LegacyText& target_guid)
 {
 	tree* fallback = NULL;
 	int bestCount = -1;

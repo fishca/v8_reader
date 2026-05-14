@@ -10,7 +10,7 @@ TMoxel::TMoxel()
 
 }
 
-TMoxel::TMoxel(String _name, String _guid)
+TMoxel::TMoxel(const Utf16String& _name, const Utf16String& _guid)
 {
 	name = _name;
     guid = _guid;

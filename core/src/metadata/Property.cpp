@@ -460,7 +460,7 @@ bool Property::validateValue(const std::string& value, std::vector<std::string>&
     }
 
     // Проверка минимальной/максимальной длины для строк
-    if (dataType == DataType::String) {
+    if (dataType == DataType::Text) {
         size_t length = value.length();
         if (minLength && length < *minLength) {
             errors.push_back("Value length is less than minimum: " +
@@ -1360,7 +1360,7 @@ bool Property::validateDataType(const std::string& value, std::vector<std::strin
     }
 
     switch (dataType) {
-        case DataType::String:
+        case DataType::Text:
             return validateString(value, errors);
         case DataType::Number:
             return validateNumber(value, errors);
@@ -1389,12 +1389,12 @@ bool Property::validateString(const std::string& value, std::vector<std::string>
         try {
             double numValue = std::stod(value);
             if (minValue && numValue < *minValue) {
-                errors.push_back("String value " + value + " is less than minimum: " +
+                errors.push_back("Text value " + value + " is less than minimum: " +
                                std::to_string(*minValue));
                 return false;
             }
             if (maxValue && numValue > *maxValue) {
-                errors.push_back("String value " + value + " exceeds maximum: " +
+                errors.push_back("Text value " + value + " exceeds maximum: " +
                                std::to_string(*maxValue));
                 return false;
             }
@@ -1620,7 +1620,7 @@ PropertyType Property::stringToPropertyType(const std::string& typeName) {
 
 std::string Property::dataTypeToString(DataType dataType) {
     switch (dataType) {
-        case DataType::String: return "String";
+        case DataType::Text: return "Text";
         case DataType::Number: return "Number";
         case DataType::Integer: return "Integer";
         case DataType::Float: return "Float";
@@ -1642,7 +1642,7 @@ std::string Property::dataTypeToString(DataType dataType) {
 
 DataType Property::stringToDataType(const std::string& typeName) {
     static std::map<std::string, DataType> typeMap = {
-        {"String", DataType::String},
+        {"Text", DataType::Text},
         {"Number", DataType::Number},
         {"Integer", DataType::Integer},
         {"Float", DataType::Float},

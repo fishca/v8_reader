@@ -3,7 +3,7 @@
 #ifndef NodeTypesH
 #define NodeTypesH
 
-#include <Classes.hpp>
+#include "../APIcfBase.h"
 //---------------------------------------------------------------------------
 enum node_type{
 	nd_empty = 0, // пусто
@@ -19,6 +19,6 @@ enum node_type{
 	nd_unknown // неизвестный тип
 };
 
-String get_node_type_presentation(node_type type);
+Utf16String get_node_type_presentation(node_type type);
 //---------------------------------------------------------------------------
 #endif

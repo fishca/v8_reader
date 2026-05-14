@@ -16,7 +16,7 @@ static MetadataTreePaths GetBusinessProcessesPaths()
 	paths.cmdIdx = 5;
 	paths.cmdItemPath = {0, 1, 3, 2, 9, 2};
 	paths.moxIdx = 3;
-	paths.getFormNameFunc = GetNameFormDescriptor;
+	paths.getFormNameFunc = GetNameFormDescriptor16;
 	paths.hasTabulars = true;
 	return paths;
 }

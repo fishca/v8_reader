@@ -7,35 +7,47 @@
 
 struct TExternalDataSourceTable
 {
-	String name;
-	std::vector<String> fields;
-	std::vector<String> forms;
-	std::vector<String> commands;
-	std::vector<String> layouts;
+	Utf16String name;
+	std::vector<Utf16String> fields;
+	std::vector<Utf16String> forms;
+	std::vector<Utf16String> commands;
+	std::vector<Utf16String> layouts;
 };
 
 struct TExternalDataSourceCube
 {
-	String name;
+	Utf16String name;
 	std::vector<TExternalDataSourceTable> dimensionTables;
-	std::vector<String> dimensions;
-	std::vector<String> resources;
-	std::vector<String> forms;
-	std::vector<String> commands;
-	std::vector<String> layouts;
+	std::vector<Utf16String> dimensions;
+	std::vector<Utf16String> resources;
+	std::vector<Utf16String> forms;
+	std::vector<Utf16String> commands;
+	std::vector<Utf16String> layouts;
 };
 
 class TExternalDataSources : public BaseMetadataObject
 {
 public:
 	TExternalDataSources();
-	TExternalDataSources(v8catalog* _parent, const String& _guid);
-	TExternalDataSources(v8catalog* _parent, const String& _guid, const String& _name);
+	TExternalDataSources(v8catalog* _parent, const Utf16String& _guid);
+	TExternalDataSources(v8catalog* _parent, const Utf16String& _guid, const Utf16String& _name);
 	virtual ~TExternalDataSources();
+
+	template <typename TGuid>
+	TExternalDataSources(v8catalog* _parent, const TGuid& _guid)
+		: TExternalDataSources(_parent, V8Utf16FromString(_guid))
+	{
+	}
+
+	template <typename TGuid, typename TName>
+	TExternalDataSources(v8catalog* _parent, const TGuid& _guid, const TName& _name)
+		: TExternalDataSources(_parent, V8Utf16FromString(_guid), V8Utf16FromString(_name))
+	{
+	}
 
 	std::vector<TExternalDataSourceTable> tables;
 	std::vector<TExternalDataSourceCube> cubes;
-	std::vector<String> functions;
+	std::vector<Utf16String> functions;
 
 	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
 	std::vector<std::unique_ptr<TComand>>& getCommands() override;

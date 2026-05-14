@@ -27,7 +27,7 @@ static InfoRegisterTreePaths GetCalculationRegistersPaths()
 
     paths.moxIdx = 5;
 
-    paths.getFormNameFunc = GetNameFormCatalogs;
+    paths.getFormNameFunc = GetNameFormCatalogs16;
     return paths;
 }
 

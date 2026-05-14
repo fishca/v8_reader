@@ -16,7 +16,7 @@ static MetadataTreePaths GetJournalsPaths()
 	paths.cmdIdx = 5;
 	paths.cmdItemPath = {0, 1, 2, 9, 2};
 	paths.moxIdx = 3;
-	paths.getFormNameFunc = GetNameFormCatalogs;
+	paths.getFormNameFunc = GetNameFormCatalogs16;
 	paths.hasTabulars = false;  // у журналов документов нет табличных частей
 	return paths;
 }

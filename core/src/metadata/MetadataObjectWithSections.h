@@ -20,7 +20,7 @@ struct MetadataTreePaths
     int cmdIdx;           // индекс: root[0][cmdIdx][1] = количество команд
     std::vector<int> cmdItemPath;   // путь к имени команды от узла элемента
     int moxIdx;           // индекс: root[0][moxIdx][0] = узел списка макетов
-    std::function<String(v8catalog*, String&)> getFormNameFunc;
+    std::function<Utf16String(v8catalog*, const Utf16String&)> getFormNameFunc;
     bool hasTabulars = true;  // у журналов нет табличных частей
 };
 

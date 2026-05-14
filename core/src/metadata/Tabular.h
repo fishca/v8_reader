@@ -17,8 +17,14 @@ public:
 	std::vector<std::unique_ptr<TRequisite>> attributes;
 
 	TTabular();
-	TTabular(String _name, String _guid);
+	TTabular(const Utf16String& _name, const Utf16String& _guid);
 	~TTabular();
+
+	template <typename TName, typename TGuid>
+	TTabular(const TName& _name, const TGuid& _guid)
+		: TTabular(mdo_detail::ToUtf16(_name), mdo_detail::ToUtf16(_guid))
+	{
+	}
 
 	void initializeFromTree(tree* root);
 };

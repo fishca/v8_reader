@@ -15,7 +15,7 @@
 class tree
 {
 private:
-	String value;
+	LegacyText value;
 	node_type type;
 	int num_subnode; // количество подчиненных
 	tree* parent; // +1
@@ -26,24 +26,24 @@ private:
 	unsigned int index;
 
 public:
-	tree(const String& _value, const node_type _type, tree* _parent);
+	tree(const LegacyText& _value, const node_type _type, tree* _parent);
 	~tree();
-	tree* add_child(const String& _value, const node_type _type);
+	tree* add_child(const LegacyText& _value, const node_type _type);
 	tree* add_child();
 	tree* add_node();
-	String& get_value();
+	LegacyText& get_value();
 	node_type get_type();
 	int get_num_subnode();
 	tree* get_subnode(int _index);
-	tree* get_subnode(const String& node_name);
+	tree* get_subnode(const LegacyText& node_name);
 	tree* get_next();
 	tree* get_parent();
 	tree* get_first();
 	tree* get_last();
 	tree& operator [](int _index);
-	void set_value(const String& v, const node_type t);
-	void outtext(String& text);
-	String path();
+	void set_value(const LegacyText& v, const node_type t);
+	void outtext(LegacyText& text);
+	LegacyText path();
 };
 
 typedef tree* treeptr;
@@ -54,13 +54,13 @@ typedef std::shared_ptr<tree> tree_shared_ptr;
 
 
 
-//tree* parse_1Ctext_old(String& text, String path);
-tree* parse_1Ctext(const String& text, const String& path);
-tree* parse_1Cstream(v8reader::core::io::IByteStream& str, const String& path);
-bool test_parse_1Ctext(v8reader::core::io::IByteStream& str, const String& path);
-String outtext(tree* t);
-tree* find_node_by_guid(tree* root, const String& target_guid);
-tree* find_metadata_node_by_guid(tree* root, const String& target_guid);
+//tree* parse_1Ctext_old(LegacyText& text, LegacyText path);
+tree* parse_1Ctext(const LegacyText& text, const LegacyText& path);
+tree* parse_1Cstream(v8reader::core::io::IByteStream& str, const LegacyText& path);
+bool test_parse_1Ctext(v8reader::core::io::IByteStream& str, const LegacyText& path);
+LegacyText outtext(tree* t);
+tree* find_node_by_guid(tree* root, const LegacyText& target_guid);
+tree* find_metadata_node_by_guid(tree* root, const LegacyText& target_guid);
 tree* get_treeFromV8file(v8file* f);
 
 // Transitional core-friendly wrappers (UTF-16 std strings on public boundary).

@@ -26,7 +26,7 @@ namespace
         return current;
     }
 
-    tree* FindChildListByFirstValue(tree* root, const String& firstValue)
+    tree* FindChildListByFirstValue(tree* root, const wchar_t* firstValue)
     {
         if (!root)
             return nullptr;
@@ -68,26 +68,26 @@ namespace
         return nullptr;
     }
 
-    String GetDescriptorName(tree* descriptor)
+    Utf16String GetDescriptorName(tree* descriptor)
     {
         tree* nameNode = descriptor ? descriptor->get_subnode(2) : nullptr;
-        return nameNode ? nameNode->get_value() : L"";
+        return nameNode ? V8Utf16FromString(nameNode->get_value()) : Utf16String();
     }
 
-    String GetDescriptorGuid(tree* descriptor)
+    Utf16String GetDescriptorGuid(tree* descriptor)
     {
         tree* guidNode = GetNodeByPath(descriptor, {1, 2});
-        return guidNode ? Trim(guidNode->get_value()) : L"";
+        return guidNode ? V8Utf16FromString(Trim(guidNode->get_value())) : Utf16String();
     }
 
-    String GetMetadataNameFromFile(v8catalog* parent, const Utf16String& guid)
+    Utf16String GetMetadataNameFromFile(v8catalog* parent, const Utf16String& guid)
     {
         if (!parent || guid.empty())
-            return L"";
+            return Utf16String();
 
         v8file* file = parent->GetFile16(guid);
         if (!file)
-            return L"";
+            return Utf16String();
 
         std::unique_ptr<tree> metadataTree(get_treeFromV8file(file));
         tree* descriptor = FindMetadataDescriptor(metadataTree.get());
@@ -183,9 +183,9 @@ void TFilterCriteria::initializeFromTree()
         if (!formGuidNode)
             continue;
 
-        String formGuid = Trim(formGuidNode->get_value());
-        String formName = GetMetadataNameFromFile(parent, V8Utf16FromString(formGuid));
-        if (formName.IsEmpty())
+        Utf16String formGuid = V8Utf16FromString(Trim(formGuidNode->get_value()));
+        Utf16String formName = GetMetadataNameFromFile(parent, formGuid);
+        if (formName.empty())
             formName = formGuid;
 
         forms.push_back(std::make_unique<TForm1C>(formName, formGuid));
@@ -201,8 +201,8 @@ void TFilterCriteria::initializeFromTree()
     {
         tree* commandNode = commandsNode->get_subnode(i + 2);
         tree* descriptor = FindMetadataDescriptor(commandNode);
-        String commandName = GetDescriptorName(descriptor);
-        if (commandName.IsEmpty())
+        Utf16String commandName = GetDescriptorName(descriptor);
+        if (commandName.empty())
             continue;
 
         commands.push_back(std::make_unique<TComand>(commandName, GetDescriptorGuid(descriptor)));

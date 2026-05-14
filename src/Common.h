@@ -35,6 +35,13 @@ String GetNameFormPVH(v8catalog      *cf, String &guid_md);
 String GetNameFormDescriptor(v8catalog *cf, String &guid_md);
 String GetNameMoxCatalogs(v8catalog  *cf, String &guid_md);
 
+Utf16String GetNameFromTreePath16(v8catalog* cf, const Utf16String& guid_md, const std::vector<int>& path);
+Utf16String GetNameFormCatalogs16(v8catalog* cf, const Utf16String& guid_md);
+Utf16String GetNameFormReports16(v8catalog* cf, const Utf16String& guid_md);
+Utf16String GetNameFormPVH16(v8catalog* cf, const Utf16String& guid_md);
+Utf16String GetNameFormDescriptor16(v8catalog* cf, const Utf16String& guid_md);
+Utf16String GetNameMoxCatalogs16(v8catalog* cf, const Utf16String& guid_md);
+
 //---------------------------------------------------------------------------
 #endif
 

@@ -1,4 +1,4 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 
 #include <filesystem>
@@ -15,57 +15,57 @@
 
 namespace
 {
-	inline String ToVclString(const Utf16String& value)
+	inline LegacyText ToVclString(const Utf16String& value)
 	{
-		return String(reinterpret_cast<const wchar_t*>(value.c_str()));
+		return LegacyText(reinterpret_cast<const wchar_t*>(value.c_str()));
 	}
 }
 
 namespace ModuleTextStorage
 {
-	bool LooksLike1CModuleText(const String& value);
-	bool IsGuidLike(const String& value);
-	String NormalizeGuidFileName(const String& guid);
-	ModuleTextDocument LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
-	ModuleTextDocument LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
-	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind);
-	ModuleTextDocument LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind);
+	bool LooksLike1CModuleText(const LegacyText& value);
+	bool IsGuidLike(const LegacyText& value);
+	LegacyText NormalizeGuidFileName(const LegacyText& guid);
+	ModuleTextDocument LoadCommonModule(v8catalog* parent, const LegacyText& metadataGuid, const LegacyText& moduleName);
+	ModuleTextDocument LoadCommonForm(v8catalog* parent, const LegacyText& metadataGuid, const LegacyText& formName);
+	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const LegacyText& metadataGuid, const LegacyText& objectName, ModuleTextKind kind);
+	ModuleTextDocument LoadBySourceCfModuleDataGuid(const LegacyText& metadataGuid, const LegacyText& moduleDataGuid, ModuleTextKind kind);
 }
 
 namespace
 {
 	namespace fs = std::filesystem;
 
-	fs::path ToFsPath(const String& path)
+	fs::path ToFsPath(const LegacyText& path)
 	{
 		return fs::path(path.c_str());
 	}
 
-	String FromFsPath(const fs::path& path)
+	LegacyText FromFsPath(const fs::path& path)
 	{
-		return String(path.wstring().c_str());
+		return LegacyText(path.wstring().c_str());
 	}
 
-	String CombinePath(const String& left, const String& right)
+	LegacyText CombinePath(const LegacyText& left, const LegacyText& right)
 	{
 		return FromFsPath(ToFsPath(left) / ToFsPath(right));
 	}
 
-	bool DirectoryExistsFs(const String& path)
+	bool DirectoryExistsFs(const LegacyText& path)
 	{
 		std::error_code ec;
 		return fs::is_directory(ToFsPath(path), ec);
 	}
 
-	bool FileExistsFs(const String& path)
+	bool FileExistsFs(const LegacyText& path)
 	{
 		std::error_code ec;
 		return fs::is_regular_file(ToFsPath(path), ec);
 	}
 
-	std::vector<String> GetFilesInDirectory(const String& directoryPath)
+	std::vector<LegacyText> GetFilesInDirectory(const LegacyText& directoryPath)
 	{
-		std::vector<String> files;
+		std::vector<LegacyText> files;
 		std::error_code ec;
 		for (const auto& entry : fs::directory_iterator(ToFsPath(directoryPath), ec))
 		{
@@ -79,30 +79,30 @@ namespace
 		return files;
 	}
 
-	bool DeleteFileFs(const String& path)
+	bool DeleteFileFs(const LegacyText& path)
 	{
 		std::error_code ec;
 		return fs::remove(ToFsPath(path), ec);
 	}
 
-	bool MoveFileFs(const String& fromPath, const String& toPath)
+	bool MoveFileFs(const LegacyText& fromPath, const LegacyText& toPath)
 	{
 		std::error_code ec;
 		fs::rename(ToFsPath(fromPath), ToFsPath(toPath), ec);
 		return !ec;
 	}
 
-	bool LooksLikeStrictModuleBody(const String& value);
+	bool LooksLikeStrictModuleBody(const LegacyText& value);
 
-	void AddUniquePath(std::vector<String>& values, const String& value)
+	void AddUniquePath(std::vector<LegacyText>& values, const LegacyText& value)
 	{
 		if (value.IsEmpty())
 			return;
 
-		const String normalized = FromFsPath(ToFsPath(value).lexically_normal()).UpperCase();
+		const LegacyText normalized = FromFsPath(ToFsPath(value).lexically_normal()).UpperCase();
 		for (const auto& existing : values)
 		{
-			const String existingNormalized = FromFsPath(ToFsPath(existing).lexically_normal()).UpperCase();
+			const LegacyText existingNormalized = FromFsPath(ToFsPath(existing).lexically_normal()).UpperCase();
 			if (existingNormalized == normalized)
 				return;
 		}
@@ -110,20 +110,20 @@ namespace
 		values.push_back(value);
 	}
 
-	std::vector<String> GetSourceCfRoots()
+	std::vector<LegacyText> GetSourceCfRoots()
 	{
-		std::vector<String> roots;
+		std::vector<LegacyText> roots;
 		AddUniquePath(roots, CombinePath(GetCurrentDir(), L"SourceCF"));
 		AddUniquePath(roots, CombinePath(ExtractFilePath(ParamStr(0)), L"SourceCF"));
 		return roots;
 	}
 
-	void AddUniqueString(std::vector<String>& values, const String& value)
+	void AddUniqueString(std::vector<LegacyText>& values, const LegacyText& value)
 	{
 		if (value.IsEmpty())
 			return;
 
-		String upperValue = value.UpperCase();
+		LegacyText upperValue = value.UpperCase();
 		for (const auto& existing : values)
 			if (existing.UpperCase() == upperValue)
 				return;
@@ -131,10 +131,10 @@ namespace
 		values.push_back(value);
 	}
 
-	std::vector<String> GetModuleContainerCandidates(const String& baseGuid,
+	std::vector<LegacyText> GetModuleContainerCandidates(const LegacyText& baseGuid,
 		ModuleTextKind kind = ModuleTextKind::Unknown)
 	{
-		std::vector<String> candidates;
+		std::vector<LegacyText> candidates;
 
 		if (kind == ModuleTextKind::ApplicationModule)
 		{
@@ -184,7 +184,7 @@ namespace
 		return candidates;
 	}
 
-	String ReadDiskFileRawText(const String& filePath, ModuleTextEncodingKind& encoding)
+	LegacyText ReadDiskFileRawText(const LegacyText& filePath, ModuleTextEncodingKind& encoding)
 	{
 		if (!FileExistsFs(filePath))
 		{
@@ -213,14 +213,14 @@ namespace
 		return ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding);
 	}
 
-	bool TryReadDiskModuleFile(const String& filePath,
+	bool TryReadDiskModuleFile(const LegacyText& filePath,
 										  ModuleTextKind kind,
-										  const String& metadataGuid,
-										  const String& moduleDataGuid,
+										  const LegacyText& metadataGuid,
+										  const LegacyText& moduleDataGuid,
 										  ModuleTextDocument& document)
 	{
 		ModuleTextEncodingKind encoding;
-		String text = ReadDiskFileRawText(filePath, encoding);
+		LegacyText text = ReadDiskFileRawText(filePath, encoding);
 		if (!FileExistsFs(filePath))
 			return false;
 
@@ -251,11 +251,11 @@ namespace
 		return true;
 	}
 
-	bool TryLoadFromSourceCfByGuid(const String& metadataGuid,
+	bool TryLoadFromSourceCfByGuid(const LegacyText& metadataGuid,
 											  ModuleTextKind kind,
 											  ModuleTextDocument& document)
 	{
-		const String normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(metadataGuid);
+		const LegacyText normalizedGuid = ModuleTextStorage::NormalizeGuidFileName(metadataGuid);
 		if (normalizedGuid.IsEmpty())
 			return false;
 
@@ -270,8 +270,8 @@ namespace
 			for (const auto& containerName : GetModuleContainerCandidates(normalizedGuid, kind))
 			{
 				ModuleTextDocument candidate;
-				const String containerPath = CombinePath(sourceRoot, containerName);
-				const String textPath = CombinePath(containerPath, L"text");
+				const LegacyText containerPath = CombinePath(sourceRoot, containerName);
+				const LegacyText textPath = CombinePath(containerPath, L"text");
 				if (TryReadDiskModuleFile(textPath, kind, metadataGuid, containerName, candidate))
 				{
 					if (kind != ModuleTextKind::ManagerModule || !candidate.text.empty())
@@ -287,7 +287,7 @@ namespace
 					}
 				}
 
-				const String modulePath = CombinePath(containerPath, L"module");
+				const LegacyText modulePath = CombinePath(containerPath, L"module");
 				if (TryReadDiskModuleFile(modulePath, kind, metadataGuid, containerName, candidate))
 				{
 					if (kind != ModuleTextKind::ManagerModule || !candidate.text.empty())
@@ -303,7 +303,7 @@ namespace
 					}
 				}
 
-				const String directPath = CombinePath(sourceRoot, containerName);
+				const LegacyText directPath = CombinePath(sourceRoot, containerName);
 				if (TryReadDiskModuleFile(directPath, kind, metadataGuid, containerName, candidate))
 				{
 					if (kind != ModuleTextKind::ManagerModule || !candidate.text.empty())
@@ -330,7 +330,7 @@ namespace
 		return false;
 	}
 
-	bool TryLoadFromSourceCfByModuleName(const String& moduleName,
+	bool TryLoadFromSourceCfByModuleName(const LegacyText& moduleName,
 													ModuleTextKind kind,
 													ModuleTextDocument& document)
 	{
@@ -342,15 +342,15 @@ namespace
 			if (!DirectoryExistsFs(sourceRoot))
 				continue;
 
-			const std::vector<String> files = GetFilesInDirectory(sourceRoot);
+			const std::vector<LegacyText> files = GetFilesInDirectory(sourceRoot);
 			for (const auto& metadataFile : files)
 			{
-				const String objectGuid = ExtractFileName(metadataFile);
+				const LegacyText objectGuid = ExtractFileName(metadataFile);
 				if (!ModuleTextStorage::IsGuidLike(objectGuid))
 					continue;
 
 				ModuleTextEncodingKind encoding;
-				String metadataText = ReadDiskFileRawText(metadataFile, encoding);
+				LegacyText metadataText = ReadDiskFileRawText(metadataFile, encoding);
 				if (metadataText.Pos(moduleName) <= 0)
 					continue;
 
@@ -362,7 +362,7 @@ namespace
 		return false;
 	}
 
-	void CollectGuidReferences(tree* node, std::vector<String>& guids)
+	void CollectGuidReferences(tree* node, std::vector<LegacyText>& guids)
 	{
 		if (!node)
 			return;
@@ -374,7 +374,7 @@ namespace
 			CollectGuidReferences(node->get_subnode(i), guids);
 	}
 
-	String FindEmbeddedModuleText(tree* node)
+	LegacyText FindEmbeddedModuleText(tree* node)
 	{
 		if (!node)
 			return L"";
@@ -384,7 +384,7 @@ namespace
 
 		for (int i = 0; i < node->get_num_subnode(); i++)
 		{
-			String found = FindEmbeddedModuleText(node->get_subnode(i));
+			LegacyText found = FindEmbeddedModuleText(node->get_subnode(i));
 			if (!found.IsEmpty())
 				return found;
 		}
@@ -392,7 +392,7 @@ namespace
 		return L"";
 	}
 
-	String ReadRootMetadataGuid(v8catalog* parent)
+	LegacyText ReadRootMetadataGuid(v8catalog* parent)
 	{
 		if (!parent)
 			return L"";
@@ -401,7 +401,7 @@ namespace
 		{
 			v8file* rootFile = parent->GetFile16(u"root");
 			std::unique_ptr<tree> rootTree(get_treeFromV8file(rootFile));
-			std::vector<String> rootGuids;
+			std::vector<LegacyText> rootGuids;
 			CollectGuidReferences(rootTree.get(), rootGuids);
 			for (const auto& guid : rootGuids)
 				return guid;
@@ -413,7 +413,7 @@ namespace
 		return L"";
 	}
 
-	String ReadV8FileAsText(v8file* file)
+	LegacyText ReadV8FileAsText(v8file* file)
 	{
 		if (!file)
 			return L"";
@@ -429,7 +429,7 @@ namespace
 			if (bytesCount > 0)
 				std::memcpy(&bytes[0], payload.data(), static_cast<std::size_t>(bytesCount));
 			ModuleTextEncodingKind encoding;
-			String text = ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding);
+			LegacyText text = ModuleTextEncodingUtils::DecodeModuleText(bytes, bytesCount, encoding);
 			return text;
 		}
 		catch (...)
@@ -438,17 +438,17 @@ namespace
 		}
 	}
 
-	bool LooksLikeStrictModuleBody(const String& value)
+	bool LooksLikeStrictModuleBody(const LegacyText& value)
 	{
-		String text = Trim(value);
+		LegacyText text = Trim(value);
 		if (text.IsEmpty())
 			return false;
 
 		if (text[1] == L'{')
 			return false;
 
-		const String upper = UpperCase(text);
-		if (upper.Pos(L"РџР РћР¦Р•Р”РЈР Рђ") > 0 || upper.Pos(L"Р¤РЈРќРљР¦РРЇ") > 0
+		const LegacyText upper = UpperCase(text);
+		if (upper.Pos(L"ПРОЦЕДУРА") > 0 || upper.Pos(L"ФУНКЦИЯ") > 0
 			|| upper.Pos(L"PROCEDURE") > 0 || upper.Pos(L"FUNCTION") > 0)
 			return true;
 
@@ -462,9 +462,9 @@ namespace
 		return false;
 	}
 
-	String ExtractConfigurationObjectGuid(const String& metadataText)
+	LegacyText ExtractConfigurationObjectGuid(const LegacyText& metadataText)
 	{
-		const String marker = L"{1,0,";
+		const LegacyText marker = L"{1,0,";
 		int searchFrom = 1;
 		while (searchFrom <= metadataText.Length())
 		{
@@ -476,7 +476,7 @@ namespace
 			const int guidStart = markerPos + marker.Length();
 			if (guidStart + 35 <= metadataText.Length())
 			{
-				String guid = metadataText.SubString(guidStart, 36);
+				LegacyText guid = metadataText.SubString(guidStart, 36);
 				if (ModuleTextStorage::IsGuidLike(guid))
 					return guid;
 			}
@@ -488,19 +488,19 @@ namespace
 	}
 
 
-	String ReadConfigurationObjectGuid(v8catalog* parent)
+	LegacyText ReadConfigurationObjectGuid(v8catalog* parent)
 	{
-		const String metadataGuid = ReadRootMetadataGuid(parent);
+		const LegacyText metadataGuid = ReadRootMetadataGuid(parent);
 		if (metadataGuid.IsEmpty() || !parent)
 			return metadataGuid;
 
 		v8file* metadataFile = parent->GetFile16(V8Utf16FromString(metadataGuid));
-		String metadataText = ReadV8FileAsText(metadataFile);
-		String objectGuid = ExtractConfigurationObjectGuid(metadataText);
+		LegacyText metadataText = ReadV8FileAsText(metadataFile);
+		LegacyText objectGuid = ExtractConfigurationObjectGuid(metadataText);
 		return objectGuid.IsEmpty() ? metadataGuid : objectGuid;
 	}
 
-	String TryReadNamedTextFile(v8catalog* catalog, const String& fileName)
+	LegacyText TryReadNamedTextFile(v8catalog* catalog, const LegacyText& fileName)
 	{
 		if (!catalog)
 			return L"";
@@ -509,11 +509,11 @@ namespace
 		if (!file)
 			return L"";
 
-		String text = ReadV8FileAsText(file);
+		LegacyText text = ReadV8FileAsText(file);
 		return ModuleTextStorage::LooksLike1CModuleText(text) ? text : L"";
 	}
 
-	String TryReadModuleContainer(v8file* file, bool strictContainerOnly = false)
+	LegacyText TryReadModuleContainer(v8file* file, bool strictContainerOnly = false)
 	{
 		if (!file)
 			return L"";
@@ -525,7 +525,7 @@ namespace
 			{
 				catalog->ClearIs8316();
 
-				String text = TryReadNamedTextFile(catalog, L"text");
+				LegacyText text = TryReadNamedTextFile(catalog, L"text");
 				if (text.IsEmpty())
 					text = TryReadNamedTextFile(catalog, L"module");
 
@@ -534,7 +534,7 @@ namespace
 					for (v8file* child = catalog->GetFirst(); child; child = child->GetNext())
 					{
 						const Utf16String childName16 = child->GetFileName16();
-						String childName(reinterpret_cast<const wchar_t*>(childName16.c_str()));
+						LegacyText childName(reinterpret_cast<const wchar_t*>(childName16.c_str()));
 						childName = childName.LowerCase();
 						if (childName.Pos(L"text") > 0 || childName.Pos(L"module") > 0)
 						{
@@ -555,7 +555,7 @@ namespace
 		{
 		}
 
-		String directText = ReadV8FileAsText(file);
+		LegacyText directText = ReadV8FileAsText(file);
 		if (strictContainerOnly)
 		{
 			if (LooksLikeStrictModuleBody(directText))
@@ -581,22 +581,22 @@ namespace
 
 namespace ModuleTextStorage
 {
-	bool LooksLike1CModuleText(const String& value)
+	bool LooksLike1CModuleText(const LegacyText& value)
 	{
-		String trimmed = Trim(value);
+		LegacyText trimmed = Trim(value);
 		if (trimmed.IsEmpty() || trimmed[1] == L'{')
 			return false;
 
 		return value.Length() > 0
 			&& (value.Pos(L"\n") > 0
 				|| value.Pos(L"\r") > 0
-				|| value.Pos(L"РџСЂРѕС†РµРґСѓСЂР°") > 0
-				|| value.Pos(L"Р¤СѓРЅРєС†РёСЏ") > 0
-				|| value.Pos(L"РљРѕРЅРµС†РџСЂРѕС†РµРґСѓСЂС‹") > 0
-				|| value.Pos(L"РљРѕРЅРµС†Р¤СѓРЅРєС†РёРё") > 0);
+				|| value.Pos(L"Процедура") > 0
+				|| value.Pos(L"Функция") > 0
+				|| value.Pos(L"КонецПроцедуры") > 0
+				|| value.Pos(L"КонецФункции") > 0);
 	}
 
-	bool IsGuidLike(const String& value)
+	bool IsGuidLike(const LegacyText& value)
 	{
 		if (value.Length() != 36)
 			return false;
@@ -623,15 +623,15 @@ namespace ModuleTextStorage
 		return true;
 	}
 
-	String NormalizeGuidFileName(const String& guid)
+	LegacyText NormalizeGuidFileName(const LegacyText& guid)
 	{
-		String result = Trim(guid).LowerCase();
+		LegacyText result = Trim(guid).LowerCase();
 		if (result.Length() >= 2 && result[1] == L'{' && result[result.Length()] == L'}')
 			result = result.SubString(2, result.Length() - 2);
 		return result;
 	}
 
-	ModuleTextDocument LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName)
+	ModuleTextDocument LoadCommonModule(v8catalog* parent, const LegacyText& metadataGuid, const LegacyText& moduleName)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -646,7 +646,7 @@ namespace ModuleTextStorage
 
 		if (parent && !metadataGuid.IsEmpty())
 		{
-			std::vector<String> candidates = GetModuleContainerCandidates(NormalizeGuidFileName(metadataGuid), ModuleTextKind::CommonModule);
+			std::vector<LegacyText> candidates = GetModuleContainerCandidates(NormalizeGuidFileName(metadataGuid), ModuleTextKind::CommonModule);
 
 			try
 			{
@@ -656,7 +656,7 @@ namespace ModuleTextStorage
 					std::unique_ptr<tree> objectTree(get_treeFromV8file(objectFile));
 					document.text = V8Utf16FromString(FindEmbeddedModuleText(objectTree.get()));
 
-					std::vector<String> referencedGuids;
+					std::vector<LegacyText> referencedGuids;
 					CollectGuidReferences(objectTree.get(), referencedGuids);
 					for (const auto& referencedGuid : referencedGuids)
 					{
@@ -674,7 +674,7 @@ namespace ModuleTextStorage
 			for (size_t i = 0; i < candidates.size(); i++)
 			{
 				v8file* dataModule = parent->GetFile16(V8Utf16FromString(candidates[i]));
-				String text = TryReadModuleContainer(dataModule, true);
+				LegacyText text = TryReadModuleContainer(dataModule, true);
 				if (!text.IsEmpty())
 				{
 					document.text = V8Utf16FromString(text);
@@ -689,7 +689,7 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	ModuleTextDocument LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName)
+	ModuleTextDocument LoadCommonForm(v8catalog* parent, const LegacyText& metadataGuid, const LegacyText& formName)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -702,7 +702,7 @@ namespace ModuleTextStorage
 		if (parent && !metadataGuid.IsEmpty())
 		{
 			v8file* dataForm = parent->GetFile16(V8Utf16FromString(metadataGuid + L".0"));
-			String text = TryReadModuleContainer(dataForm, true);
+			LegacyText text = TryReadModuleContainer(dataForm, true);
 			if (!text.IsEmpty())
 			{
 				document.text = V8Utf16FromString(text);
@@ -715,7 +715,7 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind)
+	ModuleTextDocument LoadByMetadataObject(v8catalog* parent, const LegacyText& metadataGuid, const LegacyText& objectName, ModuleTextKind kind)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -727,7 +727,7 @@ namespace ModuleTextStorage
 
 		if (parent && !metadataGuid.IsEmpty())
 		{
-			std::vector<String> candidates = GetModuleContainerCandidates(NormalizeGuidFileName(metadataGuid), kind);
+			std::vector<LegacyText> candidates = GetModuleContainerCandidates(NormalizeGuidFileName(metadataGuid), kind);
 
 			try
 			{
@@ -736,7 +736,7 @@ namespace ModuleTextStorage
 				{
 					std::unique_ptr<tree> objectTree(get_treeFromV8file(objectFile));
 
-					std::vector<String> referencedGuids;
+					std::vector<LegacyText> referencedGuids;
 					CollectGuidReferences(objectTree.get(), referencedGuids);
 					for (const auto& referencedGuid : referencedGuids)
 					{
@@ -754,7 +754,7 @@ namespace ModuleTextStorage
 			for (size_t i = 0; i < candidates.size(); i++)
 			{
 				v8file* file = parent->GetFile16(V8Utf16FromString(candidates[i]));
-				String text = TryReadModuleContainer(file, true);
+				LegacyText text = TryReadModuleContainer(file, true);
 				if (!text.IsEmpty())
 				{
 					document.text = V8Utf16FromString(text);
@@ -769,7 +769,7 @@ namespace ModuleTextStorage
 		return document;
 	}
 
-	ModuleTextDocument LoadBySourceCfModuleDataGuid(const String& metadataGuid, const String& moduleDataGuid, ModuleTextKind kind)
+	ModuleTextDocument LoadBySourceCfModuleDataGuid(const LegacyText& metadataGuid, const LegacyText& moduleDataGuid, ModuleTextKind kind)
 	{
 		ModuleTextDocument document;
 		document.loaded = true;
@@ -784,11 +784,11 @@ namespace ModuleTextStorage
 			if (!DirectoryExistsFs(sourceRoot))
 				continue;
 
-			const String containerPath = CombinePath(sourceRoot, moduleDataGuid);
-			const String textPath = CombinePath(containerPath, L"text");
-			const String modulePath = CombinePath(containerPath, L"module");
+			const LegacyText containerPath = CombinePath(sourceRoot, moduleDataGuid);
+			const LegacyText textPath = CombinePath(containerPath, L"text");
+			const LegacyText modulePath = CombinePath(containerPath, L"module");
 
-			auto loadExactTextFile = [&](const String& filePath) -> bool
+			auto loadExactTextFile = [&](const LegacyText& filePath) -> bool
 			{
 				if (!FileExistsFs(filePath))
 					return false;
@@ -823,7 +823,7 @@ namespace ModuleTextStorage
 		document.loaded = true;
 		document.location.kind = kind;
 
-		const String rootMetadataGuid = ReadConfigurationObjectGuid(parent);
+		const LegacyText rootMetadataGuid = ReadConfigurationObjectGuid(parent);
 		document.location.metadataGuid = V8Utf16FromString(rootMetadataGuid);
 
 		if (!rootMetadataGuid.IsEmpty())
@@ -833,11 +833,11 @@ namespace ModuleTextStorage
 
 			if (parent)
 			{
-				const String normalizedGuid = NormalizeGuidFileName(rootMetadataGuid);
-				const std::vector<String> candidates = GetModuleContainerCandidates(normalizedGuid, kind);
+				const LegacyText normalizedGuid = NormalizeGuidFileName(rootMetadataGuid);
+				const std::vector<LegacyText> candidates = GetModuleContainerCandidates(normalizedGuid, kind);
 				for (const auto& candidate : candidates)
 				{
-					String text = TryReadModuleContainer(parent->GetFile16(V8Utf16FromString(candidate)), true);
+					LegacyText text = TryReadModuleContainer(parent->GetFile16(V8Utf16FromString(candidate)), true);
 					if (!text.IsEmpty())
 					{
 						document.text = V8Utf16FromString(text);
@@ -894,36 +894,36 @@ namespace ModuleTextStorage
 
 		if (!document.location.editable || document.location.filePath.empty())
 		{
-			errorText = u"Не найден редактируемый файл модуля в SourceCF.";
+			errorText = u"�� ������ ������������� ���� ������ � SourceCF.";
 			return false;
 		}
 
-		const String target = String(reinterpret_cast<const wchar_t*>(document.location.filePath.c_str()));
-		const String dir = ExtractFileDir(target);
+		const LegacyText target = LegacyText(reinterpret_cast<const wchar_t*>(document.location.filePath.c_str()));
+		const LegacyText dir = ExtractFileDir(target);
 		if (!DirectoryExistsFs(dir))
 		{
-			errorText = u"Каталог модуля не существует: ";
+			errorText = u"������� ������ �� ����������: ";
 			errorText += Utf16String(reinterpret_cast<const char16_t*>(dir.c_str()));
 			return false;
 		}
 
-		const String tmp = CombinePath(dir, ExtractFileName(target) + L".codex.tmp");
+		const LegacyText tmp = CombinePath(dir, ExtractFileName(target) + L".codex.tmp");
 		try
 		{
 			{
 				v8reader::core::io::StdFileStream out(ToFsPath(tmp), v8reader::core::io::FileOpenMode::CreateTruncate);
-				ModuleTextEncodingUtils::WriteTextWithEncoding(out, String(reinterpret_cast<const wchar_t*>(newText.c_str())), document.location.encoding);
+				ModuleTextEncodingUtils::WriteTextWithEncoding(out, LegacyText(reinterpret_cast<const wchar_t*>(newText.c_str())), document.location.encoding);
 			}
 
 			if (FileExistsFs(target) && !DeleteFileFs(target))
 			{
-				errorText = u"Не удалось удалить исходный файл модуля: ";
+				errorText = u"�� ������� ������� �������� ���� ������: ";
 				errorText += document.location.filePath;
 				return false;
 			}
 			if (!MoveFileFs(tmp, target))
 			{
-				errorText = u"Не удалось переместить временный файл модуля: ";
+				errorText = u"�� ������� ����������� ��������� ���� ������: ";
 				errorText += Utf16String(reinterpret_cast<const char16_t*>(tmp.c_str()));
 				return false;
 			}
