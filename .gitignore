@@ -27,7 +27,7 @@
 
 # Project files
 *.dproj
-*.cbproj
+
 *.dpr
 *.bdsproj
 *.bdsgroup
@@ -68,7 +68,7 @@ __history/
 
 # RAD Studio user settings
 *.dproj.local
-*.cbproj.local
+
 Compile
 .vscode
 

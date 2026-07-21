@@ -11,7 +11,6 @@
 //---------------------------------------------------------------------------
 USEFORM("MainUnit.cpp", MainForm);
 //---------------------------------------------------------------------------
-
 static bool IsCrashLoggingEnabled()
 {
 	String envValue = Trim(GetEnvironmentVariable(L"V8READER_CRASH_LOG")).LowerCase();
