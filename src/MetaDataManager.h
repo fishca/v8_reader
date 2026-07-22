@@ -65,22 +65,22 @@ public:
     void fill_md(v8catalog *cf, tree* tr, String guid_md);
 	void populateTreeView(TVirtualStringTree* tvSringTree);
 	std::shared_ptr<MetaObject> getObject(const String& type, const String& name);
-	std::vector<std::shared_ptr<TSessionParameters>>& getSessionParameters();
-	std::vector<std::shared_ptr<TRoles>>& getRoles();
-	std::vector<std::shared_ptr<TBots>>& getBots();
-	std::vector<std::shared_ptr<TCommonAttributes>>& getCommonAttributes();
-	std::vector<std::shared_ptr<TCommonCommands>>& getCommonCommands();
-	std::vector<std::shared_ptr<TConstants>>& getConstants();
-	std::vector<std::shared_ptr<TCommonTemplates>>& getCommonTemplates();
-	std::vector<std::shared_ptr<TCommandGroups>>& getCommandGroups();
-	std::vector<std::shared_ptr<TExchangePlans>>& getExchangePlans();
-	std::vector<std::shared_ptr<TEventSubscriptions>>& getEventSubscriptions();
-	std::vector<std::shared_ptr<TScheduledJobs>>& getScheduledJobs();
-	std::vector<std::shared_ptr<TFunctionalOptions>>& getFunctionalOptions();
-	std::vector<std::shared_ptr<TFunctionalOptionsParameters>>& getFunctionalOptionsParameters();
-	std::vector<std::shared_ptr<TDefinedTypes>>& getDefinedTypes();
-	std::vector<std::shared_ptr<TSettingsStorages>>& getSettingsStorages();
-	std::vector<std::shared_ptr<TInterfaces>>& getInterfaces();
+	std::vector<std::shared_ptr<TSessionParameters>>& getSessionParameters() { return SessionParameters; }
+	std::vector<std::shared_ptr<TRoles>>& getRoles() { return Roles; }
+	std::vector<std::shared_ptr<TBots>>& getBots() { return Bots; }
+	std::vector<std::shared_ptr<TCommonAttributes>>& getCommonAttributes() { return CommonAttributes; }
+	std::vector<std::shared_ptr<TCommonCommands>>& getCommonCommands() { return CommonCommands; }
+	std::vector<std::shared_ptr<TConstants>>& getConstants() { return Constants; }
+	std::vector<std::shared_ptr<TCommonTemplates>>& getCommonTemplates() { return CommonTemplates; }
+	std::vector<std::shared_ptr<TCommandGroups>>& getCommandGroups() { return CommandGroups; }
+	std::vector<std::shared_ptr<TExchangePlans>>& getExchangePlans() { return ExchangePlans; }
+	std::vector<std::shared_ptr<TEventSubscriptions>>& getEventSubscriptions() { return EventSubscriptions; }
+	std::vector<std::shared_ptr<TScheduledJobs>>& getScheduledJobs() { return ScheduledJobs; }
+	std::vector<std::shared_ptr<TFunctionalOptions>>& getFunctionalOptions() { return FunctionalOptions; }
+	std::vector<std::shared_ptr<TFunctionalOptionsParameters>>& getFunctionalOptionsParameters() { return FunctionalOptionsParameters; }
+	std::vector<std::shared_ptr<TDefinedTypes>>& getDefinedTypes() { return DefinedTypes; }
+	std::vector<std::shared_ptr<TSettingsStorages>>& getSettingsStorages() { return SettingsStorages; }
+	std::vector<std::shared_ptr<TInterfaces>>& getInterfaces() { return Interfaces; }
 
 	MetaDataManager() = default;  // Явно указываем использование конструктора по умолчанию
 	MetaDataManager(const MetaDataManager&) = delete; // запретить копирование
