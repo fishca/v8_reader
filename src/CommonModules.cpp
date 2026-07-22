@@ -1,4 +1,4 @@
-﻿//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -10,54 +10,6 @@
 
 namespace
 {
-	bool __fastcall LooksLikeUtf16Le(const TBytes& bytes)
-	{
-		int limit = bytes.Length < 200 ? bytes.Length : 200;
-		int checked = 0;
-		int zeroOdd = 0;
-
-		for (int i = 1; i < limit; i += 2)
-		{
-			++checked;
-			if (bytes[i] == 0)
-				++zeroOdd;
-		}
-
-		return checked > 0 && zeroOdd * 2 >= checked;
-	}
-
-	String __fastcall DecodeModuleText(const TBytes& sourceBytes, int sourceSize)
-	{
-		if (sourceSize <= 0 || sourceBytes.empty())
-			return L"";
-
-		TBytes bytes = sourceBytes;
-		sourceSize = sourceSize < bytes.Length ? sourceSize : bytes.Length;
-
-		TEncoding *enc = nullptr;
-		int off = TEncoding::GetBufferEncoding(bytes, enc);
-		if (off > 0)
-		{
-			TBytes unicodeBytes = TEncoding::Convert(enc, TEncoding::Unicode, bytes, off, sourceSize - off);
-			if (!unicodeBytes.empty())
-				return String((wchar_t*)&unicodeBytes[0], unicodeBytes.Length / 2);
-		}
-
-		if (LooksLikeUtf16Le(bytes))
-			return String((wchar_t*)&bytes[0], sourceSize / 2);
-
-		try
-		{
-			return TEncoding::UTF8->GetString(bytes, 0, sourceSize);
-		}
-		catch (...)
-		{
-			return String((char*)&bytes[0], sourceSize);
-		}
-	}
-
-	
-
 	bool __fastcall IsGuidLikeChar(wchar_t ch)
 	{
 		return (ch >= L'0' && ch <= L'9')
@@ -129,53 +81,6 @@ namespace
 
 	
 
-	String __fastcall ReadV8FileAsText(v8file* file)
-	{
-		if (!file)
-			return L"";
-
-		TBytes bytes;
-		TBytesStream* sb = new TBytesStream(bytes);
-		try
-		{
-			file->SaveToStream(sb);
-			String text = DecodeModuleText(sb->Bytes, sb->Size);
-			delete sb;
-			return text;
-		}
-		catch (...)
-		{
-			delete sb;
-			return L"";
-		}
-	}
-
-	String __fastcall ReadDiskFileAsText(const String& fileName)
-	{
-		if (!FileExists(fileName))
-			return L"";
-
-		TFileStream* fs = nullptr;
-		TBytesStream* sb = nullptr;
-		try
-		{
-			fs = new TFileStream(fileName, fmOpenRead | fmShareDenyNone);
-			TBytes bytes;
-			sb = new TBytesStream(bytes);
-			sb->CopyFrom(fs, 0);
-			String text = DecodeModuleText(sb->Bytes, sb->Size);
-			delete sb;
-			delete fs;
-			return text;
-		}
-		catch (...)
-		{
-			delete sb;
-			delete fs;
-			return L"";
-		}
-	}
-
 	void __fastcall AddUniquePath(std::vector<String>& values, const String& value)
 	{
 		if (value.IsEmpty())
@@ -205,17 +110,17 @@ namespace
 			{
 				const String objectDir = TPath::Combine(sourceDir, normalizedGuid + L"." + IntToStr(i));
 				const String textFileName = TPath::Combine(objectDir, L"text");
-				String text = ReadDiskFileAsText(textFileName);
+				String text = ModuleTextStorage::ReadDiskFileAsText(textFileName);
 				if (!text.IsEmpty() && ModuleTextStorage::LooksLike1CModuleText(text))
 					return text;
 
 				const String moduleFileName = TPath::Combine(objectDir, L"module");
-				text = ReadDiskFileAsText(moduleFileName);
+				text = ModuleTextStorage::ReadDiskFileAsText(moduleFileName);
 				if (!text.IsEmpty() && ModuleTextStorage::LooksLike1CModuleText(text))
 					return text;
 
 				const String directFileName = TPath::Combine(sourceDir, normalizedGuid + L"." + IntToStr(i));
-				text = ReadDiskFileAsText(directFileName);
+				text = ModuleTextStorage::ReadDiskFileAsText(directFileName);
 				if (!text.IsEmpty() && ModuleTextStorage::LooksLike1CModuleText(text))
 					return text;
 			}
@@ -246,7 +151,7 @@ namespace
 				if (!IsGuidLike(objectGuid))
 					continue;
 
-				String metadataText = ReadDiskFileAsText(fileName);
+				String metadataText = ModuleTextStorage::ReadDiskFileAsText(fileName);
 				if (metadataText.Pos(moduleName) <= 0)
 					continue;
 
@@ -268,7 +173,7 @@ namespace
 		if (!file)
 			return L"";
 
-		String text = ReadV8FileAsText(file);
+		String text = ModuleTextStorage::ReadV8FileAsText(file);
 		return ModuleTextStorage::LooksLike1CModuleText(text) ? text : L"";
 	}
 
@@ -295,7 +200,7 @@ namespace
 						String childName = child->GetFileName().LowerCase();
 						if (childName.Pos(L"text") > 0 || childName.Pos(L"module") > 0)
 						{
-							text = ReadV8FileAsText(child);
+							text = ModuleTextStorage::ReadV8FileAsText(child);
 							if (ModuleTextStorage::LooksLike1CModuleText(text))
 								break;
 							text = L"";
@@ -312,7 +217,7 @@ namespace
 		{
 		}
 
-		String directText = ReadV8FileAsText(file);
+		String directText = ModuleTextStorage::ReadV8FileAsText(file);
 		if (ModuleTextStorage::LooksLike1CModuleText(directText))
 			return directText;
 
@@ -436,3 +341,4 @@ void __fastcall TCommonModules::initializeFromTree()
 {
 
 }
+

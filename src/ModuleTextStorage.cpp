@@ -696,4 +696,15 @@ namespace ModuleTextStorage
 			return location.moduleDataGuid;
 		return L"";
 	}
+
+	String __fastcall ReadV8FileAsText(v8file* file)
+	{
+		return ::ReadV8FileAsText(file);
+	}
+
+	String __fastcall ReadDiskFileAsText(const String& fileName)
+	{
+		ModuleTextEncodingKind encoding;
+		return ::ReadDiskFileRawText(fileName, encoding);
+	}
 }

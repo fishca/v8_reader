@@ -59,6 +59,9 @@ namespace ModuleTextStorage
 	bool __fastcall LooksLike1CModuleText(const String& value);
     String __fastcall FindEmbeddedModuleText(tree* node);
 
+	String __fastcall ReadV8FileAsText(v8file* file);
+	String __fastcall ReadDiskFileAsText(const String& fileName);
+
 	ModuleTextDocument __fastcall LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
 	ModuleTextDocument __fastcall LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
 	ModuleTextDocument __fastcall LoadByMetadataObject(v8catalog* parent, const String& metadataGuid, const String& objectName, ModuleTextKind kind);
