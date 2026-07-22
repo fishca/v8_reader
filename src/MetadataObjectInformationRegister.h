@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #ifndef MetadataObjectInformationRegisterH
 #define MetadataObjectInformationRegisterH

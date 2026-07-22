@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #pragma hdrstop
 
@@ -304,24 +304,6 @@ namespace
 			CollectGuidReferences(node->get_subnode(i), guids);
 	}
 
-	String __fastcall FindEmbeddedModuleText(tree* node)
-	{
-		if (!node)
-			return L"";
-
-		if (node->get_type() == nd_string && ModuleTextStorage::LooksLike1CModuleText(node->get_value()))
-			return node->get_value();
-
-		for (int i = 0; i < node->get_num_subnode(); i++)
-		{
-			String found = FindEmbeddedModuleText(node->get_subnode(i));
-			if (!found.IsEmpty())
-				return found;
-		}
-
-		return L"";
-	}
-
 	String __fastcall ReadV8FileAsText(v8file* file)
 	{
 		if (!file)
@@ -404,7 +386,7 @@ namespace
 		try
 		{
 			std::unique_ptr<tree> objectTree(get_treeFromV8file(file));
-			return FindEmbeddedModuleText(objectTree.get());
+			return ModuleTextStorage::FindEmbeddedModuleText(objectTree.get());
 		}
 		catch (...)
 		{
@@ -469,6 +451,24 @@ namespace ModuleTextStorage
 				|| value.Pos(L"КонецФункции") > 0);
 	}
 
+	String __fastcall FindEmbeddedModuleText(tree* node)
+	{
+		if (!node)
+			return L"";
+
+		if (node->get_type() == nd_string && LooksLike1CModuleText(node->get_value()))
+			return node->get_value();
+
+		for (int i = 0; i < node->get_num_subnode(); i++)
+		{
+			String found = FindEmbeddedModuleText(node->get_subnode(i));
+			if (!found.IsEmpty())
+				return found;
+		}
+
+		return L"";
+	}
+
 	bool __fastcall IsGuidLike(const String& value)
 	{
 		if (value.Length() != 36)
@@ -527,7 +527,7 @@ namespace ModuleTextStorage
 				if (objectFile)
 				{
 					std::unique_ptr<tree> objectTree(get_treeFromV8file(objectFile));
-					document.text = FindEmbeddedModuleText(objectTree.get());
+					document.text = ModuleTextStorage::FindEmbeddedModuleText(objectTree.get());
 
 					std::vector<String> referencedGuids;
 					CollectGuidReferences(objectTree.get(), referencedGuids);

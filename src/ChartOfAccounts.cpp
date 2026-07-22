@@ -8,27 +8,7 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-namespace
-{
-	String FindFirstGuid(tree* node)
-	{
-		if (!node)
-			return L"";
 
-		String value = Trim(node->get_value());
-		if (ModuleTextStorage::IsGuidLike(value))
-			return value;
-
-		for (int i = 0; i < node->get_num_subnode(); i++)
-		{
-			String found = FindFirstGuid(node->get_subnode(i));
-			if (!found.IsEmpty())
-				return found;
-		}
-
-		return L"";
-	}
-}
 
 __fastcall TChartOfAccounts::TChartOfAccounts()
 	: BaseMetadataObject()

@@ -56,16 +56,7 @@ namespace
 		}
 	}
 
-	bool __fastcall LooksLike1CModuleText(const String& value)
-	{
-		return value.Length() > 20
-			&& (value.Pos(L"\n") > 0
-				|| value.Pos(L"\r") > 0
-				|| value.Pos(L"Процедура") > 0
-				|| value.Pos(L"Функция") > 0
-				|| value.Pos(L"КонецПроцедуры") > 0
-				|| value.Pos(L"КонецФункции") > 0);
-	}
+	
 
 	bool __fastcall IsGuidLikeChar(wchar_t ch)
 	{
@@ -136,23 +127,7 @@ namespace
 			CollectGuidReferences(node->get_subnode(i), guids);
 	}
 
-	String __fastcall FindEmbeddedModuleText(tree* node)
-	{
-		if (!node)
-			return L"";
-
-		if (node->get_type() == nd_string && LooksLike1CModuleText(node->get_value()))
-			return node->get_value();
-
-		for (int i = 0; i < node->get_num_subnode(); i++)
-		{
-			String found = FindEmbeddedModuleText(node->get_subnode(i));
-			if (!found.IsEmpty())
-				return found;
-		}
-
-		return L"";
-	}
+	
 
 	String __fastcall ReadV8FileAsText(v8file* file)
 	{
@@ -231,17 +206,17 @@ namespace
 				const String objectDir = TPath::Combine(sourceDir, normalizedGuid + L"." + IntToStr(i));
 				const String textFileName = TPath::Combine(objectDir, L"text");
 				String text = ReadDiskFileAsText(textFileName);
-				if (!text.IsEmpty() && LooksLike1CModuleText(text))
+				if (!text.IsEmpty() && ModuleTextStorage::LooksLike1CModuleText(text))
 					return text;
 
 				const String moduleFileName = TPath::Combine(objectDir, L"module");
 				text = ReadDiskFileAsText(moduleFileName);
-				if (!text.IsEmpty() && LooksLike1CModuleText(text))
+				if (!text.IsEmpty() && ModuleTextStorage::LooksLike1CModuleText(text))
 					return text;
 
 				const String directFileName = TPath::Combine(sourceDir, normalizedGuid + L"." + IntToStr(i));
 				text = ReadDiskFileAsText(directFileName);
-				if (!text.IsEmpty() && LooksLike1CModuleText(text))
+				if (!text.IsEmpty() && ModuleTextStorage::LooksLike1CModuleText(text))
 					return text;
 			}
 		}
@@ -294,7 +269,7 @@ namespace
 			return L"";
 
 		String text = ReadV8FileAsText(file);
-		return LooksLike1CModuleText(text) ? text : L"";
+		return ModuleTextStorage::LooksLike1CModuleText(text) ? text : L"";
 	}
 
 	String __fastcall TryReadModuleContainer(v8file* file)
@@ -321,7 +296,7 @@ namespace
 						if (childName.Pos(L"text") > 0 || childName.Pos(L"module") > 0)
 						{
 							text = ReadV8FileAsText(child);
-							if (LooksLike1CModuleText(text))
+							if (ModuleTextStorage::LooksLike1CModuleText(text))
 								break;
 							text = L"";
 						}
@@ -338,13 +313,13 @@ namespace
 		}
 
 		String directText = ReadV8FileAsText(file);
-		if (LooksLike1CModuleText(directText))
+		if (ModuleTextStorage::LooksLike1CModuleText(directText))
 			return directText;
 
 		try
 		{
 			std::unique_ptr<tree> objectTree(get_treeFromV8file(file));
-			return FindEmbeddedModuleText(objectTree.get());
+			return ModuleTextStorage::FindEmbeddedModuleText(objectTree.get());
 		}
 		catch (...)
 		{

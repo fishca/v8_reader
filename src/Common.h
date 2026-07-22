@@ -4,6 +4,7 @@
 #define CommonH
 
 //#include <vcl.h>
+#include "Parse_tree.h"
 #include <vector>
 #include "APIcfBase.h"
 #include <System.Classes.hpp>
@@ -35,6 +36,8 @@ String __fastcall GetNameFormReports(v8catalog  *cf, String &guid_md);
 String __fastcall GetNameFormPVH(v8catalog      *cf, String &guid_md);
 String __fastcall GetNameFormDescriptor(v8catalog *cf, String &guid_md);
 String __fastcall GetNameMoxCatalogs(v8catalog  *cf, String &guid_md);
+
+String FindFirstGuid(tree* node);
 
 //---------------------------------------------------------------------------
 #endif

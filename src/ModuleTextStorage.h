@@ -57,6 +57,7 @@ namespace ModuleTextStorage
 	String __fastcall NormalizeGuidFileName(const String& guid);
 	bool __fastcall IsGuidLike(const String& value);
 	bool __fastcall LooksLike1CModuleText(const String& value);
+    String __fastcall FindEmbeddedModuleText(tree* node);
 
 	ModuleTextDocument __fastcall LoadCommonModule(v8catalog* parent, const String& metadataGuid, const String& moduleName);
 	ModuleTextDocument __fastcall LoadCommonForm(v8catalog* parent, const String& metadataGuid, const String& formName);
