@@ -162,9 +162,9 @@
         <VerInfo_Release>1</VerInfo_Release>
         <VerInfo_Debug>true</VerInfo_Debug>
         <VerInfo_AutoIncVersion>true</VerInfo_AutoIncVersion>
-        <VerInfo_Keys>CompanyName=;FileDescription=v8reader;FileVersion=0.0.1.186;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.v8reader;ProductName=v8reader;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=v8reader;FileVersion=0.0.1.188;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.v8reader;ProductName=v8reader;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <BCC_UseClassicCompiler>false</BCC_UseClassicCompiler>
-        <VerInfo_Build>186</VerInfo_Build>
+        <VerInfo_Build>188</VerInfo_Build>
         <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
         <BCC_CallingConvention>fastcall</BCC_CallingConvention>
         <DynamicRTL>false</DynamicRTL>

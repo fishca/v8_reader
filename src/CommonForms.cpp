@@ -23,7 +23,7 @@ String __fastcall GetManagedFormModuleText(tree* root)
 }
 
 
-__fastcall TCommonForms::TCommonForms() : BaseMetadataObject()
+__fastcall TCommonForms::TCommonForms() : EmptyMetadataObject<TCommonForms>()
 {
     name = "";
     root_data.reset();
@@ -32,7 +32,7 @@ __fastcall TCommonForms::TCommonForms() : BaseMetadataObject()
 	textDocument.dirty = false;
 }
 
-__fastcall TCommonForms::TCommonForms(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+__fastcall TCommonForms::TCommonForms(v8catalog* _parent, const String& _guid) : EmptyMetadataObject<TCommonForms>()
 {
     name = "";
     root_data.reset();
@@ -41,17 +41,13 @@ __fastcall TCommonForms::TCommonForms(v8catalog* _parent, const String& _guid) :
 	textDocument.dirty = false;
 }
 
-__fastcall TCommonForms::TCommonForms(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+__fastcall TCommonForms::TCommonForms(v8catalog* _parent, const String& _guid, const String& _name) : EmptyMetadataObject<TCommonForms>()
 {
     name = _name;
     root_data.reset();
 	textDocument.text = L"";
 	textDocument.loaded = false;
 	textDocument.dirty = false;
-}
-
-__fastcall TCommonForms::~TCommonForms()
-{
 }
 
 String __fastcall TCommonForms::GetFormName()
@@ -135,35 +131,4 @@ ModuleTextLocation __fastcall TCommonForms::GetEditableModuleLocation()
 {
 	RefreshEditableTextIfNeeded();
 	return textDocument.location;
-}
-
-std::vector<std::unique_ptr<TRequisite>>& TCommonForms::getAttributes()
-{
-    return attributes;
-}
-
-std::vector<std::unique_ptr<TComand>>& TCommonForms::getCommands()
-{
-    return commands;
-}
-
-std::vector<std::unique_ptr<TMoxel>>& TCommonForms::getLayouts()
-{
-    return layouts;
-}
-
-std::vector<std::unique_ptr<TTabular>>& TCommonForms::getTabularSections()
-{
-    return tabularSections;
-}
-
-std::vector<std::unique_ptr<TForm1C>>& TCommonForms::getForms()
-{
-    return forms;
-}
-
-void __fastcall TCommonForms::initializeFromTree()
-{
-    // Инициализация общей формы из дерева метаданных
-    // Имя общей формы уже установлено в конструкторе
 }

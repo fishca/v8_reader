@@ -7,26 +7,22 @@
 #pragma package(smart_init)
 
 
-__fastcall TCommonCommands::TCommonCommands() : BaseMetadataObject()
+__fastcall TCommonCommands::TCommonCommands() : EmptyMetadataObject<TCommonCommands>()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommonCommands::TCommonCommands(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+__fastcall TCommonCommands::TCommonCommands(v8catalog* _parent, const String& _guid) : EmptyMetadataObject<TCommonCommands>()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TCommonCommands::TCommonCommands(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+__fastcall TCommonCommands::TCommonCommands(v8catalog* _parent, const String& _guid, const String& _name) : EmptyMetadataObject<TCommonCommands>()
 {
     name = _name;
     root_data.reset();
-}
-
-__fastcall TCommonCommands::~TCommonCommands()
-{
 }
 
 String __fastcall TCommonCommands::GetCommandName()
@@ -37,35 +33,4 @@ String __fastcall TCommonCommands::GetCommandName()
 void __fastcall TCommonCommands::SetCommandName(String _name)
 {
     name = _name;
-}
-
-std::vector<std::unique_ptr<TRequisite>>& TCommonCommands::getAttributes()
-{
-    return attributes;
-}
-
-std::vector<std::unique_ptr<TComand>>& TCommonCommands::getCommands()
-{
-    return commands;
-}
-
-std::vector<std::unique_ptr<TMoxel>>& TCommonCommands::getLayouts()
-{
-    return layouts;
-}
-
-std::vector<std::unique_ptr<TTabular>>& TCommonCommands::getTabularSections()
-{
-    return tabularSections;
-}
-
-std::vector<std::unique_ptr<TForm1C>>& TCommonCommands::getForms()
-{
-    return forms;
-}
-
-void __fastcall TCommonCommands::initializeFromTree()
-{
-    // Инициализация общей команды из дерева метаданных
-    // Имя общей команды уже установлено в конструкторе
 }
