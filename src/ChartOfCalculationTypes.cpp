@@ -7,7 +7,8 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static MetadataTreePaths GetChartOfCalculationTypesPaths()
+// Убрать static для CRTP-шаблона
+MetadataTreePaths GetChartOfCalculationTypesPaths()
 {
 	MetadataTreePaths paths;
 	// TODO: пути скопированы из Catalogs - необходимо проверить и исправить для ПВР
@@ -25,19 +26,19 @@ static MetadataTreePaths GetChartOfCalculationTypesPaths()
 }
 
 __fastcall TChartOfCalculationTypes::TChartOfCalculationTypes()
-	: MetadataObjectWithSections()
+	: MetadataObjectWithSectionsT<TChartOfCalculationTypes, GetChartOfCalculationTypesPaths>()
 {
 }
 
 __fastcall TChartOfCalculationTypes::TChartOfCalculationTypes(v8catalog *_parent, const String& _guid)
-	: MetadataObjectWithSections(_parent, _guid)
+	: MetadataObjectWithSectionsT<TChartOfCalculationTypes, GetChartOfCalculationTypesPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TChartOfCalculationTypes::TChartOfCalculationTypes(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectWithSections(_parent, _guid, _name)
+	: MetadataObjectWithSectionsT<TChartOfCalculationTypes, GetChartOfCalculationTypesPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -45,9 +46,4 @@ __fastcall TChartOfCalculationTypes::TChartOfCalculationTypes(v8catalog *_parent
 
 __fastcall TChartOfCalculationTypes::~TChartOfCalculationTypes()
 {
-}
-
-void __fastcall TChartOfCalculationTypes::initializeFromTree()
-{
-	MetadataObjectWithSections::initializeFromTreeWithPaths(GetChartOfCalculationTypesPaths());
 }

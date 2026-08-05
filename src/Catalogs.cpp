@@ -7,7 +7,8 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static MetadataTreePaths GetCatalogsPaths()
+// Убрать static для CRTP-шаблона
+MetadataTreePaths GetCatalogsPaths()
 {
 	MetadataTreePaths paths;
 	paths.attIdx = 6;
@@ -24,19 +25,19 @@ static MetadataTreePaths GetCatalogsPaths()
 }
 
 __fastcall TCatalogs::TCatalogs()
-	: MetadataObjectWithSections()
+	: MetadataObjectWithSectionsT<TCatalogs, GetCatalogsPaths>()
 {
 }
 
 __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid)
-	: MetadataObjectWithSections(_parent, _guid)
+	: MetadataObjectWithSectionsT<TCatalogs, GetCatalogsPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectWithSections(_parent, _guid, _name)
+	: MetadataObjectWithSectionsT<TCatalogs, GetCatalogsPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -44,9 +45,4 @@ __fastcall TCatalogs::TCatalogs(v8catalog *_parent, const String& _guid, const S
 
 __fastcall TCatalogs::~TCatalogs()
 {
-}
-
-void __fastcall TCatalogs::initializeFromTree()
-{
-	MetadataObjectWithSections::initializeFromTreeWithPaths(GetCatalogsPaths());
 }

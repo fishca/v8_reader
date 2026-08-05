@@ -6,11 +6,14 @@
 #include "MetadataObjectInformationRegister.h"
 #include "Requisite.h"
 
+// Глобальная функция для CRTP-шаблона (не static)
+InfoRegisterTreePaths GetAccountingRegistersPaths();
+
 //---------------------------------------------------------------------------
 
 // Класс для регистров бухгалтерии
 // Добавляет AccountingFlags и DimensionAccountingFlags к стандартным атрибутам
-class TAccountingRegisters : public MetadataObjectInformationRegister
+class TAccountingRegisters : public MetadataObjectInformationRegisterT<TAccountingRegisters, GetAccountingRegistersPaths>
 {
 protected:
     std::vector<std::unique_ptr<TAccountingFlag>> accountingFlags;           // Признаки учета
@@ -21,8 +24,6 @@ public:
     __fastcall TAccountingRegisters(v8catalog *_parent, const String& _guid);
     __fastcall TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name);
     __fastcall ~TAccountingRegisters();
-
-    void __fastcall initializeFromTree() override;
 
     // Геттеры для AccountingFlags
     std::vector<std::unique_ptr<TAccountingFlag>>& getAccountingFlags() { return accountingFlags; }

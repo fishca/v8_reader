@@ -54,7 +54,24 @@ public:
     std::vector<std::unique_ptr<TForm1C>>& getForms() override { return forms; }
 
     std::vector<std::unique_ptr<TRequisite>>& getDimensions() { return dimensions; }
-    std::vector<std::unique_ptr<TRequisite>>& getResources() { return resources; }
+	std::vector<std::unique_ptr<TRequisite>>& getResources() { return resources; }
+};
+
+//---------------------------------------------------------------------------
+// CRTP-шаблон: наследник передает свою функцию GetPaths через параметр шаблона
+template<typename Derived, InfoRegisterTreePaths (*GetPathsFunc)()>
+class MetadataObjectInformationRegisterT : public MetadataObjectInformationRegister
+{
+public:
+	__fastcall MetadataObjectInformationRegisterT() : MetadataObjectInformationRegister() {}
+	__fastcall MetadataObjectInformationRegisterT(v8catalog* _parent, const String& _guid) : MetadataObjectInformationRegister(_parent, _guid) {}
+	__fastcall MetadataObjectInformationRegisterT(v8catalog* _parent, const String& _guid, const String& _name) : MetadataObjectInformationRegister(_parent, _guid, _name) {}
+	virtual __fastcall ~MetadataObjectInformationRegisterT() {}
+
+	void __fastcall initializeFromTree() override
+	{
+		MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetPathsFunc());
+	}
 };
 
 //---------------------------------------------------------------------------

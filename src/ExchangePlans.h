@@ -4,6 +4,10 @@
 #define ExchangePlansH
 
 #include "MetadataObjectWithSections.h"
+
+// Глобальная функция для CRTP-шаблона (не static)
+MetadataTreePaths GetExchangePlansPaths();
+
 //---------------------------------------------------------------------------
 
 /**
@@ -13,7 +17,7 @@
  * Планы обмена - это объекты метаданных, которые определяют
  * правила обмена данными между информационными базами 1С.
  */
-class TExchangePlans : public MetadataObjectWithSections
+class TExchangePlans : public MetadataObjectWithSectionsT<TExchangePlans, GetExchangePlansPaths>
 {
 private:
     String exchangePlanName;  // Имя плана обмена

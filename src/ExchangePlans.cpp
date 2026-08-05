@@ -359,7 +359,8 @@ bool TryCollectExchangePlanLayouts(v8catalog* parent, tree* root, std::vector<st
     return true;
 }
 
-static MetadataTreePaths GetExchangePlansPaths()
+// Убрать static для CRTP-шаблона
+MetadataTreePaths GetExchangePlansPaths()
 {
     MetadataTreePaths paths;
     paths.attIdx = 3;
@@ -375,20 +376,20 @@ static MetadataTreePaths GetExchangePlansPaths()
     return paths;
 }
 
-__fastcall TExchangePlans::TExchangePlans() : MetadataObjectWithSections()
+__fastcall TExchangePlans::TExchangePlans() : MetadataObjectWithSectionsT<TExchangePlans, GetExchangePlansPaths>()
 {
     exchangePlanName = "";
     root_data.reset();
 }
 
-__fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid) : MetadataObjectWithSections(_parent, _guid)
+__fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid) : MetadataObjectWithSectionsT<TExchangePlans, GetExchangePlansPaths>(_parent, _guid)
 {
     exchangePlanName = "";
     initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name) : MetadataObjectWithSections(_parent, _guid, _name)
+__fastcall TExchangePlans::TExchangePlans(v8catalog* _parent, const String& _guid, const String& _name) : MetadataObjectWithSectionsT<TExchangePlans, GetExchangePlansPaths>(_parent, _guid, _name)
 {
     exchangePlanName = _name;
     initializeFromTree();

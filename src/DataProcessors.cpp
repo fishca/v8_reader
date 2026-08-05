@@ -7,7 +7,8 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static MetadataTreePaths GetDataProcessorsPaths()
+// Убрать static для CRTP-шаблона
+MetadataTreePaths GetDataProcessorsPaths()
 {
 	MetadataTreePaths paths;
 	paths.attIdx = 7;
@@ -24,19 +25,19 @@ static MetadataTreePaths GetDataProcessorsPaths()
 }
 
 __fastcall TDataProcessors::TDataProcessors()
-	: MetadataObjectWithSections()
+	: MetadataObjectWithSectionsT<TDataProcessors, GetDataProcessorsPaths>()
 {
 }
 
 __fastcall TDataProcessors::TDataProcessors(v8catalog *_parent, const String& _guid)
-	: MetadataObjectWithSections(_parent, _guid)
+	: MetadataObjectWithSectionsT<TDataProcessors, GetDataProcessorsPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TDataProcessors::TDataProcessors(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectWithSections(_parent, _guid, _name)
+	: MetadataObjectWithSectionsT<TDataProcessors, GetDataProcessorsPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -44,9 +45,4 @@ __fastcall TDataProcessors::TDataProcessors(v8catalog *_parent, const String& _g
 
 __fastcall TDataProcessors::~TDataProcessors()
 {
-}
-
-void __fastcall TDataProcessors::initializeFromTree()
-{
-	MetadataObjectWithSections::initializeFromTreeWithPaths(GetDataProcessorsPaths());
 }

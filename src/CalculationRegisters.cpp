@@ -9,7 +9,8 @@
 #pragma package(smart_init)
 
 // Конфигурация путей в дереве парсинга для регистров расчета
-static InfoRegisterTreePaths GetCalculationRegistersPaths()
+// Убрать static для CRTP-шаблона
+InfoRegisterTreePaths GetCalculationRegistersPaths()
 {
     InfoRegisterTreePaths paths;
     // Пути для регистров расчета
@@ -35,13 +36,13 @@ static InfoRegisterTreePaths GetCalculationRegistersPaths()
 
 //---------------------------------------------------------------------------
 __fastcall TCalculationRegisters::TCalculationRegisters()
-	: MetadataObjectInformationRegister()
+	: MetadataObjectInformationRegisterT<TCalculationRegisters, GetCalculationRegistersPaths>()
 {
 }
 
 //---------------------------------------------------------------------------
 __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid)
-	: MetadataObjectInformationRegister(_parent, _guid)
+	: MetadataObjectInformationRegisterT<TCalculationRegisters, GetCalculationRegistersPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -49,7 +50,7 @@ __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, cons
 
 //---------------------------------------------------------------------------
 __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectInformationRegister(_parent, _guid, _name)
+	: MetadataObjectInformationRegisterT<TCalculationRegisters, GetCalculationRegistersPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -58,11 +59,4 @@ __fastcall TCalculationRegisters::TCalculationRegisters(v8catalog *_parent, cons
 //---------------------------------------------------------------------------
 __fastcall TCalculationRegisters::~TCalculationRegisters()
 {
-}
-
-//---------------------------------------------------------------------------
-void __fastcall TCalculationRegisters::initializeFromTree()
-{
-	// Инициализируем стандартные поля (реквизиты, измерения, ресурсы, формы, команды, макеты)
-	MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetCalculationRegistersPaths());
 }

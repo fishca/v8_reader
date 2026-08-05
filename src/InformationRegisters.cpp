@@ -7,7 +7,8 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static InfoRegisterTreePaths GetInformationRegistersPaths()
+// Убрать static для CRTP-шаблона
+InfoRegisterTreePaths GetInformationRegistersPaths()
 {
 	InfoRegisterTreePaths paths;
 	// TODO: пути скопированы по аналогии с Catalogs - необходимо проверить и исправить для регистров сведений
@@ -26,19 +27,19 @@ static InfoRegisterTreePaths GetInformationRegistersPaths()
 }
 
 __fastcall TInformationRegisters::TInformationRegisters()
-	: MetadataObjectInformationRegister()
+	: MetadataObjectInformationRegisterT<TInformationRegisters, GetInformationRegistersPaths>()
 {
 }
 
 __fastcall TInformationRegisters::TInformationRegisters(v8catalog *_parent, const String& _guid)
-	: MetadataObjectInformationRegister(_parent, _guid)
+	: MetadataObjectInformationRegisterT<TInformationRegisters, GetInformationRegistersPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TInformationRegisters::TInformationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectInformationRegister(_parent, _guid, _name)
+	: MetadataObjectInformationRegisterT<TInformationRegisters, GetInformationRegistersPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -46,9 +47,4 @@ __fastcall TInformationRegisters::TInformationRegisters(v8catalog *_parent, cons
 
 __fastcall TInformationRegisters::~TInformationRegisters()
 {
-}
-
-void __fastcall TInformationRegisters::initializeFromTree()
-{
-	MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetInformationRegistersPaths());
 }

@@ -66,4 +66,21 @@ public:
 };
 
 //---------------------------------------------------------------------------
+// CRTP-шаблон: наследник передает свою функцию GetPaths через параметр шаблона
+template<typename Derived, MetadataTreePaths (*GetPathsFunc)()>
+class MetadataObjectWithSectionsT : public MetadataObjectWithSections
+{
+public:
+	__fastcall MetadataObjectWithSectionsT() : MetadataObjectWithSections() {}
+	__fastcall MetadataObjectWithSectionsT(v8catalog* _parent, const String& _guid) : MetadataObjectWithSections(_parent, _guid) {}
+	__fastcall MetadataObjectWithSectionsT(v8catalog* _parent, const String& _guid, const String& _name) : MetadataObjectWithSections(_parent, _guid, _name) {}
+	virtual __fastcall ~MetadataObjectWithSectionsT() {}
+
+	void __fastcall initializeFromTree() override
+	{
+		MetadataObjectWithSections::initializeFromTreeWithPaths(GetPathsFunc());
+	}
+};
+
+//---------------------------------------------------------------------------
 #endif

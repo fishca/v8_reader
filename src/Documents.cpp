@@ -7,7 +7,8 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static MetadataTreePaths GetDocumentsPaths()
+// Убрать static для CRTP-шаблона
+MetadataTreePaths GetDocumentsPaths()
 {
 	MetadataTreePaths paths;
 	paths.attIdx = 5;
@@ -24,19 +25,19 @@ static MetadataTreePaths GetDocumentsPaths()
 }
 
 __fastcall TDocuments::TDocuments()
-	: MetadataObjectWithSections()
+	: MetadataObjectWithSectionsT<TDocuments, GetDocumentsPaths>()
 {
 }
 
 __fastcall TDocuments::TDocuments(v8catalog *_parent, const String& _guid)
-	: MetadataObjectWithSections(_parent, _guid)
+	: MetadataObjectWithSectionsT<TDocuments, GetDocumentsPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TDocuments::TDocuments(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectWithSections(_parent, _guid, _name)
+	: MetadataObjectWithSectionsT<TDocuments, GetDocumentsPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -44,9 +45,4 @@ __fastcall TDocuments::TDocuments(v8catalog *_parent, const String& _guid, const
 
 __fastcall TDocuments::~TDocuments()
 {
-}
-
-void __fastcall TDocuments::initializeFromTree()
-{
-	MetadataObjectWithSections::initializeFromTreeWithPaths(GetDocumentsPaths());
 }

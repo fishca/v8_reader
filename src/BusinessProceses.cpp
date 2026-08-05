@@ -7,7 +7,8 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static MetadataTreePaths GetBusinessProcessesPaths()
+// Убрать static для CRTP-шаблона
+MetadataTreePaths GetBusinessProcessesPaths()
 {
 	MetadataTreePaths paths;
 	paths.attIdx = 6;
@@ -24,19 +25,19 @@ static MetadataTreePaths GetBusinessProcessesPaths()
 }
 
 __fastcall TBusinessProceses::TBusinessProceses()
-	: MetadataObjectWithSections()
+	: MetadataObjectWithSectionsT<TBusinessProceses, GetBusinessProcessesPaths>()
 {
 }
 
 __fastcall TBusinessProceses::TBusinessProceses(v8catalog *_parent, const String& _guid)
-	: MetadataObjectWithSections(_parent, _guid)
+	: MetadataObjectWithSectionsT<TBusinessProceses, GetBusinessProcessesPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TBusinessProceses::TBusinessProceses(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectWithSections(_parent, _guid, _name)
+	: MetadataObjectWithSectionsT<TBusinessProceses, GetBusinessProcessesPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -44,9 +45,4 @@ __fastcall TBusinessProceses::TBusinessProceses(v8catalog *_parent, const String
 
 __fastcall TBusinessProceses::~TBusinessProceses()
 {
-}
-
-void __fastcall TBusinessProceses::initializeFromTree()
-{
-	MetadataObjectWithSections::initializeFromTreeWithPaths(GetBusinessProcessesPaths());
 }

@@ -7,7 +7,8 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static InfoRegisterTreePaths GetAccumulationRegistersPaths()
+// Убрать static для CRTP-шаблона
+InfoRegisterTreePaths GetAccumulationRegistersPaths()
 {
 	InfoRegisterTreePaths paths;
 	// Пути для регистров накопления - аналогично регистрам сведений
@@ -32,19 +33,19 @@ static InfoRegisterTreePaths GetAccumulationRegistersPaths()
 }
 
 __fastcall TAccumulationRegisters::TAccumulationRegisters()
-	: MetadataObjectInformationRegister()
+	: MetadataObjectInformationRegisterT<TAccumulationRegisters, GetAccumulationRegistersPaths>()
 {
 }
 
 __fastcall TAccumulationRegisters::TAccumulationRegisters(v8catalog *_parent, const String& _guid)
-	: MetadataObjectInformationRegister(_parent, _guid)
+	: MetadataObjectInformationRegisterT<TAccumulationRegisters, GetAccumulationRegistersPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TAccumulationRegisters::TAccumulationRegisters(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectInformationRegister(_parent, _guid, _name)
+	: MetadataObjectInformationRegisterT<TAccumulationRegisters, GetAccumulationRegistersPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -52,9 +53,4 @@ __fastcall TAccumulationRegisters::TAccumulationRegisters(v8catalog *_parent, co
 
 __fastcall TAccumulationRegisters::~TAccumulationRegisters()
 {
-}
-
-void __fastcall TAccumulationRegisters::initializeFromTree()
-{
-	MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetAccumulationRegistersPaths());
 }

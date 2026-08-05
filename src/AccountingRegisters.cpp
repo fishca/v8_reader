@@ -7,7 +7,8 @@
 #pragma package(smart_init)
 
 // Конфигурация путей в дереве парсинга для регистров бухгалтерии
-static InfoRegisterTreePaths GetAccountingRegistersPaths()
+// Убрать static для CRTP-шаблона
+InfoRegisterTreePaths GetAccountingRegistersPaths()
 {
     InfoRegisterTreePaths paths;
     
@@ -33,19 +34,19 @@ static InfoRegisterTreePaths GetAccountingRegistersPaths()
 }
 
 __fastcall TAccountingRegisters::TAccountingRegisters()
-    : MetadataObjectInformationRegister()
+    : MetadataObjectInformationRegisterT<TAccountingRegisters, GetAccountingRegistersPaths>()
 {
 }
 
 __fastcall TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const String& _guid)
-    : MetadataObjectInformationRegister(_parent, _guid)
+    : MetadataObjectInformationRegisterT<TAccountingRegisters, GetAccountingRegistersPaths>(_parent, _guid)
 {
     initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const String& _guid, const String& _name)
-    : MetadataObjectInformationRegister(_parent, _guid, _name)
+    : MetadataObjectInformationRegisterT<TAccountingRegisters, GetAccountingRegistersPaths>(_parent, _guid, _name)
 {
     initializeFromTree();
 	root_data.reset();
@@ -53,14 +54,4 @@ __fastcall TAccountingRegisters::TAccountingRegisters(v8catalog *_parent, const 
 
 __fastcall TAccountingRegisters::~TAccountingRegisters()
 {
-}
-
-void __fastcall TAccountingRegisters::initializeFromTree()
-{
-    // Инициализируем стандартные поля (реквизиты, измерения, ресурсы, формы, команды, макеты)
-    // AccountingFlags и DimensionAccountingFlags будут загружены отдельно
-    MetadataObjectInformationRegister::initializeFromTreeWithPaths(GetAccountingRegistersPaths());
-
-    // TODO: Загрузка AccountingFlags и DimensionAccountingFlags
-    // При необходимости добавить дополнительную логику загрузки
 }

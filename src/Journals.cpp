@@ -4,10 +4,12 @@
 
 #include "Common.h"
 #include "Journals.h"
+#include "MetadataObjectWithSections.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-static MetadataTreePaths GetJournalsPaths()
+// Убрать static для CRTP-шаблона
+MetadataTreePaths GetJournalsPaths()
 {
 	MetadataTreePaths paths;
 	paths.attIdx = 4;
@@ -24,19 +26,19 @@ static MetadataTreePaths GetJournalsPaths()
 }
 
 __fastcall TJournals::TJournals()
-	: MetadataObjectWithSections()
+	: MetadataObjectWithSectionsT<TJournals, GetJournalsPaths>()
 {
 }
 
 __fastcall TJournals::TJournals(v8catalog *_parent, const String& _guid)
-	: MetadataObjectWithSections(_parent, _guid)
+	: MetadataObjectWithSectionsT<TJournals, GetJournalsPaths>(_parent, _guid)
 {
 	initializeFromTree();
 	root_data.reset();
 }
 
 __fastcall TJournals::TJournals(v8catalog *_parent, const String& _guid, const String& _name)
-	: MetadataObjectWithSections(_parent, _guid, _name)
+	: MetadataObjectWithSectionsT<TJournals, GetJournalsPaths>(_parent, _guid, _name)
 {
 	initializeFromTree();
 	root_data.reset();
@@ -44,9 +46,4 @@ __fastcall TJournals::TJournals(v8catalog *_parent, const String& _guid, const S
 
 __fastcall TJournals::~TJournals()
 {
-}
-
-void __fastcall TJournals::initializeFromTree()
-{
-	MetadataObjectWithSections::initializeFromTreeWithPaths(GetJournalsPaths());
 }
