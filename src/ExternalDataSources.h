@@ -3,7 +3,7 @@
 #ifndef ExternalDataSourcesH
 #define ExternalDataSourcesH
 //---------------------------------------------------------------------------
-#include "BaseMetadataObject.h"
+#include "EmptyMetadataObject.h"
 
 struct TExternalDataSourceTable
 {
@@ -25,7 +25,7 @@ struct TExternalDataSourceCube
 	std::vector<String> layouts;
 };
 
-class TExternalDataSources : public BaseMetadataObject
+class TExternalDataSources : public EmptyMetadataObject<TExternalDataSources>
 {
 public:
 	__fastcall TExternalDataSources();
@@ -37,20 +37,7 @@ public:
 	std::vector<TExternalDataSourceCube> cubes;
 	std::vector<String> functions;
 
-	std::vector<std::unique_ptr<TRequisite>>& getAttributes() override;
-	std::vector<std::unique_ptr<TComand>>& getCommands() override;
-	std::vector<std::unique_ptr<TMoxel>>& getLayouts() override;
-	std::vector<std::unique_ptr<TTabular>>& getTabularSections() override;
-	std::vector<std::unique_ptr<TForm1C>>& getForms() override;
-
 	void __fastcall initializeFromTree() override;
-
-private:
-	std::vector<std::unique_ptr<TRequisite>> attributes;
-	std::vector<std::unique_ptr<TComand>> commands;
-	std::vector<std::unique_ptr<TMoxel>> layouts;
-	std::vector<std::unique_ptr<TTabular>> tabularSections;
-	std::vector<std::unique_ptr<TForm1C>> forms;
 };
 
 #endif

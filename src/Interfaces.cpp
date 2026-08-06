@@ -7,26 +7,22 @@
 #pragma package(smart_init)
 
 
-__fastcall TInterfaces::TInterfaces() : BaseMetadataObject()
+__fastcall TInterfaces::TInterfaces() : EmptyMetadataObject<TInterfaces>()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+__fastcall TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid) : EmptyMetadataObject<TInterfaces>(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+__fastcall TInterfaces::TInterfaces(v8catalog* _parent, const String& _guid, const String& _name) : EmptyMetadataObject<TInterfaces>(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
-}
-
-__fastcall TInterfaces::~TInterfaces()
-{
 }
 
 String __fastcall TInterfaces::GetInterfaceName()
@@ -37,35 +33,4 @@ String __fastcall TInterfaces::GetInterfaceName()
 void __fastcall TInterfaces::SetInterfaceName(String _name)
 {
     name = _name;
-}
-
-std::vector<std::unique_ptr<TRequisite>>& TInterfaces::getAttributes()
-{
-    return attributes;
-}
-
-std::vector<std::unique_ptr<TComand>>& TInterfaces::getCommands()
-{
-    return commands;
-}
-
-std::vector<std::unique_ptr<TMoxel>>& TInterfaces::getLayouts()
-{
-    return layouts;
-}
-
-std::vector<std::unique_ptr<TTabular>>& TInterfaces::getTabularSections()
-{
-    return tabularSections;
-}
-
-std::vector<std::unique_ptr<TForm1C>>& TInterfaces::getForms()
-{
-    return forms;
-}
-
-void __fastcall TInterfaces::initializeFromTree()
-{
-    // Инициализация интерфейса из дерева метаданных
-    // Имя интерфейса уже установлено в конструкторе
 }

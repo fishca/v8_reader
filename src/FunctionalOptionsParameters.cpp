@@ -7,26 +7,22 @@
 #pragma package(smart_init)
 
 
-__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters() : BaseMetadataObject()
+__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters() : EmptyMetadataObject<TFunctionalOptionsParameters>()
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid) : EmptyMetadataObject<TFunctionalOptionsParameters>(_parent, _guid)
 {
     name = "";
     root_data.reset();
 }
 
-__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+__fastcall TFunctionalOptionsParameters::TFunctionalOptionsParameters(v8catalog* _parent, const String& _guid, const String& _name) : EmptyMetadataObject<TFunctionalOptionsParameters>(_parent, _guid, _name)
 {
     name = _name;
     root_data.reset();
-}
-
-__fastcall TFunctionalOptionsParameters::~TFunctionalOptionsParameters()
-{
 }
 
 String __fastcall TFunctionalOptionsParameters::GetParameterName()
@@ -37,35 +33,4 @@ String __fastcall TFunctionalOptionsParameters::GetParameterName()
 void __fastcall TFunctionalOptionsParameters::SetParameterName(String _name)
 {
     name = _name;
-}
-
-std::vector<std::unique_ptr<TRequisite>>& TFunctionalOptionsParameters::getAttributes()
-{
-    return attributes;
-}
-
-std::vector<std::unique_ptr<TComand>>& TFunctionalOptionsParameters::getCommands()
-{
-    return commands;
-}
-
-std::vector<std::unique_ptr<TMoxel>>& TFunctionalOptionsParameters::getLayouts()
-{
-    return layouts;
-}
-
-std::vector<std::unique_ptr<TTabular>>& TFunctionalOptionsParameters::getTabularSections()
-{
-    return tabularSections;
-}
-
-std::vector<std::unique_ptr<TForm1C>>& TFunctionalOptionsParameters::getForms()
-{
-    return forms;
-}
-
-void __fastcall TFunctionalOptionsParameters::initializeFromTree()
-{
-    // Инициализация параметра функциональной опции из дерева метаданных
-    // Имя параметра функциональной опции уже установлено в конструкторе
 }

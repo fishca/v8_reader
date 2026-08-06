@@ -6,48 +6,23 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 
-namespace
-{
-    tree* GetNodeByPath(tree* root, std::initializer_list<int> indexes)
-    {
-        tree* current = root;
-        if (!current)
-            return nullptr;
 
-        for (int index : indexes)
-        {
-            if (!current || index < 0 || index >= current->get_num_subnode())
-                return nullptr;
-
-            current = current->get_subnode(index);
-        }
-
-        return current;
-    }
-}
-
-__fastcall TBots::TBots() : BaseMetadataObject()
+__fastcall TBots::TBots() : EmptyMetadataObject<TBots>()
 {
     botName = "";
     root_data.reset();
 }
 
-__fastcall TBots::TBots(v8catalog* _parent, const String& _guid) : BaseMetadataObject(_parent, _guid)
+__fastcall TBots::TBots(v8catalog* _parent, const String& _guid) : EmptyMetadataObject<TBots>(_parent, _guid)
 {
     botName = "";
-    initializeFromTree();
     root_data.reset();
 }
 
-__fastcall TBots::TBots(v8catalog* _parent, const String& _guid, const String& _name) : BaseMetadataObject(_parent, _guid, _name)
+__fastcall TBots::TBots(v8catalog* _parent, const String& _guid, const String& _name) : EmptyMetadataObject<TBots>(_parent, _guid, _name)
 {
     botName = _name;
-    initializeFromTree();
     root_data.reset();
-}
-
-__fastcall TBots::~TBots()
-{
 }
 
 String __fastcall TBots::GetBotName()
@@ -59,43 +34,4 @@ void __fastcall TBots::SetBotName(String _name)
 {
     botName = _name;
     name = _name;
-}
-
-std::vector<std::unique_ptr<TRequisite>>& TBots::getAttributes()
-{
-    return attributes;
-}
-
-std::vector<std::unique_ptr<TComand>>& TBots::getCommands()
-{
-    return commands;
-}
-
-std::vector<std::unique_ptr<TMoxel>>& TBots::getLayouts()
-{
-    return layouts;
-}
-
-std::vector<std::unique_ptr<TTabular>>& TBots::getTabularSections()
-{
-    return tabularSections;
-}
-
-std::vector<std::unique_ptr<TForm1C>>& TBots::getForms()
-{
-    return forms;
-}
-
-void __fastcall TBots::initializeFromTree()
-{
-    tree* nameNode = GetNodeByPath(root_data.get(), {0, 1, 1, 2});
-    if (nameNode && !nameNode->get_value().IsEmpty())
-    {
-        name = nameNode->get_value();
-        botName = name;
-        return;
-    }
-
-    if (botName.IsEmpty())
-        botName = name;
 }

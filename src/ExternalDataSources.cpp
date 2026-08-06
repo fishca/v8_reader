@@ -212,13 +212,13 @@ namespace
 }
 
 __fastcall TExternalDataSources::TExternalDataSources()
-	: BaseMetadataObject()
+	: EmptyMetadataObject<TExternalDataSources>()
 {
 	root_data.reset();
 }
 
 __fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid)
-	: BaseMetadataObject()
+	: EmptyMetadataObject<TExternalDataSources>()
 {
 	name = _guid;
 	guid = _guid;
@@ -242,7 +242,7 @@ __fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const 
 }
 
 __fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const String& _guid, const String& _name)
-	: BaseMetadataObject()
+	: EmptyMetadataObject<TExternalDataSources>()
 {
 	name = _name;
 	guid = _guid;
@@ -267,31 +267,6 @@ __fastcall TExternalDataSources::TExternalDataSources(v8catalog* _parent, const 
 
 __fastcall TExternalDataSources::~TExternalDataSources()
 {
-}
-
-std::vector<std::unique_ptr<TRequisite>>& TExternalDataSources::getAttributes()
-{
-	return attributes;
-}
-
-std::vector<std::unique_ptr<TComand>>& TExternalDataSources::getCommands()
-{
-	return commands;
-}
-
-std::vector<std::unique_ptr<TMoxel>>& TExternalDataSources::getLayouts()
-{
-	return layouts;
-}
-
-std::vector<std::unique_ptr<TTabular>>& TExternalDataSources::getTabularSections()
-{
-	return tabularSections;
-}
-
-std::vector<std::unique_ptr<TForm1C>>& TExternalDataSources::getForms()
-{
-	return forms;
 }
 
 void __fastcall TExternalDataSources::initializeFromTree()
