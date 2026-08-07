@@ -616,6 +616,100 @@ bool __fastcall ConfigStorageTable::fileexists(const String& path)
 // Класс ConfigStorageTableConfig
 
 //---------------------------------------------------------------------------
+// Результат разбора файла DynamicallyUpdated (Phase 5)
+// dynup — массив GUID обновлений или NULL, ndynup — его размер (0 если dynup==NULL)
+struct DynUpdateResult
+{
+	int ndynup;
+	TGUID* dynup;
+};
+
+// Разбор файла "DynamicallyUpdated" из контейнера TableFiles
+static DynUpdateResult ParseDynamicallyUpdated(TableFiles* tabf, const String& label)
+{
+	DynUpdateResult result;
+	result.ndynup = 0;
+	result.dynup = NULL;
+
+	String s;
+	table_file* _DynamicallyUpdated;
+	container_file* DynamicallyUpdated;
+	tree* tt;
+	tree* ct;
+	table* tab;
+	int m;
+
+	tab = tabf->gettable();
+	if(!tab) return result;
+
+	_DynamicallyUpdated = tabf->getfile(label);
+	if(!_DynamicallyUpdated) return result;
+
+	DynamicallyUpdated = new container_file(_DynamicallyUpdated, _DynamicallyUpdated->name);
+	DynamicallyUpdated->open();
+	s = tab->getbase()->getfilename() + L"\\" + tab->getname() + L"\\" + DynamicallyUpdated->name;
+	tt = parse_1Cstream(DynamicallyUpdated->stream, s);
+	if(!tt)
+	{
+		error(L"Ошибка разбора файла DynamicallyUpdated"
+			, L"Путь", s);
+	}
+	else
+	{
+		ct = tt->get_first();
+		if(!ct)
+		{
+			error(L"Ошибка разбора файла DynamicallyUpdated"
+				, L"Путь", s);
+		}
+		else
+		{
+			ct = ct->get_first();
+			if(!ct)
+			{
+				error(L"Ошибка разбора файла DynamicallyUpdated"
+					, L"Путь", s);
+			}
+			else
+			{
+				ct = ct->get_next();
+				if(!ct)
+				{
+					error(L"Ошибка разбора файла DynamicallyUpdated"
+						, L"Путь", s);
+				}
+				else
+				{
+					if(ct->get_type() != nd_number)
+					{
+						error(L"Ошибка разбора файла DynamicallyUpdated"
+							, L"Путь", s);
+					}
+					else
+					{
+						result.ndynup = ct->get_value().ToIntDef(0);
+						if(result.ndynup > 0)
+						{
+							result.dynup = new TGUID[result.ndynup];
+							for(m = 0; m < result.ndynup; ++m)
+							{
+								ct = ct->get_next();
+								string_to_GUID(ct->get_value(), &result.dynup[m]);
+							}
+						}
+						else result.ndynup = 0;
+					}
+
+				}
+			}
+		}
+	}
+	delete DynamicallyUpdated;
+
+	return result;
+}
+
+//---------------------------------------------------------------------------
 __fastcall ConfigStorageTableConfig::ConfigStorageTableConfig(TableFiles* tabf, T_1CD* _base) : ConfigStorageTable(_base)
 {
 	int m;
@@ -641,72 +735,9 @@ __fastcall ConfigStorageTableConfig::ConfigStorageTableConfig(TableFiles* tabf, 
 	present = tabf->gettable()->getbase()->getfilename() + L"\\CONFIG";
 
 	tab = tabf->gettable();
-	_DynamicallyUpdated = tabf->getfile(L"DynamicallyUpdated");
-
-	dynup = NULL;
-	if(_DynamicallyUpdated)
-	{
-		DynamicallyUpdated = new container_file(_DynamicallyUpdated, _DynamicallyUpdated->name);
-		DynamicallyUpdated->open();
-		s = tab->getbase()->getfilename() + L"\\" + tab->getname() + L"\\" + DynamicallyUpdated->name;
-		tt = parse_1Cstream(DynamicallyUpdated->stream, s);
-		if(!tt)
-		{
-			error(L"Ошибка разбора файла DynamicallyUpdated"
-				, L"Путь", s);
-		}
-		else
-		{
-			ct = tt->get_first();
-			if(!ct)
-			{
-				error(L"Ошибка разбора файла DynamicallyUpdated"
-					, L"Путь", s);
-			}
-			else
-			{
-				ct = ct->get_first();
-				if(!ct)
-				{
-					error(L"Ошибка разбора файла DynamicallyUpdated"
-						, L"Путь", s);
-				}
-				else
-				{
-					ct = ct->get_next();
-					if(!ct)
-					{
-						error(L"Ошибка разбора файла DynamicallyUpdated"
-							, L"Путь", s);
-					}
-					else
-					{
-						if(ct->get_type() != nd_number)
-						{
-							error(L"Ошибка разбора файла DynamicallyUpdated"
-								, L"Путь", s);
-						}
-						else
-						{
-							ndynup = ct->get_value().ToIntDef(0);
-							if(ndynup > 0)
-							{
-								dynup = new TGUID[ndynup];
-								for(m = 0; m < ndynup; ++m)
-								{
-									ct = ct->get_next();
-									string_to_GUID(ct->get_value(), &dynup[m]);
-								}
-							}
-							else ndynup = 0;
-						}
-
-					}
-				}
-			}
-		}
-		delete DynamicallyUpdated;
-	}
+	DynUpdateResult _dup = ParseDynamicallyUpdated(tabf, L"DynamicallyUpdated");
+	dynup = _dup.dynup;
+	ndynup = _dup.ndynup;
 
 	for(pfilesmap = tabf->files.begin(); pfilesmap != tabf->files.end(); ++pfilesmap)
 	{
@@ -860,72 +891,9 @@ __fastcall ConfigStorageTableConfigSave::ConfigStorageTableConfigSave(TableFiles
 	}
 
 	tab = tabc->gettable();
-	_DynamicallyUpdated = tabc->getfile(L"DynamicallyUpdated");
-
-	dynup = NULL;
-	if(_DynamicallyUpdated)
-	{
-		DynamicallyUpdated = new container_file(_DynamicallyUpdated, _DynamicallyUpdated->name);
-		DynamicallyUpdated->open();
-		s = tab->getbase()->getfilename() + L"\\" + tab->getname() + L"\\" + DynamicallyUpdated->name;
-		tt = parse_1Cstream(DynamicallyUpdated->stream, s);
-		if(!tt)
-		{
-			error(L"Ошибка разбора файла DynamicallyUpdated"
-				, L"Путь", s);
-		}
-		else
-		{
-			ct = tt->get_first();
-			if(!ct)
-			{
-				error(L"Ошибка разбора файла DynamicallyUpdated"
-					, L"Путь", s);
-			}
-			else
-			{
-				ct = ct->get_first();
-				if(!ct)
-				{
-					error(L"Ошибка разбора файла DynamicallyUpdated"
-						, L"Путь", s);
-				}
-				else
-				{
-					ct = ct->get_next();
-					if(!ct)
-					{
-						error(L"Ошибка разбора файла DynamicallyUpdated"
-							, L"Путь", s);
-					}
-					else
-					{
-						if(ct->get_type() != nd_number)
-						{
-							error(L"Ошибка разбора файла DynamicallyUpdated"
-								, L"Путь", s);
-						}
-						else
-						{
-							ndynup = ct->get_value().ToIntDef(0);
-							if(ndynup > 0)
-							{
-								dynup = new TGUID[ndynup];
-								for(m = 0; m < ndynup; ++m)
-								{
-									ct = ct->get_next();
-									string_to_GUID(ct->get_value(), &dynup[m]);
-								}
-							}
-							else ndynup = 0;
-						}
-
-					}
-				}
-			}
-		}
-		delete DynamicallyUpdated;
-	}
+	DynUpdateResult _dup = ParseDynamicallyUpdated(tabc, L"DynamicallyUpdated");
+	dynup = _dup.dynup;
+	ndynup = _dup.ndynup;
 
 	m = ndynup + 2;
 
